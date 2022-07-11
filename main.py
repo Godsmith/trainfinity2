@@ -11,8 +11,10 @@ GRID_COLOR = arcade.color.BLACK
 
 
 class MyGame(arcade.Window):
+
+    VISIBLE = True  # Overridden for unit testing
     def __init__(self):
-        super().__init__(width=SCREEN_WIDTH, height=SCREEN_HEIGHT, title="TRAINFINITY")
+        super().__init__(width=SCREEN_WIDTH, height=SCREEN_HEIGHT, title="TRAINFINITY", visible=self.VISIBLE)
 
         self.horizontal_grid_lines = []
         self.vertical_grid_lines = []
