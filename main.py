@@ -5,6 +5,8 @@ import arcade
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
+GRID_WIDTH = 600
+GRID_HEIGHT = 600
 GRID_BOX_SIZE = 30
 GRID_LINE_WIDTH = 1
 GRID_COLOR = arcade.color.BLACK
@@ -44,11 +46,11 @@ class MyGame(arcade.Window):
         pass
 
     def _draw_grid(self):
-        for x in range(0, SCREEN_WIDTH + 1, GRID_BOX_SIZE):
-            arcade.draw_line(x, 0, x, SCREEN_HEIGHT, GRID_COLOR, GRID_LINE_WIDTH)
+        for x in range(0, GRID_WIDTH + 1, GRID_BOX_SIZE):
+            arcade.draw_line(x, 0, x, GRID_HEIGHT, GRID_COLOR, GRID_LINE_WIDTH)
 
-        for y in range(0, SCREEN_HEIGHT + 1, GRID_BOX_SIZE):
-            arcade.draw_line(0, y, SCREEN_WIDTH, y, GRID_COLOR, GRID_LINE_WIDTH)
+        for y in range(0, GRID_HEIGHT + 1, GRID_BOX_SIZE):
+            arcade.draw_line(0, y, GRID_WIDTH, y, GRID_COLOR, GRID_LINE_WIDTH)
 
     def on_draw(self):
         self.clear()
@@ -75,6 +77,16 @@ class MyGame(arcade.Window):
             delta = delta.scale(self.camera_sprites.scale)
 
             new_position = self.camera_position_when_mouse2_pressed - delta
+
+            min_x = -self.camera_sprites.viewport_width / 2
+            max_x = GRID_WIDTH + min_x
+            min_y = -self.camera_sprites.viewport_height / 2
+            max_y = GRID_HEIGHT + min_y
+
+            new_position = Vec2(max(min_x, new_position.x), new_position.y)
+            new_position = Vec2(min(max_x, new_position.x), new_position.y)
+            new_position = Vec2(new_position.x, max(min_y, new_position.y))
+            new_position = Vec2(new_position.x, min(max_y, new_position.y))
 
             self.camera_sprites.move(new_position)
 
