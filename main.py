@@ -85,6 +85,19 @@ class Camera:
         dx, dy = position - Vec2(left, bottom)
         arcade.set_viewport(left + dx, right + dx, bottom + dy, top + dy)
 
+    def to_world_coordinates(self, x, y):
+        """Convert a position x, y in the current window to world coordinates."""
+        relative_x = (x - self.original_left) / (
+            self.original_right - self.original_left
+        )
+        relative_y = (y - self.original_bottom) / (
+            self.original_top - self.original_bottom
+        )
+        left, right, bottom, top = arcade.get_viewport()
+        return int(left + (right - left) * relative_x), int(
+            bottom + (top - bottom) * relative_y
+        )
+
 
 class Grid:
     def __init__(self) -> None:
@@ -192,6 +205,7 @@ class MyGame(arcade.Window):
             self.is_mouse2_pressed = True
             self.camera_position_when_mouse2_pressed = self.camera_sprites.position
         elif button == arcade.MOUSE_BUTTON_LEFT:
+            x, y = self.camera_sprites.to_world_coordinates(x, y)
             self.mouse1_pressed_x = x
             self.mouse1_pressed_y = y
             self.is_mouse1_pressed = True
@@ -224,6 +238,7 @@ class MyGame(arcade.Window):
 
             self.camera_sprites.move(new_position)
         elif self.is_mouse1_pressed:
+            x, y = self.camera_sprites.to_world_coordinates(x, y)
             self.grid.click_and_drag(x, y, self.mouse1_pressed_x, self.mouse1_pressed_y)
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
