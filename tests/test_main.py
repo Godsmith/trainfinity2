@@ -32,7 +32,7 @@ class TestCamera:
             x=2000, y=3000, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0
         )
 
-        assert game.camera_sprites.goal_position == Vec2(-400, -300)
+        assert game.camera_sprites.position == Vec2(-400, -300)
 
     def test_camera_stops_when_trying_to_move_past_bottom_right_corner(self, game):
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0)
@@ -41,7 +41,7 @@ class TestCamera:
             x=-2000, y=-3000, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0
         )
 
-        assert game.camera_sprites.goal_position == Vec2(200, 300)
+        assert game.camera_sprites.position == Vec2(200, 300)
 
     def test_camera_starts_with_scale_1(self, game):
         assert game.camera_sprites.scale == 1.0
