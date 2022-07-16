@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass
+import random
 from re import S
 from typing import Iterable, Literal
 from pyglet.math import Vec2
@@ -29,6 +30,8 @@ MIN_CAMERA_SCALE = 0.5
 
 
 Rail = namedtuple("Rail", "x1 y1 x2 y2")
+Mine = namedtuple("Mine", "x y")
+Factory = namedtuple("Factory", "x y")
 
 arcade.get_viewport
 
@@ -103,6 +106,18 @@ class Grid:
     def __init__(self) -> None:
         self.rails_being_built = []
         self.rails = []
+        self.mines = self._create_mines()
+        self.factories = self._create_factories()
+
+    def _create_mines(self):
+        x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
+        y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
+        return [Mine(x, y)]
+
+    def _create_factories(self):
+        x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
+        y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
+        return [Factory(x, y)]
 
     def snap_to_x(self, x) -> int:
         return math.floor(x / GRID_BOX_SIZE) * GRID_BOX_SIZE
@@ -192,11 +207,21 @@ class MyGame(arcade.Window):
         self._draw_rails(self.grid.rails_being_built, BUILDING_RAIL_COLOR)
         self._draw_rails(self.grid.rails, FINISHED_RAIL_COLOR)
 
+    def _draw_mines(self):
+        for mine in self.grid.mines:
+            arcade.draw_text("M", mine.x, mine.y, bold=True, font_size=24)
+
+    def _draw_factories(self):
+        for factory in self.grid.factories:
+            arcade.draw_text("F", factory.x, factory.y, bold=True, font_size=24)
+
     def on_draw(self):
         self.clear()
 
         self._draw_grid()
         self._draw_all_rails()
+        self._draw_mines()
+        self._draw_factories()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
