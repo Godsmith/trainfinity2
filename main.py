@@ -1,8 +1,7 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from dataclasses import dataclass
 import random
-from re import S
-from typing import Iterable, Literal
+from typing import Iterable
 from pyglet.math import Vec2
 import arcade
 import arcade.color
@@ -29,11 +28,23 @@ MAX_CAMERA_SCALE = 4
 MIN_CAMERA_SCALE = 0.5
 
 
-Rail = namedtuple("Rail", "x1 y1 x2 y2")
 Mine = namedtuple("Mine", "x y")
 Factory = namedtuple("Factory", "x y")
+Station = namedtuple("Station", "x y")
 
-arcade.get_viewport
+
+@dataclass
+class Rail:
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+
+    def is_horizontal(self):
+        return self.y1 == self.y2
+
+    def is_vertical(self):
+        return self.x1 == self.x2
 
 
 class Camera:
@@ -106,6 +117,7 @@ class Grid:
     def __init__(self) -> None:
         self.rails_being_built = []
         self.rails = []
+        self.stations = []
         self.mines = self._create_mines()
         self.factories = self._create_factories()
 
@@ -158,6 +170,45 @@ class Grid:
         self.rails.extend(self.rails_being_built)
         self.rails_being_built.clear()
 
+        self._add_stations()
+
+    def _is_adjacent(self, position1, position2):
+        return (
+            abs(position1.x - position2.x) == GRID_BOX_SIZE
+            and position1.y == position2.y
+        ) or (
+            abs(position1.y - position2.y) == GRID_BOX_SIZE
+            and position1.x == position2.x
+        )
+
+    def _is_adjacent_to_mine_or_factory(self, position):
+        for mine in self.mines:
+            if self._is_adjacent(position, mine):
+                return True
+        for factory in self.factories:
+            if self._is_adjacent(position, factory):
+                return True
+        return False
+
+    def _add_stations(self):
+        rails_from_position = defaultdict(list)
+        for rail in self.rails:
+            rails_from_position[(rail.x1, rail.y1)].append(rail)
+            rails_from_position[(rail.x2, rail.y2)].append(rail)
+
+        for (x, y), rails in rails_from_position.items():
+            if len(rails) == 2:
+                if all(rail.is_horizontal() for rail in rails) or all(
+                    rail.is_vertical() for rail in rails
+                ):
+                    # Checking for existing stations might not be needed later if
+                    # building rail on top of rail will be prohibited.
+                    if (
+                        self._is_adjacent_to_mine_or_factory(Vec2(x, y))
+                        and Station(x, y) not in self.stations
+                    ):
+                        self.stations.append(Station(x, y))
+
 
 class MyGame(arcade.Window):
     def __init__(self, visible=True):
@@ -200,7 +251,10 @@ class MyGame(arcade.Window):
 
     def _draw_rails(self, rails: Iterable[Rail], color: Color):
         for rail in rails:
-            x1, y1, x2, y2 = [coordinate + GRID_BOX_SIZE / 2 for coordinate in rail]
+            x1, y1, x2, y2 = [
+                coordinate + GRID_BOX_SIZE / 2
+                for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
+            ]
             arcade.draw_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
 
     def _draw_all_rails(self):
@@ -215,11 +269,16 @@ class MyGame(arcade.Window):
         for factory in self.grid.factories:
             arcade.draw_text("F", factory.x, factory.y, bold=True, font_size=24)
 
+    def _draw_stations(self):
+        for station in self.grid.stations:
+            arcade.draw_text("S", station.x, station.y, bold=True, font_size=24)
+
     def on_draw(self):
         self.clear()
 
         self._draw_grid()
         self._draw_all_rails()
+        self._draw_stations()
         self._draw_mines()
         self._draw_factories()
 

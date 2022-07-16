@@ -1,6 +1,6 @@
 import arcade
 import pytest
-from main import MyGame, Rail
+from main import MyGame, Rail, Station, Mine, Factory
 from pyglet.math import Vec2
 from pytest import approx
 
@@ -91,3 +91,19 @@ class TestGrid:
 
         assert len(game.grid.rails_being_built) == 0
         assert len(game.grid.rails) == 1
+
+    def test_building_horizontal_station(self, game: MyGame):
+        game.grid.mines = [Mine(0, 30)]
+        game.on_mouse_press(x=-30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=30, y=0, dx=30, dy=0)
+        game.on_mouse_release(x=30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+
+        assert game.grid.stations == [Station(0, 0)]
+
+    def test_building_vertical_station(self, game: MyGame):
+        game.grid.factories = [Factory(30, 0)]
+        game.on_mouse_press(x=0, y=-30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=0, y=30, dx=0, dy=30)
+        game.on_mouse_release(x=0, y=30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+
+        assert game.grid.stations == [Station(0, 0)]
