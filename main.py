@@ -21,6 +21,8 @@ FINISHED_RAIL_COLOR = arcade.color.RED
 BUILDING_RAIL_COLOR = arcade.color.RED_BROWN
 RAIL_LINE_WIDTH = 5
 
+MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK = 5
+
 
 # Min zoom = 1/MAX_CAMERA_SCALE, i.e. 25%
 MAX_CAMERA_SCALE = 4
@@ -294,12 +296,30 @@ class MyGame(arcade.Window):
             self.mouse1_pressed_y = y
             self.is_mouse1_pressed = True
 
+    def _is_click(self, mouse_down_x, mouse_down_y, mouse_up_x, mouse_up_y):
+        return (
+            abs(mouse_down_x - mouse_up_x)
+            < MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK
+            and abs(mouse_down_y - mouse_up_y)
+            < MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK
+        )
+
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
+            if self._is_click(self.mouse2_pressed_x, self.mouse2_pressed_y, x, y):
+                self.on_right_click(x, y)
             self.is_mouse2_pressed = False
         elif button == arcade.MOUSE_BUTTON_LEFT:
+            if self._is_click(self.mouse1_pressed_x, self.mouse1_pressed_y, x, y):
+                self.on_left_click(x, y)
             self.is_mouse1_pressed = False
             self.grid.release_mouse_button()
+
+    def on_left_click(self, x, y):
+        pass
+
+    def on_right_click(self, x, y):
+        pass
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         if self.is_mouse2_pressed:
