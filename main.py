@@ -1,13 +1,16 @@
-from collections import namedtuple, defaultdict
-from dataclasses import dataclass
+import math
 import random
+from collections import defaultdict, namedtuple
+from dataclasses import dataclass
+from itertools import pairwise
 from typing import Iterable
-from pyglet.math import Vec2
+
 import arcade
 import arcade.color
 from arcade import Color
-import math
-from itertools import pairwise
+from pyglet.math import Vec2
+
+from gui import Gui
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -17,8 +20,8 @@ GRID_HEIGHT = 600
 GRID_BOX_SIZE = 30
 GRID_LINE_WIDTH = 1
 GRID_COLOR = arcade.color.BLACK
-FINISHED_RAIL_COLOR = arcade.color.RED
-BUILDING_RAIL_COLOR = arcade.color.RED_BROWN
+FINISHED_RAIL_COLOR = [128, 128, 128]  # Gray
+BUILDING_RAIL_COLOR = [128, 128, 128, 128]  # Gray translucent
 RAIL_LINE_WIDTH = 5
 
 MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK = 5
@@ -227,7 +230,6 @@ class MyGame(arcade.Window):
         arcade.set_background_color(arcade.color.BUD_GREEN)
 
         self.camera_sprites = Camera()
-        self.camera_gui = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         self.is_mouse1_pressed = False
         self.mouse1_pressed_x = 0
@@ -240,6 +242,7 @@ class MyGame(arcade.Window):
         self.camera_position_when_mouse2_pressed = self.camera_sprites.position
 
         self.grid = Grid()
+        self.gui = Gui()
 
     def setup(self):
         pass
@@ -284,6 +287,8 @@ class MyGame(arcade.Window):
         self._draw_mines()
         self._draw_factories()
 
+        self.gui.draw()
+
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.mouse2_pressed_x = x
@@ -305,6 +310,7 @@ class MyGame(arcade.Window):
         )
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        x, y = self.camera_sprites.to_world_coordinates(x, y)
         if button == arcade.MOUSE_BUTTON_RIGHT:
             if self._is_click(self.mouse2_pressed_x, self.mouse2_pressed_y, x, y):
                 self.on_right_click(x, y)
@@ -316,7 +322,7 @@ class MyGame(arcade.Window):
             self.grid.release_mouse_button()
 
     def on_left_click(self, x, y):
-        pass
+        self.gui.on_left_click(x, y)
 
     def on_right_click(self, x, y):
         pass
