@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 import arcade
 
 SELECTED_BOX_BACKGROUND_COLOR = arcade.color.WHITE
@@ -7,13 +8,23 @@ BOX_TEXT_COLOR = arcade.color.BLACK
 BOX_OUTLINE_COLOR = arcade.color.BLACK
 
 
-Box = namedtuple("Box", "text")
+Box = namedtuple("Box", "text mode")
+
+
+class Mode(Enum):
+    SELECT = 1
+    RAIL = 2
+    TRAIN = 3
 
 
 class Gui:
     def __init__(self) -> None:
-        self.boxes = [Box("RAIL"), Box("TRAIN")]
-        self.selection = 0
+        self.boxes = [
+            Box("SELECT", Mode.SELECT),
+            Box("RAIL", Mode.RAIL),
+            Box("TRAIN", Mode.TRAIN),
+        ]
+        self.mode = Mode.TRAIN
 
     def draw(self):
         for i, box in enumerate(self.boxes):
@@ -26,9 +37,12 @@ class Gui:
         return left < x < left + box_size and bottom < y < bottom + box_size
 
     def on_left_click(self, x, y):
-        for i, _ in enumerate(self.boxes):
+        """Returns True if the event was handled, False otherwise."""
+        for i, box in enumerate(self.boxes):
             if self._is_inside(x, y, i):
-                self.selection = i
+                self.mode = box.mode
+                return True
+        return False
 
     def _draw_box(self, box: Box, index: int):
         left, _, bottom, top = arcade.get_viewport()
@@ -36,7 +50,7 @@ class Gui:
         left += index * box_size
         background_color = (
             SELECTED_BOX_BACKGROUND_COLOR
-            if self.selection == index
+            if self.mode == box.mode
             else DESELECTED_BOX_BACKGROUND_COLOR
         )
         arcade.draw_lrtb_rectangle_filled(

@@ -1,16 +1,17 @@
 import math
 import random
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import Iterable
+from typing import Iterable, Optional, Tuple
+from enum import Enum
 
 import arcade
 import arcade.color
 from arcade import Color
 from pyglet.math import Vec2
 
-from gui import Gui
+from gui import Gui, Mode
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -26,6 +27,8 @@ RAIL_LINE_WIDTH = 5
 
 MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK = 5
 
+TRAIN_SPEED = 3
+
 
 # Min zoom = 1/MAX_CAMERA_SCALE, i.e. 25%
 MAX_CAMERA_SCALE = 4
@@ -36,6 +39,32 @@ MIN_CAMERA_SCALE = 0.5
 Mine = namedtuple("Mine", "x y")
 Factory = namedtuple("Factory", "x y")
 Station = namedtuple("Station", "x y")
+
+
+@dataclass
+class Train:
+    first_station: Station
+    second_station: Station
+    route: list[Vec2]
+    x: int = field(init=False)
+    y: int = field(init=False)
+    target_x: int = field(init=False)
+    target_y: int = field(init=False)
+    current_target_route_index: int = field(init=False)
+
+    def __post_init__(self):
+        self.x = self.first_station.x
+        self.y = self.first_station.y
+        self.target_x = self.route[1].x
+        self.target_y = self.route[1].y
+        self.current_target_route_index = 1
+        self.route = self.route + self.route[-2:0:-1]
+
+    def select_next_position_in_route(self):
+        self.current_target_route_index += 1
+        self.current_target_route_index %= len(self.route)
+        self.target_x = self.route[self.current_target_route_index].x
+        self.target_y = self.route[self.current_target_route_index].y
 
 
 @dataclass
@@ -50,6 +79,11 @@ class Rail:
 
     def is_vertical(self):
         return self.x1 == self.x2
+
+
+class TrainPlacementMode(Enum):
+    FIRST_STATION = 1
+    SECOND_STATION = 2
 
 
 class Camera:
@@ -136,11 +170,41 @@ class Grid:
         y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
         return [Factory(x, y)]
 
+    def snap_to(self, x, y) -> tuple[int, int]:
+        return self.snap_to_x(x), self.snap_to_y(y)
+
     def snap_to_x(self, x) -> int:
         return math.floor(x / GRID_BOX_SIZE) * GRID_BOX_SIZE
 
     def snap_to_y(self, y) -> int:
         return math.floor(y / GRID_BOX_SIZE) * GRID_BOX_SIZE
+
+    def connect_stations(self, station1: Station, station2: Station):
+        self.rails_from_vec2 = defaultdict(list)
+        for rail in self.rails:
+            self.rails_from_vec2[Vec2(rail.x1, rail.y1)].append(rail)
+            self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
+        return self._explore([Vec2(station1.x, station1.y)], station2)
+
+    def _explore(
+        self, previous_locations: list[Vec2], target_station: Station
+    ) -> Optional[list[Vec2]]:
+        if (
+            previous_locations[-1].x == target_station.x
+            and previous_locations[-1].y == target_station.y
+        ):
+            return previous_locations
+        next_locations = set()
+        for rail in self.rails_from_vec2[previous_locations[-1]]:
+            next_locations.add(Vec2(rail.x1, rail.y1))
+            next_locations.add(Vec2(rail.x2, rail.y2))
+        next_locations -= set(previous_locations)
+        for next_location in next_locations:
+            if route := self._explore(
+                previous_locations + [next_location], target_station
+            ):
+                return route
+        return None
 
     def _is_not_straight_horizontal_or_diagonal(self, xs, ys):
         return len(xs) != len(ys) and (
@@ -176,6 +240,11 @@ class Grid:
         self.rails_being_built.clear()
 
         self._add_stations()
+
+    def get_station(self, x, y) -> Optional[Station]:
+        x, y = self.snap_to(x, y)
+        if Station(x, y) in self.stations:
+            return Station(x, y)
 
     def _is_adjacent(self, position1, position2):
         return (
@@ -244,8 +313,30 @@ class MyGame(arcade.Window):
         self.grid = Grid()
         self.gui = Gui()
 
+        self.trains = []
+        self.train_placement_mode = TrainPlacementMode.FIRST_STATION
+        self.train_placement_station_list = []
+
     def setup(self):
         pass
+
+    def on_update(self, delta_time):
+        SQRT_2 = 1.417
+
+        for train in self.trains:
+            if train.x > train.target_x:
+                train.x -= TRAIN_SPEED
+            else:
+                train.x += TRAIN_SPEED
+            if train.y > train.target_y:
+                train.y -= TRAIN_SPEED
+            else:
+                train.y += TRAIN_SPEED
+            if (
+                abs(train.x - train.target_x) < 1
+                and abs(train.y - train.target_y) < TRAIN_SPEED
+            ):
+                train.select_next_position_in_route()
 
     def _draw_grid(self):
         for x in range(0, GRID_WIDTH + 1, GRID_BOX_SIZE):
@@ -278,6 +369,15 @@ class MyGame(arcade.Window):
         for station in self.grid.stations:
             arcade.draw_text("S", station.x, station.y, bold=True, font_size=24)
 
+    def _draw_trains(self):
+        for train in self.trains:
+            arcade.draw_circle_filled(
+                train.x + GRID_BOX_SIZE / 2,
+                train.y + GRID_BOX_SIZE / 2,
+                GRID_BOX_SIZE / 2,
+                color=arcade.color.RED,
+            )
+
     def on_draw(self):
         self.clear()
 
@@ -286,6 +386,7 @@ class MyGame(arcade.Window):
         self._draw_stations()
         self._draw_mines()
         self._draw_factories()
+        self._draw_trains()
 
         self.gui.draw()
 
@@ -322,7 +423,31 @@ class MyGame(arcade.Window):
             self.grid.release_mouse_button()
 
     def on_left_click(self, x, y):
-        self.gui.on_left_click(x, y)
+        if self.gui.on_left_click(x, y):
+            return
+        # TODO: if train view is selected again, revert to TrainPlacementMode.FIRST_STATION
+        # TODO: Abort by pressing Escape
+        # TODO: Extract to class with separate state
+        elif self.gui.mode == Mode.TRAIN:
+            if station := self.grid.get_station(x, y):
+                if self.train_placement_mode == TrainPlacementMode.FIRST_STATION:
+                    self.train_placement_station_list.append(station)
+                    self.train_placement_mode = TrainPlacementMode.SECOND_STATION
+                elif self.train_placement_mode == TrainPlacementMode.SECOND_STATION:
+                    self.train_placement_station_list.append(station)
+                    if route := self.grid.connect_stations(
+                        *self.train_placement_station_list
+                    ):
+                        self.trains.append(
+                            Train(
+                                self.train_placement_station_list[0],
+                                self.train_placement_station_list[1],
+                                route,
+                            )
+                        )
+                        print(self.trains[-1].route)
+                        self.gui.mode = Mode.SELECT
+                        # TODO: Select train here
 
     def on_right_click(self, x, y):
         pass
