@@ -1,5 +1,6 @@
 [run]
-branch = True
+# Enable this if bored some time, seems to be low bang for the buck
+branch = False
 
 [report]
 
