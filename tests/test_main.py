@@ -40,14 +40,6 @@ class TestClicks:
 
         assert self.on_left_click_call_count == 1
 
-    def test_on_mouse_release_with_middle_button_does_nothing(self, game: MyGame):
-        """For branch coverage."""
-        game.on_mouse_release(0, 0, arcade.MOUSE_BUTTON_MIDDLE, modifiers=0)
-
-    def test_clicking_nowhere_does_nothing(self, game: MyGame):
-        """For branch coverage."""
-        game.on_left_click(300, 300)
-
 
 class TestCamera:
     def test_camera_starts_at_origo(self, game):

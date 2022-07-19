@@ -7,8 +7,7 @@ from typing import Iterable, Optional, Tuple
 from enum import Enum
 
 import arcade
-import arcade.color
-from arcade import Color
+from arcade import color, Color
 from pyglet.math import Vec2
 
 from gui import Gui, Mode
@@ -20,7 +19,7 @@ GRID_WIDTH = 600
 GRID_HEIGHT = 600
 GRID_BOX_SIZE = 30
 GRID_LINE_WIDTH = 1
-GRID_COLOR = arcade.color.BLACK
+GRID_COLOR = color.BLACK
 FINISHED_RAIL_COLOR = [128, 128, 128]  # Gray
 BUILDING_RAIL_COLOR = [128, 128, 128, 128]  # Gray translucent
 RAIL_LINE_WIDTH = 5
@@ -259,7 +258,7 @@ class Grid:
     def _is_adjacent_to_mine_or_factory(self, position):
         return any(
             self._is_adjacent(position, position2)
-            for position2 in self.mines + self.factories
+            for position2 in self.mines + self.factories  # type: ignore
         )
 
     def _add_stations(self):
@@ -295,7 +294,7 @@ class MyGame(arcade.Window):
         self.horizontal_grid_lines = []
         self.vertical_grid_lines = []
 
-        arcade.set_background_color(arcade.color.BUD_GREEN)
+        arcade.set_background_color(color.BUD_GREEN)
 
         self.is_mouse1_pressed = False
         self.mouse1_pressed_x = 0
@@ -305,11 +304,12 @@ class MyGame(arcade.Window):
         self.mouse2_pressed_x = 0
         self.mouse2_pressed_y = 0
 
-        self.camera_sprites = None
-        self.camera_position_when_mouse2_pressed = None
+        # This is repeated in setup() below
+        self.camera_sprites = Camera()
+        self.camera_position_when_mouse2_pressed = self.camera_sprites.position
 
-        self.grid = None
-        self.gui = None
+        self.grid = Grid()
+        self.gui = Gui()
 
         self.trains = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
@@ -328,8 +328,6 @@ class MyGame(arcade.Window):
         self.train_placement_station_list = []
 
     def on_update(self, delta_time):
-        SQRT_2 = 1.417
-
         for train in self.trains:
             if train.x > train.target_x:
                 train.x -= TRAIN_SPEED
@@ -382,7 +380,7 @@ class MyGame(arcade.Window):
                 train.x + GRID_BOX_SIZE / 2,
                 train.y + GRID_BOX_SIZE / 2,
                 GRID_BOX_SIZE / 2,
-                color=arcade.color.RED,
+                color=color.RED,
             )
 
     def on_draw(self):
