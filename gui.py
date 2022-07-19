@@ -24,7 +24,12 @@ class Gui:
             Box("RAIL", Mode.RAIL),
             Box("TRAIN", Mode.TRAIN),
         ]
-        self.mode = Mode.TRAIN
+        self.mode = Mode.RAIL
+        self._enabled = True
+
+    def disable(self):
+        """Stop the GUI from taking clicks. Currently mostly useful for unit testing."""
+        self._enabled = False
 
     def draw(self):
         for i, box in enumerate(self.boxes):
@@ -38,10 +43,11 @@ class Gui:
 
     def on_left_click(self, x, y):
         """Returns True if the event was handled, False otherwise."""
-        for i, box in enumerate(self.boxes):
-            if self._is_inside(x, y, i):
-                self.mode = box.mode
-                return True
+        if self._enabled:
+            for i, box in enumerate(self.boxes):
+                if self._is_inside(x, y, i):
+                    self.mode = box.mode
+                    return True
         return False
 
     def _draw_box(self, box: Box, index: int):

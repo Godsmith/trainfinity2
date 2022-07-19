@@ -103,6 +103,7 @@ class Camera:
     @property
     def scale(self):
         left, right, _, _ = arcade.get_viewport()
+
         return (right - left) / (self.original_right - self.original_left)
 
     @scale.setter
@@ -256,13 +257,10 @@ class Grid:
         )
 
     def _is_adjacent_to_mine_or_factory(self, position):
-        for mine in self.mines:
-            if self._is_adjacent(position, mine):
-                return True
-        for factory in self.factories:
-            if self._is_adjacent(position, factory):
-                return True
-        return False
+        return any(
+            self._is_adjacent(position, position2)
+            for position2 in self.mines + self.factories
+        )
 
     def _add_stations(self):
         rails_from_position = defaultdict(list)
@@ -291,14 +289,13 @@ class MyGame(arcade.Window):
             height=SCREEN_HEIGHT,
             title="TRAINFINITY",
             visible=visible,
+            update_rate=60,
         )  # type: ignore
 
         self.horizontal_grid_lines = []
         self.vertical_grid_lines = []
 
         arcade.set_background_color(arcade.color.BUD_GREEN)
-
-        self.camera_sprites = Camera()
 
         self.is_mouse1_pressed = False
         self.mouse1_pressed_x = 0
@@ -308,6 +305,19 @@ class MyGame(arcade.Window):
         self.mouse2_pressed_x = 0
         self.mouse2_pressed_y = 0
 
+        self.camera_sprites = None
+        self.camera_position_when_mouse2_pressed = None
+
+        self.grid = None
+        self.gui = None
+
+        self.trains = []
+        self.train_placement_mode = TrainPlacementMode.FIRST_STATION
+        self.train_placement_station_list = []
+
+    def setup(self):
+        arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
+        self.camera_sprites = Camera()
         self.camera_position_when_mouse2_pressed = self.camera_sprites.position
 
         self.grid = Grid()
@@ -316,9 +326,6 @@ class MyGame(arcade.Window):
         self.trains = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
-
-    def setup(self):
-        pass
 
     def on_update(self, delta_time):
         SQRT_2 = 1.417
@@ -430,24 +437,26 @@ class MyGame(arcade.Window):
         # TODO: Extract to class with separate state
         elif self.gui.mode == Mode.TRAIN:
             if station := self.grid.get_station(x, y):
-                if self.train_placement_mode == TrainPlacementMode.FIRST_STATION:
-                    self.train_placement_station_list.append(station)
-                    self.train_placement_mode = TrainPlacementMode.SECOND_STATION
-                elif self.train_placement_mode == TrainPlacementMode.SECOND_STATION:
-                    self.train_placement_station_list.append(station)
-                    if route := self.grid.connect_stations(
-                        *self.train_placement_station_list
-                    ):
-                        self.trains.append(
-                            Train(
-                                self.train_placement_station_list[0],
-                                self.train_placement_station_list[1],
-                                route,
+                match self.train_placement_mode:
+                    case TrainPlacementMode.FIRST_STATION:
+                        self.train_placement_station_list.append(station)
+                        self.train_placement_mode = TrainPlacementMode.SECOND_STATION
+                    case _:  # second station
+                        self.train_placement_mode = TrainPlacementMode.FIRST_STATION
+                        self.train_placement_station_list.append(station)
+                        if route := self.grid.connect_stations(
+                            *self.train_placement_station_list
+                        ):
+                            self.trains.append(
+                                Train(
+                                    self.train_placement_station_list[0],
+                                    self.train_placement_station_list[1],
+                                    route,
+                                )
                             )
-                        )
-                        print(self.trains[-1].route)
-                        self.gui.mode = Mode.SELECT
-                        # TODO: Select train here
+                            # print(self.trains[-1].route)
+                            self.gui.mode = Mode.SELECT
+                            # TODO: Select train here
 
     def on_right_click(self, x, y):
         pass
@@ -489,11 +498,8 @@ class MyGame(arcade.Window):
         self.camera_sprites.scale = new_scale
 
 
-def main():
+if __name__ == "__main__":
     window = MyGame()
+    # Not needed right now
     window.setup()
     arcade.run()
-
-
-if __name__ == "__main__":
-    main()

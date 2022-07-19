@@ -1,14 +1,52 @@
 import arcade
 import pytest
-from main import MyGame, Rail, Station, Mine, Factory
+from main import MyGame, Rail, Station, Mine, Factory, Mode, Train, TrainPlacementMode
 from pyglet.math import Vec2
 from pytest import approx
+import time
 
 
-@pytest.fixture(autouse=True)
-def game() -> MyGame:
+@pytest.fixture(autouse=True, scope="session")
+def common_game() -> MyGame:
     game = MyGame(visible=False)
     return game
+
+
+@pytest.fixture()
+def game(common_game) -> MyGame:
+    common_game.setup()
+    return common_game
+
+
+def test_draw(game: MyGame):
+    # Mainly for code coverage
+    game.grid.rails = [Rail(0, 0, 0, 0)]
+    game.grid.stations = [Station(0, 0)]
+    game.trains = [Train(Station(0, 0), Station(0, 0), [Vec2(0, 0), Vec2(0, 0)])]
+    game.on_draw()
+
+
+class TestClicks:
+    def test_create_click(self, game: MyGame, monkeypatch):
+        self.on_left_click_call_count = 0
+
+        def mock_on_left_click(x, y):
+            self.on_left_click_call_count += 1
+
+        monkeypatch.setattr(game, "on_left_click", mock_on_left_click)
+
+        game.on_mouse_press(0, 0, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_release(0, 0, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+
+        assert self.on_left_click_call_count == 1
+
+    def test_on_mouse_release_with_middle_button_does_nothing(self, game: MyGame):
+        """For branch coverage."""
+        game.on_mouse_release(0, 0, arcade.MOUSE_BUTTON_MIDDLE, modifiers=0)
+
+    def test_clicking_nowhere_does_nothing(self, game: MyGame):
+        """For branch coverage."""
+        game.on_left_click(300, 300)
 
 
 class TestCamera:
@@ -52,6 +90,7 @@ class TestCamera:
         assert game.camera_sprites.scale == approx(0.9)
 
     def test_scrolling_down_zooms_out(self, game):
+        assert game.camera_sprites.scale == 1.0
         game.on_mouse_scroll(x=100, y=100, scroll_x=0, scroll_y=-1)
 
         assert game.camera_sprites.scale == approx(1.1)
@@ -107,3 +146,115 @@ class TestGrid:
         game.on_mouse_release(x=0, y=30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
         assert game.grid.stations == [Station(0, 0)]
+
+
+@pytest.fixture
+def game_with_factory_and_mine(game):
+    """
+     M F
+    =S=S=
+    """
+    game.grid.mines = [Mine(30, 30)]
+    game.grid.factories = [Factory(90, 30)]
+    game.grid.rails = [
+        Rail(0, 0, 30, 0),
+        Rail(30, 0, 60, 0),
+        Rail(60, 0, 90, 0),
+        Rail(90, 0, 120, 0),
+    ]
+    game.grid.stations = [Station(30, 0), Station(90, 0)]
+
+    return game
+
+
+class TestGui:
+    def test_game_starts_in_rail_mode(self, game: MyGame):
+        assert game.gui.mode == Mode.RAIL
+
+    def test_clicking_bottom_left_corner_switches_to_select_mode(self, game: MyGame):
+        game.on_left_click(15, 15)
+        assert game.gui.mode == Mode.SELECT
+
+
+class TestTrain:
+    def test_clicking_nothing_in_train_mode_does_nothing(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        """Mainly for code coverage"""
+        # game = game_with_factory_and_mine
+        # game.gui.mode = Mode.TRAIN
+        # game.gui.disable()
+
+        # game.on_left_click(100, 100)
+
+    def test_clicking_station_in_train_mode_changes_train_placement_mode(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        """
+        When clicking a station in TRAIN mode
+        """
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+        game.gui.disable()
+
+        assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
+
+        # TODO: it would be nice for readability if I could just say station.click() here.
+        # Click first station
+        game.on_left_click(30, 0)
+
+        assert game.train_placement_mode == TrainPlacementMode.SECOND_STATION
+
+    def test_clicking_two_connected_stations_creates_train(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        """
+        The grid is lain out as follows:
+
+         M F
+        =S=S=
+
+        When clicking the two stations, a train shall be created.
+        """
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+
+        # TODO: it would be nice for readability if I could just say station.click() here.
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(90, 0)
+
+        assert len(game.trains) == 1
+
+    def test_clicking_two_unconnected_stations_does_not_create_train(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        """
+        Create a new station on top, like this:
+
+        =S=
+         M F
+        =S=S=
+
+        When clicking two unconnected stations, the TrainPlacementMode goes back to FIRST_STATION again.
+        """
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+
+        game.grid.rails.extend(
+            [
+                Rail(0, 90, 30, 90),
+                Rail(30, 90, 60, 90),
+            ]
+        )
+        game.grid.stations.append(Station(30, 90))
+
+        # TODO: it would be nice for readability if I could just say station.click() here.
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(30, 90)
+
+        assert len(game.trains) == 0
+        assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
