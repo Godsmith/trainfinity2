@@ -321,7 +321,6 @@ class MyGame(arcade.Window):
             height=SCREEN_HEIGHT,
             title="TRAINFINITY",
             visible=visible,
-            update_rate=60,
         )  # type: ignore
 
         self.horizontal_grid_lines = []
