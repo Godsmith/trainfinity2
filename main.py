@@ -412,7 +412,9 @@ class MyGame(arcade.Window):
     def on_draw(self):
         self.clear()
 
-        # TODO: when adding a station, mine or factory, also add a text sprite to the sprite list
+        # TODO: Move the responsibility of drawing to a Drawer class,
+        # and from this file only call self.grid.draw(). The Grid class
+        # should have a reference to the Drawer class.
         self.shape_list.draw()
 
         self.grid.rails_shape_element_list.draw()
