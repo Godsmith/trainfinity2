@@ -154,6 +154,12 @@ class Camera:
 
 class Grid:
     def __init__(self) -> None:
+        # TODO: not so nice to have two lists of objects here, perhaps
+        # consolidate to one?
+        self.station_sprite_list = arcade.SpriteList()
+        self.mine_sprite_list = arcade.SpriteList()
+        self.factory_sprite_list = arcade.SpriteList()
+
         self.rails_being_built = []
         self.rails = []
         self.stations = []
@@ -163,11 +169,15 @@ class Grid:
     def _create_mines(self):
         x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
         y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
+        sprite = arcade.create_text_sprite("M", x, y, color=color.WHITE, font_size=24)
+        self.mine_sprite_list.append(sprite)
         return [Mine(x, y)]
 
     def _create_factories(self):
         x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
         y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
+        sprite = arcade.create_text_sprite("F", x, y, color=color.WHITE, font_size=24)
+        self.factory_sprite_list.append(sprite)
         return [Factory(x, y)]
 
     def snap_to(self, x, y) -> tuple[int, int]:
@@ -279,6 +289,10 @@ class Grid:
                         and Station(x, y) not in self.stations
                     ):
                         self.stations.append(Station(x, y))
+                        sprite = arcade.create_text_sprite(
+                            "S", x, y, color=color.WHITE, font_size=24
+                        )
+                        self.factory_sprite_list.append(sprite)
 
 
 class MyGame(arcade.Window):
@@ -315,6 +329,9 @@ class MyGame(arcade.Window):
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
+        self.shape_list = arcade.ShapeElementList()
+        self.sprite_list = arcade.SpriteList()
+
     def setup(self):
         arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
         self.camera_sprites = Camera()
@@ -326,6 +343,19 @@ class MyGame(arcade.Window):
         self.trains = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
+
+        self.shape_list = arcade.ShapeElementList()
+        self.sprite_list = arcade.SpriteList()
+
+        # Set up shapes
+        self._create_grid()
+        self._draw_all_rails()
+        self._draw_trains()
+
+        sprite = arcade.create_text_sprite("Hello", 0, 0, color.AFRICAN_VIOLET)
+        self.sprite_list.append(sprite)
+
+        self.gui.draw()
 
     def on_update(self, delta_time):
         for train in self.trains:
@@ -343,12 +373,16 @@ class MyGame(arcade.Window):
             ):
                 train.select_next_position_in_route()
 
-    def _draw_grid(self):
+    def _create_grid(self):
         for x in range(0, GRID_WIDTH + 1, GRID_BOX_SIZE):
-            arcade.draw_line(x, 0, x, GRID_HEIGHT, GRID_COLOR, GRID_LINE_WIDTH)
+            self.shape_list.append(
+                arcade.create_line(x, 0, x, GRID_HEIGHT, GRID_COLOR, GRID_LINE_WIDTH)
+            )
 
         for y in range(0, GRID_HEIGHT + 1, GRID_BOX_SIZE):
-            arcade.draw_line(0, y, GRID_WIDTH, y, GRID_COLOR, GRID_LINE_WIDTH)
+            self.shape_list.append(
+                arcade.create_line(0, y, GRID_WIDTH, y, GRID_COLOR, GRID_LINE_WIDTH)
+            )
 
     def _draw_rails(self, rails: Iterable[Rail], color: Color):
         for rail in rails:
@@ -356,23 +390,13 @@ class MyGame(arcade.Window):
                 coordinate + GRID_BOX_SIZE / 2
                 for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
             ]
-            arcade.draw_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
+            self.shape_list.append(
+                arcade.create_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
+            )
 
     def _draw_all_rails(self):
         self._draw_rails(self.grid.rails_being_built, BUILDING_RAIL_COLOR)
         self._draw_rails(self.grid.rails, FINISHED_RAIL_COLOR)
-
-    def _draw_mines(self):
-        for mine in self.grid.mines:
-            arcade.draw_text("M", mine.x, mine.y, bold=True, font_size=24)
-
-    def _draw_factories(self):
-        for factory in self.grid.factories:
-            arcade.draw_text("F", factory.x, factory.y, bold=True, font_size=24)
-
-    def _draw_stations(self):
-        for station in self.grid.stations:
-            arcade.draw_text("S", station.x, station.y, bold=True, font_size=24)
 
     def _draw_trains(self):
         for train in self.trains:
@@ -386,14 +410,12 @@ class MyGame(arcade.Window):
     def on_draw(self):
         self.clear()
 
-        self._draw_grid()
-        self._draw_all_rails()
-        self._draw_stations()
-        self._draw_mines()
-        self._draw_factories()
-        self._draw_trains()
+        # TODO: when adding a station, mine or factory, also add a text sprite to the sprite list
+        self.shape_list.draw()
 
-        self.gui.draw()
+        self.grid.station_sprite_list.draw()
+        self.grid.mine_sprite_list.draw()
+        self.grid.factory_sprite_list.draw()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
