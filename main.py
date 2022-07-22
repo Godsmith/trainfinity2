@@ -159,6 +159,8 @@ class Grid:
         self.station_sprite_list = arcade.SpriteList()
         self.mine_sprite_list = arcade.SpriteList()
         self.factory_sprite_list = arcade.SpriteList()
+        self.rails_being_built_shape_element_list = arcade.ShapeElementList()
+        self.rails_shape_element_list = arcade.ShapeElementList()
 
         self.rails_being_built = []
         self.rails = []
@@ -244,9 +246,26 @@ class Grid:
         self.rails_being_built = [
             Rail(x1, y1, x2, y2) for (x1, y1), (x2, y2) in pairwise(zip(xs, ys))
         ]
+        self.rails_being_built_shape_element_list = arcade.ShapeElementList()
+        for rail in self.rails_being_built:
+            x1, y1, x2, y2 = [
+                coordinate + GRID_BOX_SIZE / 2
+                for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
+            ]
+            self.rails_being_built_shape_element_list.append(
+                arcade.create_line(x1, y1, x2, y2, BUILDING_RAIL_COLOR, RAIL_LINE_WIDTH)
+            )
 
     def release_mouse_button(self):
         self.rails.extend(self.rails_being_built)
+        for rail in self.rails_being_built:
+            x1, y1, x2, y2 = [
+                coordinate + GRID_BOX_SIZE / 2
+                for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
+            ]
+            self.rails_shape_element_list.append(
+                arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
+            )
         self.rails_being_built.clear()
 
         self._add_stations()
@@ -349,7 +368,6 @@ class MyGame(arcade.Window):
 
         # Set up shapes
         self._create_grid()
-        self._draw_all_rails()
         self._draw_trains()
 
         sprite = arcade.create_text_sprite("Hello", 0, 0, color.AFRICAN_VIOLET)
@@ -384,20 +402,6 @@ class MyGame(arcade.Window):
                 arcade.create_line(0, y, GRID_WIDTH, y, GRID_COLOR, GRID_LINE_WIDTH)
             )
 
-    def _draw_rails(self, rails: Iterable[Rail], color: Color):
-        for rail in rails:
-            x1, y1, x2, y2 = [
-                coordinate + GRID_BOX_SIZE / 2
-                for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
-            ]
-            self.shape_list.append(
-                arcade.create_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
-            )
-
-    def _draw_all_rails(self):
-        self._draw_rails(self.grid.rails_being_built, BUILDING_RAIL_COLOR)
-        self._draw_rails(self.grid.rails, FINISHED_RAIL_COLOR)
-
     def _draw_trains(self):
         for train in self.trains:
             arcade.draw_circle_filled(
@@ -413,6 +417,8 @@ class MyGame(arcade.Window):
         # TODO: when adding a station, mine or factory, also add a text sprite to the sprite list
         self.shape_list.draw()
 
+        self.grid.rails_shape_element_list.draw()
+        self.grid.rails_being_built_shape_element_list.draw()
         self.grid.station_sprite_list.draw()
         self.grid.mine_sprite_list.draw()
         self.grid.factory_sprite_list.draw()
