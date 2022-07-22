@@ -371,8 +371,6 @@ class MyGame(arcade.Window):
         sprite = arcade.create_text_sprite("Hello", 0, 0, color.AFRICAN_VIOLET)
         self.sprite_list.append(sprite)
 
-        self.gui.draw()
-
     def on_update(self, delta_time):
         for train in self.trains:
             if train.x > train.target_x:
@@ -423,7 +421,12 @@ class MyGame(arcade.Window):
         self.grid.mine_sprite_list.draw()
         self.grid.factory_sprite_list.draw()
 
+        # Draw trains here since it is only a single draw call per train
         self._draw_trains()
+
+        # Draw GUI here even though there are many draw calls, since the colors of the boxes
+        # are dynamic
+        self.gui.draw()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
