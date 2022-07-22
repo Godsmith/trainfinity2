@@ -368,8 +368,6 @@ class MyGame(arcade.Window):
 
         # Set up shapes
         self._create_grid()
-        self._draw_trains()
-
         sprite = arcade.create_text_sprite("Hello", 0, 0, color.AFRICAN_VIOLET)
         self.sprite_list.append(sprite)
 
@@ -422,6 +420,8 @@ class MyGame(arcade.Window):
         self.grid.station_sprite_list.draw()
         self.grid.mine_sprite_list.draw()
         self.grid.factory_sprite_list.draw()
+
+        self._draw_trains()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
