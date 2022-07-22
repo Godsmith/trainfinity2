@@ -87,7 +87,7 @@ class Camera:
         dx, dy = position - Vec2(left, bottom)
         arcade.set_viewport(left + dx, right + dx, bottom + dy, top + dy)
 
-    def to_world_coordinates(self, x, y):
+    def to_world_coordinates(self, x, y) -> tuple[int, int]:
         """Convert a position x, y in the current window to world coordinates."""
         relative_x = (x - self.original_left) / (
             self.original_right - self.original_left
@@ -273,6 +273,8 @@ class MyGame(arcade.Window):
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
+        self.fps = 0.0
+
     def setup(self):
         arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
         self.camera_sprites = Camera()
@@ -287,6 +289,8 @@ class MyGame(arcade.Window):
         self.train_placement_station_list = []
 
     def on_update(self, delta_time):
+        self.fps = 1 / delta_time
+
         for train in self.trains:
             if train.x > train.target_x:
                 train.x -= TRAIN_SPEED
@@ -310,6 +314,14 @@ class MyGame(arcade.Window):
         # are dynamic
         # TODO: move this to drawer class
         self.gui.draw()
+
+        self._draw_fps()
+
+    def _draw_fps(self):
+        x, y = self.camera_sprites.to_world_coordinates(
+            SCREEN_WIDTH - 100, SCREEN_HEIGHT - 20
+        )
+        arcade.draw_text(self.fps, x, y, color=color.BLACK)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_RIGHT:
