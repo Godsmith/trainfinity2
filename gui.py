@@ -26,14 +26,23 @@ class Gui:
         ]
         self.mode = Mode.RAIL
         self._enabled = True
+        self._shape_element_list = arcade.ShapeElementList()
+        self._sprite_list = arcade.SpriteList()
+        self._create_boxes()
 
     def disable(self):
         """Stop the GUI from taking clicks. Currently mostly useful for unit testing."""
         self._enabled = False
 
     def draw(self):
+        self._shape_element_list.draw()
+        self._sprite_list.draw()
+
+    def _create_boxes(self):
+        self._shape_element_list = arcade.ShapeElementList()
+        self._sprite_list = arcade.SpriteList()
         for i, box in enumerate(self.boxes):
-            self._draw_box(box, i)
+            self._create_box(box, i)
 
     def _is_inside(self, x, y, index):
         left, _, bottom, top = arcade.get_viewport()
@@ -47,10 +56,11 @@ class Gui:
             for i, box in enumerate(self.boxes):
                 if self._is_inside(x, y, i):
                     self.mode = box.mode
+                    self._create_boxes
                     return True
         return False
 
-    def _draw_box(self, box: Box, index: int):
+    def _create_box(self, box: Box, index: int):
         left, _, bottom, top = arcade.get_viewport()
         box_size = (top - bottom) / 10
         left += index * box_size
@@ -59,17 +69,25 @@ class Gui:
             if self.mode == box.mode
             else DESELECTED_BOX_BACKGROUND_COLOR
         )
-        arcade.draw_lrtb_rectangle_filled(
-            left, left + box_size, bottom + box_size, bottom, background_color
+        center_x = left + box_size / 2
+        center_y = bottom + box_size / 2
+        self._shape_element_list.append(
+            arcade.create_rectangle_filled(
+                center_x, center_y, box_size, box_size, background_color
+            )
         )
-        arcade.draw_lrtb_rectangle_outline(
-            left, left + box_size, bottom + box_size, bottom, BOX_OUTLINE_COLOR
+        self._shape_element_list.append(
+            arcade.create_rectangle_outline(
+                center_x, center_y, box_size, box_size, BOX_OUTLINE_COLOR
+            )
         )
-        arcade.draw_text(
-            box.text,
-            start_x=left,
-            start_y=bottom + box_size / 2,
-            color=BOX_TEXT_COLOR,
-            width=int(box_size),
-            align="center",
+        self._sprite_list.append(
+            arcade.create_text_sprite(
+                box.text,
+                start_x=left,
+                start_y=bottom + box_size / 2,
+                color=BOX_TEXT_COLOR,
+                width=int(box_size),
+                align="center",
+            )
         )
