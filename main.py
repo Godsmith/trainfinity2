@@ -406,6 +406,10 @@ class MyGame(arcade.Window):
             new_position = Vec2(new_position.x, min(max_y, new_position.y))
 
             self.camera_sprites.move(new_position)
+
+            change_x = dx * self.camera_sprites.scale
+            change_y = dy * self.camera_sprites.scale
+            self.gui.pan(-change_x, -change_y)
         elif self.is_mouse1_pressed:
             x, y = self.camera_sprites.to_world_coordinates(x, y)
             self.grid.click_and_drag(x, y, self.mouse1_pressed_x, self.mouse1_pressed_y)
@@ -421,6 +425,8 @@ class MyGame(arcade.Window):
         new_scale = max(new_scale, MIN_CAMERA_SCALE)
 
         self.camera_sprites.scale = new_scale
+
+        self.gui.create_boxes()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from collections import namedtuple
 from enum import Enum
+
 import arcade
 
 SELECTED_BOX_BACKGROUND_COLOR = arcade.color.WHITE
@@ -28,7 +29,7 @@ class Gui:
         self._enabled = True
         self._shape_element_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
-        self._create_boxes()
+        self.create_boxes()
 
     def disable(self):
         """Stop the GUI from taking clicks. Currently mostly useful for unit testing."""
@@ -38,7 +39,11 @@ class Gui:
         self._shape_element_list.draw()
         self._sprite_list.draw()
 
-    def _create_boxes(self):
+    def pan(self, dx, dy):
+        self._sprite_list.move(dx, dy)
+        self._shape_element_list.move(dx, dy)
+
+    def create_boxes(self):
         self._shape_element_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
         for i, box in enumerate(self.boxes):
@@ -56,7 +61,6 @@ class Gui:
             for i, box in enumerate(self.boxes):
                 if self._is_inside(x, y, i):
                     self.mode = box.mode
-                    self._create_boxes
                     return True
         return False
 
