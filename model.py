@@ -34,7 +34,7 @@ class Train:
         self.target_y = self.route[self.current_target_route_index].y
 
 
-@dataclass
+@dataclass(frozen=True)
 class Rail:
     x1: int
     y1: int

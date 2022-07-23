@@ -9,6 +9,27 @@ import math
 import random
 
 
+def positions_between(start: Vec2, end: Vec2):
+    positions = [start]
+    while positions[-1] != end:
+        current = positions[-1]
+        abs_dx = abs(current.x - end.x)
+        abs_dy = abs(current.y - end.y)
+        x_step = (end.x - current.x) / abs_dx if abs_dx else 0
+        y_step = (end.y - current.y) / abs_dy if abs_dy else 0
+        new_x = current.x + GRID_BOX_SIZE * (abs_dx >= abs_dy) * x_step
+        new_y = current.y + GRID_BOX_SIZE * (abs_dy >= abs_dx) * y_step
+        positions.append(Vec2(new_x, new_y))
+    return positions
+
+
+def rails_between(start: Vec2, end: Vec2) -> list[Rail]:
+    return [
+        Rail(x1, y1, x2, y2)
+        for (x1, y1), (x2, y2) in pairwise(positions_between(start, end))
+    ]
+
+
 class Grid:
     def __init__(self, drawer: Drawer) -> None:
         self.drawer = drawer
@@ -79,23 +100,7 @@ class Grid:
         start_x = self.snap_to_x(start_x)
         start_y = self.snap_to_y(start_y)
 
-        dx = GRID_BOX_SIZE if x < start_x else -GRID_BOX_SIZE
-        dy = GRID_BOX_SIZE if y < start_y else -GRID_BOX_SIZE
-
-        xs = list(range(x, start_x + int(dx / abs(dx)), dx))
-        ys = list(range(y, start_y + int(dy / abs(dy)), dy))
-
-        if self._is_not_straight_horizontal_or_diagonal(xs, ys):
-            return
-
-        if len(xs) > len(ys):
-            ys = ys * len(xs)
-        elif len(ys) > len(xs):
-            xs = xs * len(ys)
-
-        self.rails_being_built = [
-            Rail(x1, y1, x2, y2) for (x1, y1), (x2, y2) in pairwise(zip(xs, ys))
-        ]
+        self.rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
         self.drawer.set_rails_being_built(self.rails_being_built)
 
     def release_mouse_button(self):

@@ -1,3 +1,4 @@
+from typing import Iterable
 import arcade
 from arcade import color
 
@@ -61,7 +62,7 @@ class Drawer:
     def create_train(self, train: Train):
         self._trains.append(train)
 
-    def create_rail(self, rails: list[Rail]):
+    def create_rail(self, rails: Iterable[Rail]):
         for rail in rails:
             x1, y1, x2, y2 = [
                 coordinate + GRID_BOX_SIZE / 2
@@ -71,7 +72,7 @@ class Drawer:
                 arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
             )
 
-    def set_rails_being_built(self, rails: list[Rail]):
+    def set_rails_being_built(self, rails: Iterable[Rail]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         for rail in rails:
             x1, y1, x2, y2 = [
