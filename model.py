@@ -7,13 +7,14 @@ Mine = namedtuple("Mine", "x y")
 Factory = namedtuple("Factory", "x y")
 Station = namedtuple("Station", "x y")
 
+
 @dataclass
 class Train:
     first_station: Station
     second_station: Station
     route: list[Vec2]
-    x: int = field(init=False)
-    y: int = field(init=False)
+    x: float = field(init=False)
+    y: float = field(init=False)
     target_x: int = field(init=False)
     target_y: int = field(init=False)
     current_target_route_index: int = field(init=False)
@@ -31,6 +32,7 @@ class Train:
         self.current_target_route_index %= len(self.route)
         self.target_x = self.route[self.current_target_route_index].x
         self.target_y = self.route[self.current_target_route_index].y
+
 
 @dataclass
 class Rail:

@@ -2,11 +2,12 @@ from collections import namedtuple
 from enum import Enum
 
 import arcade
+from arcade import color
 
-SELECTED_BOX_BACKGROUND_COLOR = arcade.color.WHITE
-DESELECTED_BOX_BACKGROUND_COLOR = arcade.color.GRAY
-BOX_TEXT_COLOR = arcade.color.BLACK
-BOX_OUTLINE_COLOR = arcade.color.BLACK
+SELECTED_BOX_BACKGROUND_COLOR = color.WHITE
+DESELECTED_BOX_BACKGROUND_COLOR = color.GRAY
+BOX_TEXT_COLOR = color.BLACK
+BOX_OUTLINE_COLOR = color.BLACK
 
 
 Box = namedtuple("Box", "text mode")

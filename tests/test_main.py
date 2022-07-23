@@ -1,6 +1,7 @@
 import arcade
 import pytest
-from main import MyGame, Rail, Station, Mine, Factory, Mode, Train, TrainPlacementMode
+from main import MyGame, Mode, Train, TrainPlacementMode
+from model import Rail, Station, Mine, Factory, Train
 from pyglet.math import Vec2
 from pytest import approx
 import time
