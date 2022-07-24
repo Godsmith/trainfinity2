@@ -30,39 +30,68 @@ def rails_between(start: Vec2, end: Vec2) -> list[Rail]:
     ]
 
 
-def get_random_position() -> tuple[int, int]:
+def get_random_position() -> Vec2:
     x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
     y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
-    return x, y
+    return Vec2(x, y)
 
 
 class Grid:
     def __init__(self, drawer: Drawer) -> None:
         self.drawer = drawer
+
+        self.water = {}
+        self.mines = {}
+        self.factories = {}
+        self.stations = {}
         self.rails_being_built = []
         self.rails = []
-        self.stations = []
-        self.water = self._create_water()
-        self.mines = self._create_mines()
-        self.factories = self._create_factories()
+
+        self._create_water()
+        self._create_mines()
+        self._create_factories()
+
+    @property
+    def occupied_positions(self) -> set[Vec2]:
+        return (
+            self.water.keys()
+            | self.mines.keys()
+            | self.factories.keys()
+            | self.stations.keys()
+        )
+
+    def _get_unoccupied_positions(self, count: int) -> set[Vec2]:
+        """Gets <count> positions without water, mines, factories or stations. Ignores rails."""
+        unoccupied_positions = set()
+        while len(unoccupied_positions) < count:
+            position = get_random_position()
+            if position not in self.occupied_positions:
+                unoccupied_positions.add(position)
+        return unoccupied_positions
+
+    def _get_unoccupied_position(self) -> Vec2:
+        return self._get_unoccupied_positions(1).pop()
 
     def _create_water(self):
-        water_tiles = []
-        for _ in range(WATER_TILES):
-            water = Water(*get_random_position())
-            water_tiles.append(water)
+        water_tiles = {
+            position: Water(*position)
+            for position in self._get_unoccupied_positions(WATER_TILES)
+        }
+        for water in water_tiles.values():
             self.drawer.create_water(water)
         return water_tiles
 
     def _create_mines(self):
-        mine = Mine(*get_random_position())
+        position = self._get_unoccupied_position()
+        mine = Mine(*position)
         self.drawer.create_mine(mine)
-        return [mine]
+        return {position: mine}
 
     def _create_factories(self):
+        position = self._get_unoccupied_position()
         factory = Factory(*get_random_position())
         self.drawer.create_factory(factory)
-        return [factory]
+        return {position: factory}
 
     def snap_to(self, x, y) -> tuple[int, int]:
         return self.snap_to_x(x), self.snap_to_y(y)
@@ -123,8 +152,7 @@ class Grid:
 
     def get_station(self, x, y) -> Optional[Station]:
         x, y = self.snap_to(x, y)
-        if Station(x, y) in self.stations:
-            return Station(x, y)
+        return self.stations.get(Vec2(x, y))
 
     def _is_adjacent(self, position1, position2):
         return (
@@ -138,7 +166,7 @@ class Grid:
     def _is_adjacent_to_mine_or_factory(self, position):
         return any(
             self._is_adjacent(position, position2)
-            for position2 in self.mines + self.factories  # type: ignore
+            for position2 in self.mines.keys() | self.factories.keys()
         )
 
     def _add_stations(self):
@@ -156,8 +184,8 @@ class Grid:
                     # building rail on top of rail will be prohibited.
                     if (
                         self._is_adjacent_to_mine_or_factory(Vec2(x, y))
-                        and Station(x, y) not in self.stations
+                        and Vec2(x, y) not in self.stations
                     ):
                         station = Station(x, y)
-                        self.stations.append(station)
+                        self.stations[Vec2(x, y)] = station
                         self.drawer.create_station(station)

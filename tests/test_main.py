@@ -22,7 +22,7 @@ def game(common_game) -> MyGame:
 def test_draw(game: MyGame):
     # Mainly for code coverage
     game.grid.rails = [Rail(0, 0, 0, 0)]
-    game.grid.stations = [Station(0, 0)]
+    game.grid.stations = {Vec2(0, 0): Station(0, 0)}
     game.trains = [Train(Station(0, 0), Station(0, 0), [Vec2(0, 0), Vec2(0, 0)])]
     game.on_draw()
 
@@ -128,20 +128,20 @@ class TestGrid:
         assert len(game.grid.rails) == 1
 
     def test_building_horizontal_station(self, game: MyGame):
-        game.grid.mines = [Mine(0, 30)]
+        game.grid.mines = {Vec2(0, 30): Mine(0, 30)}
         game.on_mouse_press(x=-30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=30, y=0, dx=30, dy=0)
         game.on_mouse_release(x=30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == [Station(0, 0)]
+        assert game.grid.stations == {Vec2(0, 0): Station(0, 0)}
 
     def test_building_vertical_station(self, game: MyGame):
-        game.grid.factories = [Factory(30, 0)]
+        game.grid.factories = {Vec2(30, 0): Factory(30, 0)}
         game.on_mouse_press(x=0, y=-30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=0, y=30, dx=0, dy=30)
         game.on_mouse_release(x=0, y=30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == [Station(0, 0)]
+        assert game.grid.stations == {Vec2(0, 0): Station(0, 0)}
 
 
 @pytest.fixture
@@ -158,7 +158,7 @@ def game_with_factory_and_mine(game):
         Rail(60, 0, 90, 0),
         Rail(90, 0, 120, 0),
     ]
-    game.grid.stations = [Station(30, 0), Station(90, 0)]
+    game.grid.stations = {Vec2(30, 0): Station(30, 0), Vec2(90, 0): Station(90, 0)}
 
     return game
 
@@ -244,7 +244,7 @@ class TestTrain:
                 Rail(30, 90, 60, 90),
             ]
         )
-        game.grid.stations.append(Station(30, 90))
+        game.grid.stations[Vec2(30, 90)] = Station(30, 90)
 
         # TODO: it would be nice for readability if I could just say station.click() here.
         # Click first station
