@@ -154,11 +154,20 @@ class Grid:
             rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
             self.rails_being_built = self._mark_illegal_rail(rails_being_built)
             self.drawer.show_rails_being_built(self.rails_being_built)
+        elif mode == Mode.DESTROY:
+            if Vec2(x, y) in self.stations:
+                del self.stations[Vec2(x, y)]
+            self.rails = [rail for rail in self.rails if not rail.is_at_position(x, y)]
+            self.drawer.remove_station((x, y))
+            self.drawer.remove_rail((x, y))
+
+    def _add_rail(self, rails: Iterable[Rail]):
+        self.rails.extend(rails)
+        self.drawer.create_rail(rails)
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
-            self.rails.extend(self.rails_being_built)
-            self.drawer.create_rail(self.rails_being_built)
+            self._add_rail(self.rails_being_built)
             self._add_stations()
 
         self.rails_being_built.clear()
@@ -183,6 +192,11 @@ class Grid:
             for position2 in self.mines.keys() | self.factories.keys()
         )
 
+    def _add_station(self, x, y):
+        station = Station(x, y)
+        self.stations[Vec2(x, y)] = station
+        self.drawer.create_station(station)
+
     def _add_stations(self):
         rails_from_position = defaultdict(list)
         for rail in self.rails:
@@ -200,6 +214,4 @@ class Grid:
                         self._is_adjacent_to_mine_or_factory(Vec2(x, y))
                         and Vec2(x, y) not in self.stations
                     ):
-                        station = Station(x, y)
-                        self.stations[Vec2(x, y)] = station
-                        self.drawer.create_station(station)
+                        self._add_station(x, y)

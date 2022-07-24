@@ -166,13 +166,16 @@ def game_with_factory_and_mine(game):
     """
     game.grid.mines = [Mine(30, 30)]
     game.grid.factories = [Factory(90, 30)]
-    game.grid.rails = [
-        Rail(0, 0, 30, 0),
-        Rail(30, 0, 60, 0),
-        Rail(60, 0, 90, 0),
-        Rail(90, 0, 120, 0),
-    ]
-    game.grid.stations = {Vec2(30, 0): Station(30, 0), Vec2(90, 0): Station(90, 0)}
+    game.grid._add_rail(
+        [
+            Rail(0, 0, 30, 0),
+            Rail(30, 0, 60, 0),
+            Rail(60, 0, 90, 0),
+            Rail(90, 0, 120, 0),
+        ]
+    )
+    for position in ((30, 0), (90, 0)):
+        game.grid._add_station(*position)
 
     return game
 
@@ -268,3 +271,17 @@ class TestTrain:
 
         assert len(game.trains) == 0
         assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
+
+
+def test_destroy(game_with_factory_and_mine):
+    game = game_with_factory_and_mine
+    game.gui.mode = Mode.DESTROY
+
+    assert len(game.grid.stations) == 2
+    assert len(game.grid.rails) == 4
+
+    game.on_mouse_press(x=45, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+    game.on_mouse_motion(x=46, y=15, dx=1, dy=30)
+
+    assert len(game.grid.stations) == 1
+    assert len(game.grid.rails) == 2

@@ -52,3 +52,6 @@ class Rail:
     def to_illegal(self):
         return replace(self, legal=False)
 
+    def is_at_position(self, x, y):
+        return (self.x1 == x and self.y1 == y) or (self.x2 == x and self.y2 == y)
+

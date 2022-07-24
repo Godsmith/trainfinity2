@@ -17,6 +17,7 @@ class Mode(Enum):
     SELECT = 1
     RAIL = 2
     TRAIN = 3
+    DESTROY = 4
 
 
 class Gui:
@@ -25,6 +26,7 @@ class Gui:
             Box("SELECT", Mode.SELECT),
             Box("RAIL", Mode.RAIL),
             Box("TRAIN", Mode.TRAIN),
+            Box("DESTROY", Mode.DESTROY),
         ]
         self.mode = Mode.RAIL
         self._enabled = True
