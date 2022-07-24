@@ -62,6 +62,7 @@ class Gui:
             for i, box in enumerate(self.boxes):
                 if self._is_inside(x, y, i):
                     self.mode = box.mode
+                    self.create_boxes()
                     return True
         return False
 
