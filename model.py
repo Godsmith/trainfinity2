@@ -1,5 +1,5 @@
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from pyglet.math import Vec2
 
@@ -41,9 +41,14 @@ class Rail:
     y1: int
     x2: int
     y2: int
+    legal: bool = True  # Whether a rail tile that is currently being built can be built
 
     def is_horizontal(self):
         return self.y1 == self.y2
 
     def is_vertical(self):
         return self.x1 == self.x2
+
+    def to_illegal(self):
+        return replace(self, legal=False)
+

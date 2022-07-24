@@ -4,6 +4,7 @@ from arcade import color
 
 from constants import (
     BUILDING_RAIL_COLOR,
+    BUILDING_ILLEGAL_RAIL_COLOR,
     FINISHED_RAIL_COLOR,
     GRID_BOX_SIZE,
     GRID_COLOR,
@@ -80,15 +81,16 @@ class Drawer:
                 arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
             )
 
-    def set_rails_being_built(self, rails: Iterable[Rail]):
+    def show_rails_being_built(self, rails: Iterable[Rail]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         for rail in rails:
+            color = BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
             x1, y1, x2, y2 = [
                 coordinate + GRID_BOX_SIZE / 2
                 for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
             ]
             self.rails_being_built_shape_element_list.append(
-                arcade.create_line(x1, y1, x2, y2, BUILDING_RAIL_COLOR, RAIL_LINE_WIDTH)
+                arcade.create_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
             )
 
     def _draw_trains(self):

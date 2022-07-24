@@ -1,7 +1,7 @@
 import arcade
 import pytest
 from main import MyGame, Mode, Train, TrainPlacementMode
-from model import Rail, Station, Mine, Factory, Train
+from model import Rail, Station, Mine, Factory, Train, Water
 from pyglet.math import Vec2
 from pytest import approx
 import time
@@ -14,8 +14,11 @@ def common_game() -> MyGame:
 
 
 @pytest.fixture()
-def game(common_game) -> MyGame:
+def game(common_game: MyGame) -> MyGame:
     common_game.setup()
+    common_game.grid.water = {}
+    common_game.grid.mines = {}
+    common_game.grid.factories = {}
     return common_game
 
 
@@ -126,6 +129,17 @@ class TestGrid:
 
         assert len(game.grid.rails_being_built) == 0
         assert len(game.grid.rails) == 1
+
+    def test_cannot_build_rail_in_illegal_position(self, game: MyGame):
+        game.grid.water = {Vec2(90, 90): Water(90, 90)}
+
+        game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=130, y=100, dx=30, dy=0)
+        game.on_mouse_release(
+            x=130, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0
+        )
+
+        assert len(game.grid.rails) == 0
 
     def test_building_horizontal_station(self, game: MyGame):
         game.grid.mines = {Vec2(0, 30): Mine(0, 30)}

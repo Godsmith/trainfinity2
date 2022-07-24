@@ -1,12 +1,14 @@
-from collections import defaultdict
-from itertools import pairwise
-from typing import Optional
-from pyglet.math import Vec2
-from constants import GRID_BOX_SIZE, GRID_WIDTH, GRID_HEIGHT, WATER_TILES
-from drawer import Drawer
-from model import Mine, Factory, Rail, Station, Water
 import math
 import random
+from collections import defaultdict
+from itertools import pairwise
+from typing import Iterable, Optional
+
+from pyglet.math import Vec2
+
+from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
+from drawer import Drawer
+from model import Factory, Mine, Rail, Station, Water
 
 
 def positions_between(start: Vec2, end: Vec2):
@@ -73,25 +75,24 @@ class Grid:
         return self._get_unoccupied_positions(1).pop()
 
     def _create_water(self):
-        water_tiles = {
+        self.water = {
             position: Water(*position)
             for position in self._get_unoccupied_positions(WATER_TILES)
         }
-        for water in water_tiles.values():
+        for water in self.water.values():
             self.drawer.create_water(water)
-        return water_tiles
 
     def _create_mines(self):
         position = self._get_unoccupied_position()
         mine = Mine(*position)
+        self.mines = {position: mine}
         self.drawer.create_mine(mine)
-        return {position: mine}
 
     def _create_factories(self):
         position = self._get_unoccupied_position()
-        factory = Factory(*get_random_position())
+        factory = Factory(*position)
+        self.factories = {position: factory}
         self.drawer.create_factory(factory)
-        return {position: factory}
 
     def snap_to(self, x, y) -> tuple[int, int]:
         return self.snap_to_x(x), self.snap_to_y(y)
@@ -129,10 +130,18 @@ class Grid:
                 return route
         return None
 
-    def _is_not_straight_horizontal_or_diagonal(self, xs, ys):
-        return len(xs) != len(ys) and (
-            (len(xs) > 1 and len(ys) != 1) or (len(ys) > 1 and len(xs) != 1)
-        )
+    def _mark_illegal_rail(self, rails: Iterable[Rail]) -> list[Rail]:
+        marked_rail = []
+        occupied_positions = self.occupied_positions
+        for rail in rails:
+            if (
+                Vec2(rail.x1, rail.y1) in occupied_positions
+                or Vec2(rail.x2, rail.y2) in occupied_positions
+            ):
+                marked_rail.append(rail.to_illegal())
+            else:
+                marked_rail.append(rail)
+        return marked_rail
 
     def click_and_drag(self, x, y, start_x, start_y):
         x = self.snap_to_x(x)
@@ -140,15 +149,18 @@ class Grid:
         start_x = self.snap_to_x(start_x)
         start_y = self.snap_to_y(start_y)
 
-        self.rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
-        self.drawer.set_rails_being_built(self.rails_being_built)
+        rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
+        self.rails_being_built = self._mark_illegal_rail(rails_being_built)
+        self.drawer.show_rails_being_built(self.rails_being_built)
 
     def release_mouse_button(self):
-        self.rails.extend(self.rails_being_built)
-        self.drawer.create_rail(self.rails_being_built)
-        self.rails_being_built.clear()
+        if all(rail.legal for rail in self.rails_being_built):
+            self.rails.extend(self.rails_being_built)
+            self.drawer.create_rail(self.rails_being_built)
+            self._add_stations()
 
-        self._add_stations()
+        self.rails_being_built.clear()
+        self.drawer.show_rails_being_built(self.rails_being_built)
 
     def get_station(self, x, y) -> Optional[Station]:
         x, y = self.snap_to(x, y)
