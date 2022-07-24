@@ -6,6 +6,7 @@ from pyglet.math import Vec2
 Mine = namedtuple("Mine", "x y")
 Factory = namedtuple("Factory", "x y")
 Station = namedtuple("Station", "x y")
+Water = namedtuple("Water", "x y")
 
 
 @dataclass

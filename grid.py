@@ -2,9 +2,9 @@ from collections import defaultdict
 from itertools import pairwise
 from typing import Optional
 from pyglet.math import Vec2
-from constants import GRID_BOX_SIZE, GRID_WIDTH, GRID_HEIGHT
+from constants import GRID_BOX_SIZE, GRID_WIDTH, GRID_HEIGHT, WATER_TILES
 from drawer import Drawer
-from model import Mine, Factory, Rail, Station
+from model import Mine, Factory, Rail, Station, Water
 import math
 import random
 
@@ -30,26 +30,37 @@ def rails_between(start: Vec2, end: Vec2) -> list[Rail]:
     ]
 
 
+def get_random_position() -> tuple[int, int]:
+    x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
+    y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
+    return x, y
+
+
 class Grid:
     def __init__(self, drawer: Drawer) -> None:
         self.drawer = drawer
         self.rails_being_built = []
         self.rails = []
         self.stations = []
+        self.water = self._create_water()
         self.mines = self._create_mines()
         self.factories = self._create_factories()
 
+    def _create_water(self):
+        water_tiles = []
+        for _ in range(WATER_TILES):
+            water = Water(*get_random_position())
+            water_tiles.append(water)
+            self.drawer.create_water(water)
+        return water_tiles
+
     def _create_mines(self):
-        x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
-        y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
-        mine = Mine(x, y)
+        mine = Mine(*get_random_position())
         self.drawer.create_mine(mine)
         return [mine]
 
     def _create_factories(self):
-        x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
-        y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
-        factory = Factory(x, y)
+        factory = Factory(*get_random_position())
         self.drawer.create_factory(factory)
         return [factory]
 

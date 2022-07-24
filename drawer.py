@@ -12,7 +12,7 @@ from constants import (
     GRID_WIDTH,
     RAIL_LINE_WIDTH,
 )
-from model import Factory, Mine, Rail, Station, Train
+from model import Factory, Mine, Rail, Station, Train, Water
 
 
 class Drawer:
@@ -58,6 +58,14 @@ class Drawer:
             "S", station.x, station.y, color=color.WHITE, font_size=24
         )
         self.station_sprite_list.append(sprite)
+
+    def create_water(self, water: Water):
+        center_x = water.x + GRID_BOX_SIZE / 2
+        center_y = water.y + GRID_BOX_SIZE / 2
+        shape = arcade.create_rectangle_filled(
+            center_x, center_y, GRID_BOX_SIZE, GRID_BOX_SIZE, color=color.SEA_BLUE
+        )
+        self.shape_list.append(shape)
 
     def create_train(self, train: Train):
         self._trains.append(train)
