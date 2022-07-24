@@ -206,7 +206,9 @@ class MyGame(arcade.Window):
             self.gui.pan(-change_x, -change_y)
         elif self.is_mouse1_pressed:
             x, y = self.camera_sprites.to_world_coordinates(x, y)
-            self.grid.click_and_drag(x, y, self.mouse1_pressed_x, self.mouse1_pressed_y)
+            self.grid.click_and_drag(
+                x, y, self.mouse1_pressed_x, self.mouse1_pressed_y, self.gui.mode
+            )
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         if scroll_y < 0:

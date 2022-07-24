@@ -9,6 +9,7 @@ from pyglet.math import Vec2
 from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
 from drawer import Drawer
 from model import Factory, Mine, Rail, Station, Water
+from gui import Mode
 
 
 def positions_between(start: Vec2, end: Vec2):
@@ -143,15 +144,16 @@ class Grid:
                 marked_rail.append(rail)
         return marked_rail
 
-    def click_and_drag(self, x, y, start_x, start_y):
+    def click_and_drag(self, x, y, start_x, start_y, mode: Mode):
         x = self.snap_to_x(x)
         y = self.snap_to_y(y)
         start_x = self.snap_to_x(start_x)
         start_y = self.snap_to_y(start_y)
 
-        rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
-        self.rails_being_built = self._mark_illegal_rail(rails_being_built)
-        self.drawer.show_rails_being_built(self.rails_being_built)
+        if mode == Mode.RAIL:
+            rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
+            self.rails_being_built = self._mark_illegal_rail(rails_being_built)
+            self.drawer.show_rails_being_built(self.rails_being_built)
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
