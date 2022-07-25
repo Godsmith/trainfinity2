@@ -83,17 +83,23 @@ class Grid:
         for water in self.water.values():
             self.drawer.create_water(water)
 
-    def _create_mines(self):
-        position = self._get_unoccupied_position()
-        mine = Mine(*position)
-        self.mines = {position: mine}
+    def _create_mine(self, x, y):
+        mine = Mine(x, y, self.drawer)
+        self.mines[Vec2(x, y)] = mine
         self.drawer.create_mine(mine)
 
-    def _create_factories(self):
-        position = self._get_unoccupied_position()
-        factory = Factory(*position)
-        self.factories = {position: factory}
+    def _create_mines(self):
+        x, y = self._get_unoccupied_position()
+        self._create_mine(x, y)
+
+    def _create_factory(self, x, y):
+        factory = Factory(x, y)
+        self.factories[Vec2(x, y)] = factory
         self.drawer.create_factory(factory)
+
+    def _create_factories(self):
+        x, y = self._get_unoccupied_position()
+        self._create_factory(x, y)
 
     def snap_to(self, x, y) -> tuple[int, int]:
         return self.snap_to_x(x), self.snap_to_y(y)
@@ -161,14 +167,14 @@ class Grid:
             self.drawer.remove_station((x, y))
             self.drawer.remove_rail((x, y))
 
-    def _add_rail(self, rails: Iterable[Rail]):
+    def _create_rail(self, rails: Iterable[Rail]):
         self.rails.extend(rails)
         self.drawer.create_rail(rails)
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
-            self._add_rail(self.rails_being_built)
-            self._add_stations()
+            self._create_rail(self.rails_being_built)
+            self._create_stations()
 
         self.rails_being_built.clear()
         self.drawer.show_rails_being_built(self.rails_being_built)
@@ -186,18 +192,23 @@ class Grid:
             and position1.x == position2.x
         )
 
-    def _is_adjacent_to_mine_or_factory(self, position):
-        return any(
-            self._is_adjacent(position, position2)
-            for position2 in self.mines.keys() | self.factories.keys()
-        )
+    def _adjacent_mine_or_factory(self, position: Vec2) -> Mine | Factory | None:
+        for mine in self.mines.values():
+            if self._is_adjacent(position, Vec2(mine.x, mine.y)):
+                return mine
+        for factory in self.factories.values():
+            if self._is_adjacent(position, Vec2(factory.x, factory.y)):
+                return factory
 
-    def _add_station(self, x, y):
-        station = Station(x, y)
+    def _create_station(self, x, y):
+        """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError."""
+        mine_or_factory = self._adjacent_mine_or_factory(Vec2(x, y))
+        assert mine_or_factory
+        station = Station(x, y, mine_or_factory)
         self.stations[Vec2(x, y)] = station
         self.drawer.create_station(station)
 
-    def _add_stations(self):
+    def _create_stations(self):
         rails_from_position = defaultdict(list)
         for rail in self.rails:
             rails_from_position[(rail.x1, rail.y1)].append(rail)
@@ -211,7 +222,7 @@ class Grid:
                     # Checking for existing stations might not be needed later if
                     # building rail on top of rail will be prohibited.
                     if (
-                        self._is_adjacent_to_mine_or_factory(Vec2(x, y))
+                        self._adjacent_mine_or_factory(Vec2(x, y))
                         and Vec2(x, y) not in self.stations
                     ):
-                        self._add_station(x, y)
+                        self._create_station(x, y)

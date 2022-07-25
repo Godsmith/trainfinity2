@@ -28,7 +28,7 @@ class Gui:
             Box("TRAIN", Mode.TRAIN),
             Box("DESTROY", Mode.DESTROY),
         ]
-        self.mode = Mode.RAIL
+        self._mode = Mode.RAIL
         self._enabled = True
         self._shape_element_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
@@ -37,6 +37,15 @@ class Gui:
     def disable(self):
         """Stop the GUI from taking clicks. Currently mostly useful for unit testing."""
         self._enabled = False
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value: Mode):
+        self._mode = value
+        self.create_boxes()
 
     def draw(self):
         self._shape_element_list.draw()
@@ -47,6 +56,8 @@ class Gui:
         self._shape_element_list.move(dx, dy)
 
     def create_boxes(self):
+        """Recreates the boxes. Necessary for example after zooming and after
+        changing color of the boxes when switching active mode."""
         self._shape_element_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
         for i, box in enumerate(self.boxes):
@@ -64,7 +75,6 @@ class Gui:
             for i, box in enumerate(self.boxes):
                 if self._is_inside(x, y, i):
                     self.mode = box.mode
-                    self.create_boxes()
                     return True
         return False
 

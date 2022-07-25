@@ -5,7 +5,12 @@ from arcade import color
 from pyglet.math import Vec2
 
 
-from constants import GRID_HEIGHT, GRID_WIDTH
+from constants import (
+    GRID_BOX_SIZE,
+    GRID_HEIGHT,
+    GRID_WIDTH,
+    SECONDS_BETWEEN_IRON_CREATION,
+)
 from drawer import Drawer
 from gui import Gui, Mode
 from model import Train
@@ -67,6 +72,8 @@ class MyGame(arcade.Window):
 
         self.fps = 0.0
 
+        self.iron_counter = 0
+
     def setup(self):
         arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
         self.camera_sprites = Camera()
@@ -81,6 +88,12 @@ class MyGame(arcade.Window):
         self.train_placement_station_list = []
 
     def on_update(self, delta_time):
+        self.iron_counter += delta_time
+        if self.iron_counter > SECONDS_BETWEEN_IRON_CREATION:
+            for mine in self.grid.mines.values():
+                mine.add_iron()
+            self.iron_counter = 0
+
         self.fps = 1 / delta_time
         train_displacement = delta_time * TRAIN_SPEED_PIXELS_PER_SECOND
 
@@ -171,6 +184,7 @@ class MyGame(arcade.Window):
                                 self.train_placement_station_list[0],
                                 self.train_placement_station_list[1],
                                 route,
+                                self.drawer,
                             )
                             self.trains.append(train)
                             self.drawer.create_train(train)

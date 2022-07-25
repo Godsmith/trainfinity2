@@ -12,6 +12,8 @@ from constants import (
     GRID_HEIGHT,
     GRID_LINE_WIDTH,
     GRID_WIDTH,
+    IRON_SIZE,
+    PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
 )
 from model import Factory, Mine, Rail, Station, Train, Water
@@ -29,9 +31,11 @@ class Drawer:
         # Needed to easily remove sprites and shapes
         self.station_sprite_from_position = {}
         self.rail_shapes_from_position = defaultdict(set)
+        self.iron_shapes_from_position = defaultdict(set)
 
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.rails_shape_element_list = arcade.ShapeElementList()
+        self.iron_shape_element_list = arcade.ShapeElementList()
 
         self._trains = []
         self._create_grid()
@@ -96,6 +100,37 @@ class Drawer:
             self.rail_shapes_from_position[(rail.x1, rail.y1)].add(shape)
             self.rail_shapes_from_position[(rail.x2, rail.y2)].add(shape)
 
+    def add_iron(self, position: tuple[int, int]):
+        x, y = position
+        x += len(self.iron_shapes_from_position[position]) * PIXEL_OFFSET_PER_IRON / 2
+        filled_rectangle = arcade.create_rectangle_filled(
+            x,
+            y,
+            IRON_SIZE,
+            IRON_SIZE,
+            color=color.TROLLEY_GREY,
+        )
+        rectangle_outline = arcade.create_rectangle_outline(
+            x,
+            y,
+            IRON_SIZE,
+            IRON_SIZE,
+            color=color.BLACK,
+        )
+        self.iron_shapes_from_position[position].add(filled_rectangle)
+        self.iron_shapes_from_position[position].add(rectangle_outline)
+        self.iron_shape_element_list.append(filled_rectangle)
+        self.iron_shape_element_list.append(rectangle_outline)
+
+    def remove_all_iron(self, position: tuple[int, int]):
+        for shape in self.iron_shapes_from_position[position]:
+            self.iron_shape_element_list.remove(shape)
+        self.iron_shapes_from_position[position].clear()
+        # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
+        # the draw() method crashes, so we have to recreate the list if it becomes empty.
+        if not self.iron_shape_element_list:
+            self.iron_shape_element_list = arcade.ShapeElementList()
+
     def remove_rail(self, position: tuple[int, int]):
         """Does nothing if there is no rail at position."""
         removed_shapes = []
@@ -105,7 +140,7 @@ class Drawer:
         for position in self.rail_shapes_from_position:
             for shape in removed_shapes:
                 self.rail_shapes_from_position[position].discard(shape)
-        # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed, 
+        # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
         # the draw() method crashes, so we have to recreate the list if it becomes empty.
         if not self.rails_shape_element_list:
             self.rails_shape_element_list = arcade.ShapeElementList()
@@ -139,6 +174,7 @@ class Drawer:
         self.station_sprite_list.draw()
         self.mine_sprite_list.draw()
         self.factory_sprite_list.draw()
+        self.iron_shape_element_list.draw()
 
         # Draw trains here since it is only a single draw call per train
         self._draw_trains()

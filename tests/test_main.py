@@ -25,8 +25,15 @@ def game(common_game: MyGame) -> MyGame:
 def test_draw(game: MyGame):
     # Mainly for code coverage
     game.grid.rails = [Rail(0, 0, 0, 0)]
-    game.grid.stations = {Vec2(0, 0): Station(0, 0)}
-    game.trains = [Train(Station(0, 0), Station(0, 0), [Vec2(0, 0), Vec2(0, 0)])]
+    game.grid.stations = {Vec2(0, 0): Station(0, 0, Factory(0, 0))}
+    game.trains = [
+        Train(
+            Station(0, 0, Factory(0, 0)),
+            Station(0, 0, Factory(0, 0)),
+            [Vec2(0, 0), Vec2(0, 0)],
+            game.drawer,
+        )
+    ]
     game.on_draw()
 
 
@@ -142,12 +149,13 @@ class TestGrid:
         assert len(game.grid.rails) == 0
 
     def test_building_horizontal_station(self, game: MyGame):
-        game.grid.mines = {Vec2(0, 30): Mine(0, 30)}
+        mine = Mine(0, 30, game.drawer)
+        game.grid.mines = {Vec2(0, 30): mine}
         game.on_mouse_press(x=-30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=30, y=0, dx=30, dy=0)
         game.on_mouse_release(x=30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 0): Station(0, 0)}
+        assert game.grid.stations == {Vec2(0, 0): Station(0, 0, mine)}
 
     def test_building_vertical_station(self, game: MyGame):
         game.grid.factories = {Vec2(30, 0): Factory(30, 0)}
@@ -155,7 +163,7 @@ class TestGrid:
         game.on_mouse_motion(x=0, y=30, dx=0, dy=30)
         game.on_mouse_release(x=0, y=30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 0): Station(0, 0)}
+        assert game.grid.stations == {Vec2(0, 0): Station(0, 0, Factory(30, 0))}
 
 
 @pytest.fixture
@@ -164,9 +172,9 @@ def game_with_factory_and_mine(game):
      M F
     =S=S=
     """
-    game.grid.mines = [Mine(30, 30)]
-    game.grid.factories = [Factory(90, 30)]
-    game.grid._add_rail(
+    game.grid._create_mine(30, 30)
+    game.grid._create_factory(90, 30)
+    game.grid._create_rail(
         [
             Rail(0, 0, 30, 0),
             Rail(30, 0, 60, 0),
@@ -174,8 +182,8 @@ def game_with_factory_and_mine(game):
             Rail(90, 0, 120, 0),
         ]
     )
-    for position in ((30, 0), (90, 0)):
-        game.grid._add_station(*position)
+    for x, y in ((30, 0), (90, 0)):
+        game.grid._create_station(x, y)
 
     return game
 
@@ -261,7 +269,9 @@ class TestTrain:
                 Rail(30, 90, 60, 90),
             ]
         )
-        game.grid.stations[Vec2(30, 90)] = Station(30, 90)
+        game.grid.stations[Vec2(30, 90)] = Station(
+            30, 90, game.grid.mines[Vec2(30, 30)]
+        )
 
         # TODO: it would be nice for readability if I could just say station.click() here.
         # Click first station
