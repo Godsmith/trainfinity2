@@ -175,6 +175,7 @@ class MyGame(arcade.Window):
                             self.trains.append(train)
                             self.drawer.create_train(train)
                             self.gui.mode = Mode.SELECT
+                            self.train_placement_station_list.clear()
                             # TODO: Select train here
 
     def on_right_click(self, x, y):

@@ -272,6 +272,31 @@ class TestTrain:
         assert len(game.trains) == 0
         assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
 
+    def test_create_two_trains(self, game_with_factory_and_mine: MyGame):
+        """
+        The grid is lain out as follows:
+
+         M F
+        =S=S=
+
+        When clicking the two stations, a train shall be created.
+        """
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(90, 0)
+
+        game.gui.mode = Mode.TRAIN
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(90, 0)
+
+        assert len(game.trains) == 2
+
 
 def test_destroy(game_with_factory_and_mine):
     game = game_with_factory_and_mine
