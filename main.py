@@ -1,3 +1,4 @@
+from calendar import c
 from enum import Enum
 
 import arcade
@@ -203,6 +204,7 @@ class MyGame(arcade.Window):
             # Required for panning to work correctly when zoomed in or out
             delta = delta.scale(self.camera.scale)
 
+            previous_camera_position = self.camera.position
             new_position = self.camera_position_when_mouse2_pressed - delta
 
             min_x = -self.camera.viewport_width / 2
@@ -214,12 +216,10 @@ class MyGame(arcade.Window):
             new_position = Vec2(min(max_x, new_position.x), new_position.y)
             new_position = Vec2(new_position.x, max(min_y, new_position.y))
             new_position = Vec2(new_position.x, min(max_y, new_position.y))
-
             self.camera.move(new_position)
 
-            change_x = dx * self.camera.scale
-            change_y = dy * self.camera.scale
-            self.gui.pan(-change_x, -change_y)
+            camera_dx, camera_dy = new_position - previous_camera_position
+            self.gui.pan(camera_dx, camera_dy)
         elif self.is_mouse1_pressed:
             x, y = self.camera.to_world_coordinates(x, y)
             self.grid.click_and_drag(
