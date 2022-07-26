@@ -10,6 +10,7 @@ class Camera:
             self.original_bottom,
             self.original_top,
         ) = arcade.get_viewport()
+        print(arcade.get_viewport())
 
     @property
     def position(self):
@@ -57,12 +58,8 @@ class Camera:
 
     def to_world_coordinates(self, x, y) -> tuple[int, int]:
         """Convert a position x, y in the current window to world coordinates."""
-        relative_x = (x - self.original_left) / (
-            self.original_right - self.original_left
-        )
-        relative_y = (y - self.original_bottom) / (
-            self.original_top - self.original_bottom
-        )
+        relative_x = x / (self.original_right - self.original_left)
+        relative_y = y / (self.original_top - self.original_bottom)
         left, right, bottom, top = arcade.get_viewport()
         return int(left + (right - left) * relative_x), int(
             bottom + (top - bottom) * relative_y

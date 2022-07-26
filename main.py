@@ -43,6 +43,7 @@ class MyGame(arcade.Window):
             height=SCREEN_HEIGHT,
             title="TRAINFINITY",
             visible=visible,
+            resizable=True,
         )  # type: ignore
 
         self.horizontal_grid_lines = []
@@ -59,8 +60,8 @@ class MyGame(arcade.Window):
         self.mouse2_pressed_y = 0
 
         # This is repeated in setup() below
-        self.camera_sprites = Camera()
-        self.camera_position_when_mouse2_pressed = self.camera_sprites.position
+        self.camera = Camera()
+        self.camera_position_when_mouse2_pressed = self.camera.position
 
         self.drawer = Drawer()
         self.grid = Grid(self.drawer)
@@ -76,8 +77,8 @@ class MyGame(arcade.Window):
 
     def setup(self):
         arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
-        self.camera_sprites = Camera()
-        self.camera_position_when_mouse2_pressed = self.camera_sprites.position
+        self.camera = Camera()
+        self.camera_position_when_mouse2_pressed = self.camera.position
 
         self.drawer = Drawer()
         self.grid = Grid(self.drawer)
@@ -121,22 +122,22 @@ class MyGame(arcade.Window):
         # TODO: move this to drawer class
         self.gui.draw()
 
-        self._draw_fps()
+        # self._draw_fps()
 
     def _draw_fps(self):
-        x, y = self.camera_sprites.to_world_coordinates(
-            SCREEN_WIDTH - 100, SCREEN_HEIGHT - 20
-        )
+        x, y = self.camera.to_world_coordinates(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 20)
         arcade.draw_text(self.fps, x, y, color=color.BLACK)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        print("on_mouse_press ", x, y)
+        print("to_world_coordinates", self.camera.to_world_coordinates(x, y))
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.mouse2_pressed_x = x
             self.mouse2_pressed_y = y
             self.is_mouse2_pressed = True
-            self.camera_position_when_mouse2_pressed = self.camera_sprites.position
+            self.camera_position_when_mouse2_pressed = self.camera.position
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            x, y = self.camera_sprites.to_world_coordinates(x, y)
+            x, y = self.camera.to_world_coordinates(x, y)
             self.mouse1_pressed_x = x
             self.mouse1_pressed_y = y
             self.is_mouse1_pressed = True
@@ -150,7 +151,7 @@ class MyGame(arcade.Window):
         )
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        x, y = self.camera_sprites.to_world_coordinates(x, y)
+        x, y = self.camera.to_world_coordinates(x, y)
         if button == arcade.MOUSE_BUTTON_RIGHT:
             if self._is_click(self.mouse2_pressed_x, self.mouse2_pressed_y, x, y):
                 self.on_right_click(x, y)
@@ -200,13 +201,13 @@ class MyGame(arcade.Window):
             delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)
 
             # Required for panning to work correctly when zoomed in or out
-            delta = delta.scale(self.camera_sprites.scale)
+            delta = delta.scale(self.camera.scale)
 
             new_position = self.camera_position_when_mouse2_pressed - delta
 
-            min_x = -self.camera_sprites.viewport_width / 2
+            min_x = -self.camera.viewport_width / 2
             max_x = GRID_WIDTH + min_x
-            min_y = -self.camera_sprites.viewport_height / 2
+            min_y = -self.camera.viewport_height / 2
             max_y = GRID_HEIGHT + min_y
 
             new_position = Vec2(max(min_x, new_position.x), new_position.y)
@@ -214,13 +215,13 @@ class MyGame(arcade.Window):
             new_position = Vec2(new_position.x, max(min_y, new_position.y))
             new_position = Vec2(new_position.x, min(max_y, new_position.y))
 
-            self.camera_sprites.move(new_position)
+            self.camera.move(new_position)
 
-            change_x = dx * self.camera_sprites.scale
-            change_y = dy * self.camera_sprites.scale
+            change_x = dx * self.camera.scale
+            change_y = dy * self.camera.scale
             self.gui.pan(-change_x, -change_y)
         elif self.is_mouse1_pressed:
-            x, y = self.camera_sprites.to_world_coordinates(x, y)
+            x, y = self.camera.to_world_coordinates(x, y)
             self.grid.click_and_drag(
                 x, y, self.mouse1_pressed_x, self.mouse1_pressed_y, self.gui.mode
             )
@@ -231,12 +232,17 @@ class MyGame(arcade.Window):
         else:
             scale_delta = -0.1
 
-        new_scale = self.camera_sprites.scale + scale_delta
+        new_scale = self.camera.scale + scale_delta
         new_scale = min(new_scale, MAX_CAMERA_SCALE)
         new_scale = max(new_scale, MIN_CAMERA_SCALE)
 
-        self.camera_sprites.scale = new_scale
+        self.camera.scale = new_scale
 
+        self.gui.create_boxes()
+
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self.camera = Camera()
         self.gui.create_boxes()
 
 

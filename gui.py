@@ -8,6 +8,7 @@ SELECTED_BOX_BACKGROUND_COLOR = color.WHITE
 DESELECTED_BOX_BACKGROUND_COLOR = color.GRAY
 BOX_TEXT_COLOR = color.BLACK
 BOX_OUTLINE_COLOR = color.BLACK
+BOX_SIZE_PIXELS = 60
 
 
 Box = namedtuple("Box", "text mode")
@@ -64,10 +65,11 @@ class Gui:
             self._create_box(box, i)
 
     def _is_inside(self, x, y, index):
-        left, _, bottom, top = arcade.get_viewport()
-        box_size = (top - bottom) / 10
-        left += index * box_size
-        return left < x < left + box_size and bottom < y < bottom + box_size
+        left, _, bottom, _ = arcade.get_viewport()
+        left += index * BOX_SIZE_PIXELS
+        return (
+            left < x < left + BOX_SIZE_PIXELS and bottom < y < bottom + BOX_SIZE_PIXELS
+        )
 
     def on_left_click(self, x, y):
         """Returns True if the event was handled, False otherwise."""
@@ -79,33 +81,32 @@ class Gui:
         return False
 
     def _create_box(self, box: Box, index: int):
-        left, _, bottom, top = arcade.get_viewport()
-        box_size = (top - bottom) / 10
-        left += index * box_size
+        left, _, bottom, _ = arcade.get_viewport()
+        left += index * BOX_SIZE_PIXELS
         background_color = (
             SELECTED_BOX_BACKGROUND_COLOR
             if self.mode == box.mode
             else DESELECTED_BOX_BACKGROUND_COLOR
         )
-        center_x = left + box_size / 2
-        center_y = bottom + box_size / 2
+        center_x = left + BOX_SIZE_PIXELS / 2
+        center_y = bottom + BOX_SIZE_PIXELS / 2
         self._shape_element_list.append(
             arcade.create_rectangle_filled(
-                center_x, center_y, box_size, box_size, background_color
+                center_x, center_y, BOX_SIZE_PIXELS, BOX_SIZE_PIXELS, background_color
             )
         )
         self._shape_element_list.append(
             arcade.create_rectangle_outline(
-                center_x, center_y, box_size, box_size, BOX_OUTLINE_COLOR
+                center_x, center_y, BOX_SIZE_PIXELS, BOX_SIZE_PIXELS, BOX_OUTLINE_COLOR
             )
         )
         self._sprite_list.append(
             arcade.create_text_sprite(
                 box.text,
                 start_x=left,
-                start_y=bottom + box_size / 2,
+                start_y=bottom + BOX_SIZE_PIXELS / 2,
                 color=BOX_TEXT_COLOR,
-                width=int(box_size),
+                width=int(BOX_SIZE_PIXELS),
                 align="center",
             )
         )
