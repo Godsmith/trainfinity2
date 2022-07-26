@@ -40,6 +40,9 @@ class Drawer:
         self._trains = []
         self._create_grid()
 
+        self._fps_sprite = arcade.Sprite()
+        self.sprite_list.append(self._fps_sprite)
+
     def _create_grid(self):
         for x in range(0, GRID_WIDTH + 1, GRID_BOX_SIZE):
             self.shape_list.append(
@@ -168,6 +171,7 @@ class Drawer:
 
     def draw(self):
         self.shape_list.draw()
+        self.sprite_list.draw()
 
         self.rails_shape_element_list.draw()
         self.rails_being_built_shape_element_list.draw()
@@ -178,3 +182,9 @@ class Drawer:
 
         # Draw trains here since it is only a single draw call per train
         self._draw_trains()
+
+    def update_fps_number(self, frame_count, x, y):
+        sprite = arcade.create_text_sprite(str(frame_count), x, y, color=color.BLACK)
+        self.sprite_list.remove(self._fps_sprite)
+        self._fps_sprite = sprite
+        self.sprite_list.append(sprite)

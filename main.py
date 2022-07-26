@@ -7,7 +7,6 @@ from pyglet.math import Vec2
 
 
 from constants import (
-    GRID_BOX_SIZE,
     GRID_HEIGHT,
     GRID_WIDTH,
     SECONDS_BETWEEN_IRON_CREATION,
@@ -72,7 +71,8 @@ class MyGame(arcade.Window):
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
-        self.fps = 0.0
+        self.frame_count = 0
+        self.seconds_since_last_frame_count_display = 0
 
         self.iron_counter = 0
 
@@ -96,7 +96,8 @@ class MyGame(arcade.Window):
                 mine.add_iron()
             self.iron_counter = 0
 
-        self.fps = 1 / delta_time
+        self._update_fps_display(delta_time)
+
         train_displacement = delta_time * TRAIN_SPEED_PIXELS_PER_SECOND
 
         for train in self.trains:
@@ -114,6 +115,15 @@ class MyGame(arcade.Window):
             ):
                 train.select_next_position_in_route()
 
+    def _update_fps_display(self, delta_time):
+        self.frame_count += 1
+        self.seconds_since_last_frame_count_display += delta_time
+        if self.seconds_since_last_frame_count_display > 1:
+            _, right, _, top = arcade.get_viewport()
+            self.drawer.update_fps_number(self.frame_count, right - 20, top - 20)
+            self.frame_count = 0
+            self.seconds_since_last_frame_count_display = 0
+
     def on_draw(self):
         self.clear()
         self.drawer.draw()
@@ -123,15 +133,7 @@ class MyGame(arcade.Window):
         # TODO: move this to drawer class
         self.gui.draw()
 
-        # self._draw_fps()
-
-    def _draw_fps(self):
-        x, y = self.camera.to_world_coordinates(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 20)
-        arcade.draw_text(self.fps, x, y, color=color.BLACK)
-
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        print("on_mouse_press ", x, y)
-        print("to_world_coordinates", self.camera.to_world_coordinates(x, y))
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.mouse2_pressed_x = x
             self.mouse2_pressed_y = y
