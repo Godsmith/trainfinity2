@@ -59,29 +59,18 @@ class MyGame(arcade.Window):
         self.mouse2_pressed_x = 0
         self.mouse2_pressed_y = 0
 
-        # This is repeated in setup() below
-        self.camera = Camera()
-        self.camera_position_when_mouse2_pressed = self.camera.position
-
-        self.gui = Gui()
-
-        self.drawer = Drawer()
-        self.grid = Grid(self.drawer)
-        self.player = Player(self.gui)
-
-        self.trains: list[Train] = []
-        self.train_placement_mode = TrainPlacementMode.FIRST_STATION
-        self.train_placement_station_list = []
-
         self.frame_count = 0
         self.seconds_since_last_frame_count_display = 0
 
-        self.iron_counter = 0
+        self.setup()
 
     def setup(self):
-        # TODO: Do not repeat stuff here, it is easy to forget to add stuff here AND
-        # in __init__.
+        """Initialize variables. Run before each test to avoid having to
+        recreate the entire window for each test case."""
+
+        # Reset viewport for tests.
         arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
+
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
@@ -94,6 +83,8 @@ class MyGame(arcade.Window):
         self.trains = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
+
+        self.iron_counter = 0
 
     def on_update(self, delta_time):
         self.iron_counter += delta_time

@@ -1,7 +1,7 @@
 import arcade
 import pytest
 from main import MyGame, Mode, Train, TrainPlacementMode
-from model import Rail, Station, Mine, Factory, Train, Water
+from model import Player, Rail, Station, Mine, Factory, Train, Water
 from pyglet.math import Vec2
 from pytest import approx
 import time
@@ -28,6 +28,7 @@ def test_draw(game: MyGame):
     game.grid.stations = {Vec2(0, 0): Station(0, 0, Factory(0, 0))}
     game.trains = [
         Train(
+            Player(game.gui),
             Station(0, 0, Factory(0, 0)),
             Station(0, 0, Factory(0, 0)),
             [Vec2(0, 0), Vec2(0, 0)],
@@ -54,7 +55,7 @@ class TestClicks:
 
 class TestCamera:
     def test_camera_starts_at_origo(self, game):
-        assert game.camera_sprites.position == Vec2(0, 0)
+        assert game.camera.position == Vec2(0, 0)
 
     def test_camera_pans_when_right_clicking_and_dragging(self, game):
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0)
@@ -64,7 +65,7 @@ class TestCamera:
         )
 
         # TODO: forgot assert here
-        assert game.camera_sprites
+        assert game.camera
 
     def test_camera_stops_when_trying_to_move_past_top_left_corner(self, game):
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0)
@@ -73,7 +74,7 @@ class TestCamera:
             x=2000, y=3000, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0
         )
 
-        assert game.camera_sprites.position == Vec2(-400, -300)
+        assert game.camera.position == Vec2(-400, -300)
 
     def test_camera_stops_when_trying_to_move_past_bottom_right_corner(self, game):
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0)
@@ -82,21 +83,21 @@ class TestCamera:
             x=-2000, y=-3000, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0
         )
 
-        assert game.camera_sprites.position == Vec2(200, 300)
+        assert game.camera.position == Vec2(200, 300)
 
     def test_camera_starts_with_scale_1(self, game):
-        assert game.camera_sprites.scale == 1.0
+        assert game.camera.scale == 1.0
 
     def test_scrolling_up_zooms_in(self, game):
         game.on_mouse_scroll(x=100, y=100, scroll_x=0, scroll_y=1)
 
-        assert game.camera_sprites.scale == approx(0.9)
+        assert game.camera.scale == approx(0.9)
 
     def test_scrolling_down_zooms_out(self, game):
-        assert game.camera_sprites.scale == 1.0
+        assert game.camera.scale == 1.0
         game.on_mouse_scroll(x=100, y=100, scroll_x=0, scroll_y=-1)
 
-        assert game.camera_sprites.scale == approx(1.1)
+        assert game.camera.scale == approx(1.1)
 
 
 class TestGrid:
