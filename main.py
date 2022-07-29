@@ -13,7 +13,7 @@ from constants import (
 )
 from drawer import Drawer
 from gui import Gui, Mode
-from model import Train
+from model import Player, Train
 from grid import Grid
 from camera import Camera
 
@@ -22,7 +22,7 @@ SCREEN_HEIGHT = 600
 
 MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK = 5
 
-TRAIN_SPEED_PIXELS_PER_SECOND = 60.0
+TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
 
 
 # Min zoom = 1/MAX_CAMERA_SCALE, i.e. 25%
@@ -65,9 +65,11 @@ class MyGame(arcade.Window):
 
         self.drawer = Drawer()
         self.grid = Grid(self.drawer)
+        self.player = Player(self.drawer)
+
         self.gui = Gui()
 
-        self.trains = []
+        self.trains: list[Train] = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
@@ -77,12 +79,16 @@ class MyGame(arcade.Window):
         self.iron_counter = 0
 
     def setup(self):
+        # TODO: Do not repeat stuff here, it is easy to forget to add stuff here AND
+        # in __init__.
         arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
         self.drawer = Drawer()
         self.grid = Grid(self.drawer)
+        self.player = Player(self.drawer)
+
         self.gui = Gui()
 
         self.trains = []
@@ -119,8 +125,7 @@ class MyGame(arcade.Window):
         self.frame_count += 1
         self.seconds_since_last_frame_count_display += delta_time
         if self.seconds_since_last_frame_count_display > 1:
-            _, right, _, top = arcade.get_viewport()
-            self.drawer.update_fps_number(self.frame_count, right - 20, top - 20)
+            self.drawer.update_fps_number(self.frame_count)
             self.frame_count = 0
             self.seconds_since_last_frame_count_display = 0
 
@@ -185,6 +190,7 @@ class MyGame(arcade.Window):
                             *self.train_placement_station_list
                         ):
                             train = Train(
+                                self.player,
                                 self.train_placement_station_list[0],
                                 self.train_placement_station_list[1],
                                 route,

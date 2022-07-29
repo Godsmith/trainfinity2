@@ -10,7 +10,6 @@ Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")
 
 
-
 @dataclass
 class Mine:
     x: int
@@ -35,14 +34,32 @@ def _is_close(pos1, pos2):
         and abs(pos1.y - pos2.y) < GRID_BOX_SIZE / 2
     )
 
+
 @dataclass
 class Station:
     x: int
     y: int
     mine_or_factory: Mine | Factory
 
+
+@dataclass
+class Player:
+    drawer: "Drawer"
+    _score: int = 0
+
+    @property
+    def score(self) -> int:
+        return self._score
+
+    @score.setter
+    def score(self, value):
+        self._score = value
+        self.drawer.update_score(value)
+
+
 @dataclass
 class Train:
+    player: Player
     first_station: Station
     second_station: Station
     route: list[Vec2]
@@ -78,6 +95,7 @@ class Train:
                 self.iron += station.mine_or_factory.remove_all_iron()
             else:
                 # Factory
+                self.player.score += self.iron
                 self.iron = 0
 
 

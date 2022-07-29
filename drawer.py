@@ -16,7 +16,7 @@ from constants import (
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
 )
-from model import Factory, Mine, Rail, Station, Train, Water
+from model import Factory, Mine, Player, Rail, Station, Train, Water
 
 
 class Drawer:
@@ -41,7 +41,9 @@ class Drawer:
         self._create_grid()
 
         self._fps_sprite = arcade.Sprite()
+        self._score_sprite = arcade.Sprite()
         self.sprite_list.append(self._fps_sprite)
+        self.sprite_list.append(self._score_sprite)
 
     def _create_grid(self):
         for x in range(0, GRID_WIDTH + 1, GRID_BOX_SIZE):
@@ -183,8 +185,24 @@ class Drawer:
         # Draw trains here since it is only a single draw call per train
         self._draw_trains()
 
-    def update_fps_number(self, frame_count, x, y):
+    def update_fps_number(self, frame_count: int):
+        # TODO: does not work when zoomed in
+        # TODO: move to GUI
+        _, right, _, top = arcade.get_viewport()
+        x = right - 20
+        y = top - 20
         sprite = arcade.create_text_sprite(str(frame_count), x, y, color=color.BLACK)
         self.sprite_list.remove(self._fps_sprite)
         self._fps_sprite = sprite
+        self.sprite_list.append(sprite)
+
+    def update_score(self, score: int):
+        # TODO: does not work when zoomed in
+        # TODO: move to GUI
+        _, right, _, top = arcade.get_viewport()
+        x = right - 20
+        y = top - 40
+        sprite = arcade.create_text_sprite(str(score), x, y, color=color.BLACK)
+        self.sprite_list.remove(self._score_sprite)
+        self._score_sprite = sprite
         self.sprite_list.append(sprite)
