@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE
+from gui import Gui
 
 Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")
@@ -44,7 +45,7 @@ class Station:
 
 @dataclass
 class Player:
-    drawer: "Drawer"
+    gui: Gui
     _score: int = 0
 
     @property
@@ -54,7 +55,7 @@ class Player:
     @score.setter
     def score(self, value):
         self._score = value
-        self.drawer.update_score(value)
+        self.gui.update_score(value)
 
 
 @dataclass

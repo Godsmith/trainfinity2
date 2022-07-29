@@ -63,11 +63,11 @@ class MyGame(arcade.Window):
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
+        self.gui = Gui()
+
         self.drawer = Drawer()
         self.grid = Grid(self.drawer)
-        self.player = Player(self.drawer)
-
-        self.gui = Gui()
+        self.player = Player(self.gui)
 
         self.trains: list[Train] = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
@@ -85,11 +85,11 @@ class MyGame(arcade.Window):
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
+        self.gui = Gui()
+
         self.drawer = Drawer()
         self.grid = Grid(self.drawer)
-        self.player = Player(self.drawer)
-
-        self.gui = Gui()
+        self.player = Player(self.gui)
 
         self.trains = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
@@ -125,7 +125,7 @@ class MyGame(arcade.Window):
         self.frame_count += 1
         self.seconds_since_last_frame_count_display += delta_time
         if self.seconds_since_last_frame_count_display > 1:
-            self.drawer.update_fps_number(self.frame_count)
+            self.gui.update_fps_number(self.frame_count)
             self.frame_count = 0
             self.seconds_since_last_frame_count_display = 0
 
@@ -246,12 +246,12 @@ class MyGame(arcade.Window):
 
         self.camera.scale = new_scale
 
-        self.gui.create_boxes()
+        self.gui.refresh()
 
     def on_resize(self, width, height):
         super().on_resize(width, height)
         self.camera = Camera()
-        self.gui.create_boxes()
+        self.gui.refresh()
 
 
 if __name__ == "__main__":

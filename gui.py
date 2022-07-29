@@ -33,7 +33,15 @@ class Gui:
         self._enabled = True
         self._shape_element_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
-        self.create_boxes()
+        self._text_sprite_list = arcade.SpriteList()
+        self._fps_sprite = arcade.Sprite()
+        self._score_sprite = arcade.Sprite()
+        self._text_sprite_list = arcade.SpriteList()
+        self._text_sprite_list.append(self._fps_sprite)
+        self._text_sprite_list.append(self._score_sprite)
+        self._fps = 0
+        self._score = 0
+        self.refresh()
 
     def disable(self):
         """Stop the GUI from taking clicks. Currently mostly useful for unit testing."""
@@ -46,23 +54,28 @@ class Gui:
     @mode.setter
     def mode(self, value: Mode):
         self._mode = value
-        self.create_boxes()
+        self.refresh()
 
     def draw(self):
         self._shape_element_list.draw()
         self._sprite_list.draw()
+        self._text_sprite_list.draw()
 
     def pan(self, dx, dy):
         self._sprite_list.move(dx, dy)
+        self._text_sprite_list.move(dx, dy)
         self._shape_element_list.move(dx, dy)
 
-    def create_boxes(self):
+    def refresh(self):
         """Recreates the boxes. Necessary for example after zooming and after
         changing color of the boxes when switching active mode."""
         self._shape_element_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
         for i, box in enumerate(self.boxes):
             self._create_box(box, i)
+
+        self._refresh_fps_sprite()
+        self._refresh_score_sprite()
 
     def _is_inside(self, x, y, index):
         left, _, bottom, _ = arcade.get_viewport()
@@ -110,3 +123,33 @@ class Gui:
                 align="center",
             )
         )
+
+    def update_fps_number(self, fps: int):
+        self._fps = fps
+        self._refresh_score_sprite()
+
+    def _refresh_fps_sprite(self):
+        _, right, _, top = arcade.get_viewport()
+        x = right - 80
+        y = top - 20
+        sprite = arcade.create_text_sprite(
+            f"FPS: {self._fps}", x, y, color=color.BLACK, align="left"
+        )
+        self._text_sprite_list.remove(self._fps_sprite)
+        self._fps_sprite = sprite
+        self._text_sprite_list.append(sprite)
+
+    def update_score(self, score: int):
+        self._score = score
+        self._refresh_score_sprite()
+
+    def _refresh_score_sprite(self):
+        _, right, _, top = arcade.get_viewport()
+        x = right - 80
+        y = top - 40
+        sprite = arcade.create_text_sprite(
+            f"Score: {self._score}", x, y, color=color.BLACK, align="left"
+        )
+        self._text_sprite_list.remove(self._score_sprite)
+        self._score_sprite = sprite
+        self._text_sprite_list.append(sprite)
