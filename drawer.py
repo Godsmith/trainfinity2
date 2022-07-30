@@ -20,7 +20,13 @@ from model import Factory, Mine, Player, Rail, Station, Train, Water
 
 
 class Drawer:
-    def __init__(self):
+    def __init__(self, grid_width, grid_height):
+        self._grid_width = grid_width
+        self._grid_height = grid_height
+        self._grid_left = 0
+        self._grid_bottom = 0
+
+        self._grid_shape_list = arcade.ShapeElementList()
         self.shape_list = arcade.ShapeElementList()
         self.sprite_list = arcade.SpriteList()
 
@@ -46,14 +52,24 @@ class Drawer:
         self.sprite_list.append(self._score_sprite)
 
     def _create_grid(self):
-        for x in range(0, GRID_WIDTH + 1, GRID_BOX_SIZE):
-            self.shape_list.append(
-                arcade.create_line(x, 0, x, GRID_HEIGHT, GRID_COLOR, GRID_LINE_WIDTH)
+        self._grid_shape_list = arcade.ShapeElementList()
+        for x in range(self._grid_left, self._grid_width + 1, GRID_BOX_SIZE):
+            self._grid_shape_list.append(
+                arcade.create_line(
+                    x,
+                    self._grid_bottom,
+                    x,
+                    self._grid_height,
+                    GRID_COLOR,
+                    GRID_LINE_WIDTH,
+                )
             )
 
-        for y in range(0, GRID_HEIGHT + 1, GRID_BOX_SIZE):
-            self.shape_list.append(
-                arcade.create_line(0, y, GRID_WIDTH, y, GRID_COLOR, GRID_LINE_WIDTH)
+        for y in range(self._grid_bottom, self._grid_height + 1, GRID_BOX_SIZE):
+            self._grid_shape_list.append(
+                arcade.create_line(
+                    self._grid_left, y, self._grid_width, y, GRID_COLOR, GRID_LINE_WIDTH
+                )
             )
 
     def create_mine(self, mine: Mine):
@@ -172,6 +188,7 @@ class Drawer:
             )
 
     def draw(self):
+        self._grid_shape_list.draw()
         self.shape_list.draw()
         self.sprite_list.draw()
 
@@ -184,3 +201,10 @@ class Drawer:
 
         # Draw trains here since it is only a single draw call per train
         self._draw_trains()
+
+    def enlarge_grid(self):
+        self._grid_left -= GRID_BOX_SIZE
+        self._grid_bottom -= GRID_BOX_SIZE
+        self._grid_width += 2 * GRID_BOX_SIZE
+        self._grid_height += 2 * GRID_BOX_SIZE
+        self._create_grid()

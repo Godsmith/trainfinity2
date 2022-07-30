@@ -46,7 +46,18 @@ class Station:
 @dataclass
 class Player:
     gui: Gui
+    drawer: "Drawer"
     _score: int = 0
+    _level = 0
+
+    # The number of points required to reach a certain level.
+    # Level 0: 0 points
+    # Level 1: 10 points
+    # ...
+    LEVELS = list(range(0, 10000, 10))
+
+    def score_to_grid_increase(self):
+        return self.LEVELS[self._level + 1] - self._score
 
     @property
     def score(self) -> int:
@@ -55,7 +66,10 @@ class Player:
     @score.setter
     def score(self, value):
         self._score = value
-        self.gui.update_score(value)
+        while self._score >= self.LEVELS[self._level + 1]:
+            self._level += 1
+            self.drawer.enlarge_grid()
+        self.gui.update_score(value, self.score_to_grid_increase())
 
 
 @dataclass
@@ -64,7 +78,6 @@ class Train:
     first_station: Station
     second_station: Station
     route: list[Vec2]
-    drawer: "Drawer"
     x: float = field(init=False)
     y: float = field(init=False)
     target_x: int = field(init=False)

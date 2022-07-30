@@ -28,11 +28,10 @@ def test_draw(game: MyGame):
     game.grid.stations = {Vec2(0, 0): Station(0, 0, Factory(0, 0))}
     game.trains = [
         Train(
-            Player(game.gui),
+            Player(game.gui, game.drawer),
             Station(0, 0, Factory(0, 0)),
             Station(0, 0, Factory(0, 0)),
             [Vec2(0, 0), Vec2(0, 0)],
-            game.drawer,
         )
     ]
     game.on_draw()

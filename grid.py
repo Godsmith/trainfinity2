@@ -226,3 +226,6 @@ class Grid:
                         and Vec2(x, y) not in self.stations
                     ):
                         self._create_station(x, y)
+
+    def enlarge(self):
+        self.drawer.enlarge_grid()

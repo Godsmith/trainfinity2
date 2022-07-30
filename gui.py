@@ -41,6 +41,7 @@ class Gui:
         self._text_sprite_list.append(self._score_sprite)
         self._fps = 0
         self._score = 0
+        self._score_to_grid_increase = 10  # TODO: should not be hardcoded here
         self.refresh()
 
     def disable(self):
@@ -130,25 +131,30 @@ class Gui:
 
     def _refresh_fps_sprite(self):
         _, right, _, top = arcade.get_viewport()
-        x = right - 80
+        x = right - 20
         y = top - 20
         sprite = arcade.create_text_sprite(
-            f"FPS: {self._fps}", x, y, color=color.BLACK, align="left"
+            f"FPS: {self._fps}", x, y, color=color.BLACK, anchor_x="right"
         )
         self._text_sprite_list.remove(self._fps_sprite)
         self._fps_sprite = sprite
         self._text_sprite_list.append(sprite)
 
-    def update_score(self, score: int):
+    def update_score(self, score: int, score_to_grid_increase: int):
         self._score = score
+        self._score_to_grid_increase = score_to_grid_increase
         self._refresh_score_sprite()
 
     def _refresh_score_sprite(self):
         _, right, _, top = arcade.get_viewport()
-        x = right - 80
+        x = right - 20
         y = top - 40
         sprite = arcade.create_text_sprite(
-            f"Score: {self._score}", x, y, color=color.BLACK, align="left"
+            f"Score: {self._score}. To grid increase: {self._score_to_grid_increase}",
+            x,
+            y,
+            color=color.BLACK,
+            anchor_x="right",
         )
         self._text_sprite_list.remove(self._score_sprite)
         self._score_sprite = sprite

@@ -76,9 +76,9 @@ class MyGame(arcade.Window):
 
         self.gui = Gui()
 
-        self.drawer = Drawer()
+        self.drawer = Drawer(GRID_WIDTH, GRID_HEIGHT)
         self.grid = Grid(self.drawer)
-        self.player = Player(self.gui)
+        self.player = Player(self.gui, self.drawer)
 
         self.trains = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
@@ -185,7 +185,6 @@ class MyGame(arcade.Window):
                                 self.train_placement_station_list[0],
                                 self.train_placement_station_list[1],
                                 route,
-                                self.drawer,
                             )
                             self.trains.append(train)
                             self.drawer.create_train(train)
