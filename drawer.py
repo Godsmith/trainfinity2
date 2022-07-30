@@ -194,13 +194,31 @@ class Drawer:
             )
 
     def _draw_trains(self):
+        # TODO: Create a shapelist per train that we can move instead
         for train in self._trains:
+            x = train.x + GRID_BOX_SIZE / 2
+            y = train.y + GRID_BOX_SIZE / 2
             arcade.draw_circle_filled(
-                train.x + GRID_BOX_SIZE / 2,
-                train.y + GRID_BOX_SIZE / 2,
+                x,
+                y,
                 GRID_BOX_SIZE / 2,
                 color=color.RED,
             )
+            if train.iron:
+                arcade.draw_rectangle_filled(
+                    x,
+                    y,
+                    IRON_SIZE,
+                    IRON_SIZE,
+                    color=color.TROLLEY_GREY,
+                )
+                arcade.draw_rectangle_outline(
+                    x,
+                    y,
+                    IRON_SIZE,
+                    IRON_SIZE,
+                    color=color.BLACK,
+                )
 
     def draw(self):
         self._grid_shape_list.draw()
@@ -214,7 +232,6 @@ class Drawer:
         self.factory_sprite_list.draw()
         self.iron_shape_element_list.draw()
 
-        # Draw trains here since it is only a single draw call per train
         self._draw_trains()
 
     def enlarge_grid(self):

@@ -96,16 +96,16 @@ class MyGame(arcade.Window):
         train_displacement = delta_time * TRAIN_SPEED_PIXELS_PER_SECOND
 
         for train in self.trains:
-            if train.x > train.target_x:
+            if train.x > train.target_x + train_displacement:
                 train.x -= train_displacement
-            else:
+            elif train.x < train.target_x - train_displacement:
                 train.x += train_displacement
-            if train.y > train.target_y:
+            if train.y > train.target_y + train_displacement:
                 train.y -= train_displacement
-            else:
+            elif train.y < train.target_y - train_displacement:
                 train.y += train_displacement
             if (
-                abs(train.x - train.target_x) < 1
+                abs(train.x - train.target_x) < train_displacement
                 and abs(train.y - train.target_y) < train_displacement
             ):
                 train.select_next_position_in_route()
