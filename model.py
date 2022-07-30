@@ -69,7 +69,7 @@ class Player:
         while self._score >= self.LEVELS[self._level + 1]:
             self._level += 1
             self.drawer.enlarge_grid()
-        self.gui.update_score(value, self.score_to_grid_increase())
+        self.gui.update_score(value, self._level, self.score_to_grid_increase())
 
 
 @dataclass
