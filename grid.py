@@ -3,6 +3,7 @@ import random
 from collections import defaultdict
 from itertools import pairwise
 from typing import Iterable, Optional
+from perlin_noise import PerlinNoise
 
 from pyglet.math import Vec2
 
@@ -40,7 +41,7 @@ def get_random_position() -> Vec2:
 
 
 class Grid:
-    def __init__(self, drawer: Drawer) -> None:
+    def __init__(self, drawer: Drawer, terrain: bool) -> None:
         self.drawer = drawer
 
         self.water = {}
@@ -50,7 +51,8 @@ class Grid:
         self.rails_being_built = []
         self.rails = []
 
-        self._create_water()
+        if terrain:
+            self._create_water()
         self._create_mines()
         self._create_factories()
 
@@ -76,10 +78,21 @@ class Grid:
         return self._get_unoccupied_positions(1).pop()
 
     def _create_water(self):
-        self.water = {
-            position: Water(*position)
-            for position in self._get_unoccupied_positions(WATER_TILES)
-        }
+        print("create_water")
+        noise1 = PerlinNoise(octaves=3)
+        noise2 = PerlinNoise(octaves=6)
+        noise3 = PerlinNoise(octaves=12)
+        noise4 = PerlinNoise(octaves=24)
+        for x in range(-GRID_WIDTH * 2, GRID_WIDTH * 3 + 1, GRID_BOX_SIZE):
+            for y in range(-GRID_HEIGHT * 2, GRID_HEIGHT * 3 + 1, GRID_BOX_SIZE):
+                noise_val = noise1([x / GRID_WIDTH, y / GRID_WIDTH])
+                noise_val += 0.5 * noise2([x / GRID_WIDTH, y / GRID_WIDTH])
+                noise_val += 0.25 * noise3([x / GRID_WIDTH, y / GRID_WIDTH])
+                # noise_val += 0.125 * noise4([x / GRID_WIDTH, y / GRID_WIDTH])
+
+                if noise_val > 0.1:
+                    self.water[Vec2(x, y)] = Water(x, y)
+
         for water in self.water.values():
             self.drawer.create_water(water)
 

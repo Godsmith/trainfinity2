@@ -10,7 +10,6 @@ class Camera:
             self.original_bottom,
             self.original_top,
         ) = arcade.get_viewport()
-        print(arcade.get_viewport())
 
     @property
     def position(self):

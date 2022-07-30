@@ -15,7 +15,7 @@ def common_game() -> MyGame:
 
 @pytest.fixture()
 def game(common_game: MyGame) -> MyGame:
-    common_game.setup()
+    common_game.setup(terrain=False)
     common_game.grid.water = {}
     common_game.grid.mines = {}
     common_game.grid.factories = {}
