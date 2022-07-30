@@ -52,7 +52,7 @@ class Grid:
         self.rails = []
 
         if terrain:
-            self._create_water()
+            self._create_terrain()
         self._create_mines()
         self._create_factories()
 
@@ -77,8 +77,10 @@ class Grid:
     def _get_unoccupied_position(self) -> Vec2:
         return self._get_unoccupied_positions(1).pop()
 
-    def _create_water(self):
-        print("create_water")
+    def _create_terrain(self):
+        print("create_terrain in grid")
+        sand = []
+        mountains = []
         noise1 = PerlinNoise(octaves=3)
         noise2 = PerlinNoise(octaves=6)
         noise3 = PerlinNoise(octaves=12)
@@ -90,11 +92,16 @@ class Grid:
                 noise_val += 0.25 * noise3([x / GRID_WIDTH, y / GRID_WIDTH])
                 # noise_val += 0.125 * noise4([x / GRID_WIDTH, y / GRID_WIDTH])
 
-                if noise_val > 0.1:
+                if noise_val < -0.1:
                     self.water[Vec2(x, y)] = Water(x, y)
+                elif noise_val < 0:
+                    sand.append(Vec2(x, y))
+                elif noise_val > 0.4:
+                    mountains.append(Vec2(x, y))
 
-        for water in self.water.values():
-            self.drawer.create_water(water)
+        self.drawer.create_terrain(
+            water=self.water.keys(), sand=sand, mountains=mountains
+        )
 
     def _create_mine(self, x, y):
         mine = Mine(x, y, self.drawer)

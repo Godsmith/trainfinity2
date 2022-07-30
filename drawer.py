@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import Iterable
 import arcade
 from arcade import color
+from pyglet.math import Vec2
 
 from constants import (
     BUILDING_RAIL_COLOR,
@@ -97,11 +98,25 @@ class Drawer:
             self.station_sprite_list.remove(self.station_sprite_from_position[position])
             del self.station_sprite_from_position[position]
 
-    def create_water(self, water: Water):
-        center_x = water.x + GRID_BOX_SIZE / 2
-        center_y = water.y + GRID_BOX_SIZE / 2
+    def create_terrain(
+        self, water: list[Vec2], sand: list[Vec2], mountains: list[Vec2]
+    ):
+        print(f"{len(water)=}, {len(sand)=}, {len(mountains)=}")
+        for positions, terrain_color in [
+            (water, color.SEA_BLUE),
+            (sand, color.SAND),
+            # (mountains, color.ROAST_COFFEE),
+            # (mountains, color.LIGHT_SLATE_GRAY),
+            (mountains, color.DIM_GRAY),
+        ]:
+            for position in positions:
+                self._create_terrain(position, terrain_color)
+
+    def _create_terrain(self, position: Vec2, color):
+        center_x = position.x + GRID_BOX_SIZE / 2
+        center_y = position.y + GRID_BOX_SIZE / 2
         shape = arcade.create_rectangle_filled(
-            center_x, center_y, GRID_BOX_SIZE, GRID_BOX_SIZE, color=color.SEA_BLUE
+            center_x, center_y, GRID_BOX_SIZE, GRID_BOX_SIZE, color=color
         )
         self.shape_list.append(shape)
 
