@@ -1,5 +1,6 @@
 import arcade
 import pytest
+from constants import SECONDS_BETWEEN_IRON_CREATION
 from main import MyGame, Mode, Train, TrainPlacementMode
 from model import Player, Rail, Station, Mine, Factory, Train, Water
 from pyglet.math import Vec2
@@ -320,3 +321,13 @@ def test_destroy(game_with_factory_and_mine):
 
     assert len(game.grid.stations) == 1
     assert len(game.grid.rails) == 2
+
+
+def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
+    game = game_with_factory_and_mine
+    # Start just before creating a new iron
+    game.iron_counter = SECONDS_BETWEEN_IRON_CREATION - 0.00001
+
+    game.on_update(1 / 60)
+
+    assert game.grid.mines[Vec2(30, 30)].iron == 1

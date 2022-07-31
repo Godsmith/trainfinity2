@@ -16,15 +16,15 @@ class Mine:
     x: int
     y: int
     drawer: "Drawer"
-    _iron: int = 0
+    iron: int = 0
 
     def add_iron(self):
-        self._iron += 1
+        self.iron += 1
         self.drawer.add_iron((self.x, self.y))
 
     def remove_all_iron(self) -> int:
-        iron = self._iron
-        self._iron = 0
+        iron = self.iron
+        self.iron = 0
         self.drawer.remove_all_iron((self.x, self.y))
         return iron
 
