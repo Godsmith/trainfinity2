@@ -25,14 +25,26 @@ def game(common_game: MyGame) -> MyGame:
 
 @pytest.fixture
 def game_with_train(game: MyGame) -> MyGame:
-    game.grid.rails = [Rail(0, 0, 0, 0)]
-    game.grid.stations = {Vec2(0, 0): Station(0, 0, Factory(0, 0))}
+    """
+     M F
+    =S=S=
+    """
+    game.grid.rails = [
+        Rail(0, 0, 30, 0),
+        Rail(30, 0, 60, 0),
+        Rail(60, 0, 90, 0),
+        Rail(90, 0, 120, 0),
+    ]
+    game.grid._create_mine(30, 30)
+    game.grid._create_factory(90, 30)
+    station1 = game.grid._create_station(30, 0)
+    station2 = game.grid._create_station(90, 0)
     game.trains = [
         Train(
-            Player(game.gui, game.drawer),
-            Station(0, 0, Factory(0, 0)),
-            Station(0, 0, Factory(0, 0)),
-            [Vec2(0, 0), Vec2(0, 0)],
+            game.player,
+            station1,
+            station2,
+            [Vec2(30, 0), Vec2(60, 0), Vec2(90, 0), Vec2(60, 0)],
         )
     ]
     return game
@@ -341,3 +353,48 @@ def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
 def test_trains_are_moved_in_on_update(game_with_train):
     # For code coverage
     game_with_train.on_update(1 / 60)
+
+
+def test_fps_is_updated_every_second(game: MyGame):
+    # For code coverage
+    game.seconds_since_last_frame_count_display = 0.99
+
+    game.on_update(1 / 60)
+
+
+def test_train_picks_up_iron_from_mine(game_with_train: MyGame):
+    """
+     M F
+    =S=S=
+    """
+    mine = game_with_train.grid.mines[Vec2(30, 30)]
+    train = game_with_train.trains[0]
+    mine.add_iron()
+    train.x = 30
+    train.target_x = 30
+
+    game_with_train.on_update(1 / 60)
+
+    assert mine.iron == 0
+    assert train.iron == 1
+
+
+def test_train_delivers_iron_to_factory_gives_score(game_with_train: MyGame):
+    """
+     M F
+    =S=S=
+    """
+    train = game_with_train.trains[0]
+    train.iron = 1
+    train.x = 90
+    train.target_x = 90
+
+    game_with_train.on_update(1 / 60)
+
+    assert train.iron == 0
+    assert game_with_train.player.score == 1
+
+
+def test_on_resize(game):
+    # For code coverage
+    game.on_resize(800, 600)

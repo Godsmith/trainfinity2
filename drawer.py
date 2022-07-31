@@ -105,8 +105,6 @@ class Drawer:
         for positions, terrain_color in [
             (water, color.SEA_BLUE),
             (sand, color.SAND),
-            # (mountains, color.ROAST_COFFEE),
-            # (mountains, color.LIGHT_SLATE_GRAY),
             (mountains, color.DIM_GRAY),
         ]:
             for position in positions:

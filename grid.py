@@ -45,7 +45,7 @@ class Grid:
         self.drawer = drawer
 
         self.water = {}
-        self.mines = {}
+        self.mines: dict[Vec2, Mine] = {}
         self.factories = {}
         self.stations = {}
         self.rails_being_built = []
@@ -107,6 +107,7 @@ class Grid:
         mine = Mine(x, y, self.drawer)
         self.mines[Vec2(x, y)] = mine
         self.drawer.create_mine(mine)
+        return mine
 
     def _create_mines(self):
         x, y = self._get_unoccupied_position()
@@ -116,6 +117,7 @@ class Grid:
         factory = Factory(x, y)
         self.factories[Vec2(x, y)] = factory
         self.drawer.create_factory(factory)
+        return factory
 
     def _create_factories(self):
         x, y = self._get_unoccupied_position()
@@ -227,6 +229,7 @@ class Grid:
         station = Station(x, y, mine_or_factory)
         self.stations[Vec2(x, y)] = station
         self.drawer.create_station(station)
+        return station
 
     def _create_stations(self):
         rails_from_position = defaultdict(list)
@@ -246,6 +249,3 @@ class Grid:
                         and Vec2(x, y) not in self.stations
                     ):
                         self._create_station(x, y)
-
-    def enlarge(self):
-        self.drawer.enlarge_grid()

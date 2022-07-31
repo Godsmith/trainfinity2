@@ -58,7 +58,7 @@ class MyGame(arcade.Window):
         self.mouse2_pressed_y = 0
 
         self.frame_count = 0
-        self.seconds_since_last_frame_count_display = 0
+        self.seconds_since_last_frame_count_display = 0.0
 
     def setup(self, terrain=True):
         """Initialize variables. Run before each test to avoid having to
@@ -76,7 +76,7 @@ class MyGame(arcade.Window):
         self.grid = Grid(self.drawer, terrain=terrain)
         self.player = Player(self.gui, self.drawer)
 
-        self.trains = []
+        self.trains: list[Train] = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
