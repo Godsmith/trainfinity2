@@ -14,7 +14,7 @@ def common_game() -> MyGame:
     return game
 
 
-@pytest.fixture()
+@pytest.fixture
 def game(common_game: MyGame) -> MyGame:
     common_game.setup(terrain=False)
     common_game.grid.water = {}
@@ -23,8 +23,8 @@ def game(common_game: MyGame) -> MyGame:
     return common_game
 
 
-def test_draw(game: MyGame):
-    # Mainly for code coverage
+@pytest.fixture
+def game_with_train(game: MyGame) -> MyGame:
     game.grid.rails = [Rail(0, 0, 0, 0)]
     game.grid.stations = {Vec2(0, 0): Station(0, 0, Factory(0, 0))}
     game.trains = [
@@ -35,7 +35,12 @@ def test_draw(game: MyGame):
             [Vec2(0, 0), Vec2(0, 0)],
         )
     ]
-    game.on_draw()
+    return game
+
+
+def test_draw(game_with_train: MyGame):
+    # Mainly for code coverage
+    game_with_train.on_draw()
 
 
 class TestClicks:
@@ -331,3 +336,8 @@ def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
     game.on_update(1 / 60)
 
     assert game.grid.mines[Vec2(30, 30)].iron == 1
+
+
+def test_trains_are_moved_in_on_update(game_with_train):
+    # For code coverage
+    game_with_train.on_update(1 / 60)
