@@ -22,8 +22,6 @@ SCREEN_HEIGHT = 600
 
 MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK = 5
 
-TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
-
 
 # Min zoom = 1/MAX_CAMERA_SCALE, i.e. 25%
 MAX_CAMERA_SCALE = 4
@@ -93,22 +91,8 @@ class MyGame(arcade.Window):
 
         self._update_fps_display(delta_time)
 
-        train_displacement = delta_time * TRAIN_SPEED_PIXELS_PER_SECOND
-
         for train in self.trains:
-            if train.x > train.target_x + train_displacement:
-                train.x -= train_displacement
-            elif train.x < train.target_x - train_displacement:
-                train.x += train_displacement
-            if train.y > train.target_y + train_displacement:
-                train.y -= train_displacement
-            elif train.y < train.target_y - train_displacement:
-                train.y += train_displacement
-            if (
-                abs(train.x - train.target_x) < train_displacement
-                and abs(train.y - train.target_y) < train_displacement
-            ):
-                train.select_next_position_in_route()
+            train.move(delta_time)
 
     def _update_fps_display(self, delta_time):
         self.frame_count += 1

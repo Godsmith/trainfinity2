@@ -85,6 +85,8 @@ class Train:
     current_target_route_index: int = field(init=False)
     iron: int = 0
 
+    TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
+
     def __post_init__(self):
         self.x = self.first_station.x
         self.y = self.first_station.y
@@ -93,12 +95,29 @@ class Train:
         self.current_target_route_index = 1
         self.route = self.route + self.route[-2:0:-1]
 
+    def move(self, delta_time):
+        train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
+
+        if self.x > self.target_x + train_displacement:
+            self.x -= train_displacement
+        elif self.x < self.target_x - train_displacement:
+            self.x += train_displacement
+        if self.y > self.target_y + train_displacement:
+            self.y -= train_displacement
+        elif self.y < self.target_y - train_displacement:
+            self.y += train_displacement
+        if (
+            abs(self.x - self.target_x) < train_displacement
+            and abs(self.y - self.target_y) < train_displacement
+        ):
+            self._select_next_position_in_route()
+
     def _is_at_station(self) -> Station | None:
         for station in (self.first_station, self.second_station):
             if _is_close(self, station):
                 return station
 
-    def select_next_position_in_route(self):
+    def _select_next_position_in_route(self):
         self.current_target_route_index += 1
         self.current_target_route_index %= len(self.route)
         self.target_x = self.route[self.current_target_route_index].x
