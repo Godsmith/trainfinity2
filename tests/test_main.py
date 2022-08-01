@@ -347,6 +347,7 @@ def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
     game.on_update(1 / 60)
 
     assert game.grid.mines[Vec2(30, 30)].iron == 1
+    assert len(game.drawer.iron_shape_element_list) == 2 # One for the interior, one for the frame
 
 
 def test_trains_are_moved_in_on_update(game_with_train):
