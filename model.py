@@ -6,9 +6,9 @@ from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE
 from gui import Gui
+from protocols import IronDrawer
 
 if TYPE_CHECKING:
-    from drawer import Drawer
     from grid import Grid
 
 
@@ -20,17 +20,17 @@ Water = namedtuple("Water", "x y")
 class Mine:
     x: int
     y: int
-    drawer: "Drawer"
+    iron_drawer: IronDrawer
     iron: int = 0
 
     def add_iron(self):
         self.iron += 1
-        self.drawer.add_iron((self.x, self.y))
+        self.iron_drawer.add_iron((self.x, self.y))
 
     def remove_all_iron(self) -> int:
         iron = self.iron
         self.iron = 0
-        self.drawer.remove_all_iron((self.x, self.y))
+        self.iron_drawer.remove_all_iron((self.x, self.y))
         return iron
 
 
@@ -46,6 +46,9 @@ class Station:
     x: int
     y: int
     mine_or_factory: Mine | Factory
+
+
+Building = Mine | Factory | Station
 
 
 @dataclass

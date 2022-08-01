@@ -19,8 +19,7 @@ from constants import (
     RAIL_LINE_WIDTH,
 )
 
-if TYPE_CHECKING:
-    from model import Factory, Mine, Player, Rail, Station, Train, Water
+from model import Factory, Mine, Player, Rail, Station, Train, Water, Building
 
 
 class Drawer:
@@ -39,7 +38,7 @@ class Drawer:
         self.factory_sprite_list = arcade.SpriteList()
 
         # Needed to easily remove sprites and shapes
-        self.station_sprite_from_position = {}
+        self._building_sprite_from_position = {}
         self.rail_shapes_from_position = defaultdict(set)
         self.iron_shapes_from_position = defaultdict(set)
 
@@ -76,30 +75,26 @@ class Drawer:
                 )
             )
 
-    def create_mine(self, mine: "Mine"):
-        sprite = arcade.create_text_sprite(
-            "M", mine.x, mine.y, color=color.WHITE, font_size=24
+    def _create_building_sprite(self, building: Building):
+        if isinstance(building, Factory):
+            character = "F"
+        elif isinstance(building, Mine):
+            character = "M"
+        elif isinstance(building, Station):
+            character = "S"
+        return arcade.create_text_sprite(
+            character, building.x, building.y, color=color.WHITE, font_size=24
         )
-        self.mine_sprite_list.append(sprite)
 
-    def create_factory(self, factory: "Factory"):
-        sprite = arcade.create_text_sprite(
-            "F", factory.x, factory.y, color=color.WHITE, font_size=24
-        )
-        self.factory_sprite_list.append(sprite)
+    def create_building(self, building: Building):
+        sprite = self._create_building_sprite(building)
+        self.sprite_list.append(sprite)
+        self._building_sprite_from_position[(building.x, building.y)] = sprite
 
-    def create_station(self, station: "Station"):
-        sprite = arcade.create_text_sprite(
-            "S", station.x, station.y, color=color.WHITE, font_size=24
-        )
-        self.station_sprite_from_position[(station.x, station.y)] = sprite
-        self.station_sprite_list.append(sprite)
-
-    def remove_station(self, position: tuple[int, int]):
-        """Does nothing if there is no station at position."""
-        if position in self.station_sprite_from_position:
-            self.station_sprite_list.remove(self.station_sprite_from_position[position])
-            del self.station_sprite_from_position[position]
+    def remove_building(self, building: Building):
+        sprite = self._building_sprite_from_position[(building.x, building.y)]
+        del self._building_sprite_from_position[(building.x, building.y)]
+        self.sprite_list.remove(sprite)
 
     def create_terrain(
         self,
@@ -124,10 +119,10 @@ class Drawer:
         )
         self.shape_list.append(shape)
 
-    def create_train(self, train: "Train"):
+    def create_train(self, train: Train):
         self._trains.append(train)
 
-    def create_rail(self, rails: Iterable["Rail"]):
+    def create_rail(self, rails: Iterable[Rail]):
         for rail in rails:
             x1, y1, x2, y2 = [
                 coordinate + GRID_BOX_SIZE / 2
@@ -186,7 +181,7 @@ class Drawer:
         if not self.rails_shape_element_list:
             self.rails_shape_element_list = arcade.ShapeElementList()
 
-    def show_rails_being_built(self, rails: Iterable["Rail"]):
+    def show_rails_being_built(self, rails: Iterable[Rail]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         for rail in rails:
             color = BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR

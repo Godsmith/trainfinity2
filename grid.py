@@ -108,7 +108,7 @@ class Grid:
     def _create_mine(self, x, y):
         mine = Mine(x, y, self.drawer)
         self.mines[Vec2(x, y)] = mine
-        self.drawer.create_mine(mine)
+        self.drawer.create_building(mine)
         return mine
 
     def _create_mine_in_random_unoccupied_location(self):
@@ -121,7 +121,7 @@ class Grid:
     def _create_factory(self, x, y):
         factory = Factory(x, y)
         self.factories[Vec2(x, y)] = factory
-        self.drawer.create_factory(factory)
+        self.drawer.create_building(factory)
         return factory
 
     def _create_factory_in_random_unoccupied_location(self):
@@ -199,10 +199,10 @@ class Grid:
             self.rails_being_built = self._mark_illegal_rail(rails_being_built)
             self.drawer.show_rails_being_built(self.rails_being_built)
         elif mode == Mode.DESTROY:
-            if Vec2(x, y) in self.stations:
-                del self.stations[Vec2(x, y)]
             self.rails = [rail for rail in self.rails if not rail.is_at_position(x, y)]
-            self.drawer.remove_station((x, y))
+            if Vec2(x, y) in self.stations:
+                self.drawer.remove_building(self.stations[Vec2(x, y)])
+                del self.stations[Vec2(x, y)]
             self.drawer.remove_rail((x, y))
 
     def _create_rail(self, rails: Iterable[Rail]):
@@ -244,7 +244,7 @@ class Grid:
         assert mine_or_factory
         station = Station(x, y, mine_or_factory)
         self.stations[Vec2(x, y)] = station
-        self.drawer.create_station(station)
+        self.drawer.create_building(station)
         return station
 
     def _create_stations(self):
