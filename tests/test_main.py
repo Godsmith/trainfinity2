@@ -10,8 +10,7 @@ import time
 
 @pytest.fixture(autouse=True, scope="session")
 def common_game() -> MyGame:
-    game = MyGame(visible=False)
-    return game
+    return MyGame(visible=False)
 
 
 @pytest.fixture

@@ -207,11 +207,7 @@ class MyGame(arcade.Window):
             )
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-        if scroll_y < 0:
-            scale_delta = 0.1
-        else:
-            scale_delta = -0.1
-
+        scale_delta = 0.1 if scroll_y < 0 else -0.1
         new_scale = self.camera.scale + scale_delta
         new_scale = min(new_scale, MAX_CAMERA_SCALE)
         new_scale = max(new_scale, MIN_CAMERA_SCALE)

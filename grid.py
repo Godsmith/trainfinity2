@@ -1,7 +1,7 @@
 import math
 import random
 from collections import defaultdict
-from itertools import pairwise
+from itertools import pairwise, product
 from typing import Iterable, Optional
 from perlin_noise import PerlinNoise
 
@@ -44,7 +44,7 @@ class Grid:
     def __init__(self, drawer: Drawer, terrain: bool) -> None:
         self.drawer = drawer
 
-        self.water = {}
+        self.water: dict[Vec2, Water] = {}
         self.mines: dict[Vec2, Mine] = {}
         self.factories = {}
         self.stations = {}
@@ -85,19 +85,21 @@ class Grid:
         noise2 = PerlinNoise(octaves=6)
         noise3 = PerlinNoise(octaves=12)
         noise4 = PerlinNoise(octaves=24)
-        for x in range(-GRID_WIDTH * 2, GRID_WIDTH * 3 + 1, GRID_BOX_SIZE):
-            for y in range(-GRID_HEIGHT * 2, GRID_HEIGHT * 3 + 1, GRID_BOX_SIZE):
-                noise_val = noise1([x / GRID_WIDTH, y / GRID_WIDTH])
-                noise_val += 0.5 * noise2([x / GRID_WIDTH, y / GRID_WIDTH])
-                noise_val += 0.25 * noise3([x / GRID_WIDTH, y / GRID_WIDTH])
-                # noise_val += 0.125 * noise4([x / GRID_WIDTH, y / GRID_WIDTH])
+        for x, y in product(
+            range(-GRID_WIDTH * 2, GRID_WIDTH * 3 + 1, GRID_BOX_SIZE),
+            range(-GRID_HEIGHT * 2, GRID_HEIGHT * 3 + 1, GRID_BOX_SIZE),
+        ):
+            noise_val = noise1([x / GRID_WIDTH, y / GRID_WIDTH])
+            noise_val += 0.5 * noise2([x / GRID_WIDTH, y / GRID_WIDTH])
+            noise_val += 0.25 * noise3([x / GRID_WIDTH, y / GRID_WIDTH])
+            # noise_val += 0.125 * noise4([x / GRID_WIDTH, y / GRID_WIDTH])
 
-                if noise_val < -0.1:
-                    self.water[Vec2(x, y)] = Water(x, y)
-                elif noise_val < 0:
-                    sand.append(Vec2(x, y))
-                elif noise_val > 0.4:
-                    mountains.append(Vec2(x, y))
+            if noise_val < -0.1:
+                self.water[Vec2(x, y)] = Water(x, y)
+            elif noise_val < 0:
+                sand.append(Vec2(x, y))
+            elif noise_val > 0.4:
+                mountains.append(Vec2(x, y))
 
         self.drawer.create_terrain(
             water=self.water.keys(), sand=sand, mountains=mountains
@@ -234,18 +236,16 @@ class Grid:
     def _create_stations(self):
         rails_from_position = defaultdict(list)
         for rail in self.rails:
-            rails_from_position[(rail.x1, rail.y1)].append(rail)
-            rails_from_position[(rail.x2, rail.y2)].append(rail)
-
+            rails_from_position[rail.x1, rail.y1].append(rail)
+            rails_from_position[rail.x2, rail.y2].append(rail)
         for (x, y), rails in rails_from_position.items():
-            if len(rails) == 2:
-                if all(rail.is_horizontal() for rail in rails) or all(
-                    rail.is_vertical() for rail in rails
-                ):
-                    # Checking for existing stations might not be needed later if
-                    # building rail on top of rail will be prohibited.
-                    if (
-                        self._adjacent_mine_or_factory(Vec2(x, y))
-                        and Vec2(x, y) not in self.stations
-                    ):
-                        self._create_station(x, y)
+            if (
+                len(rails) == 2
+                and (
+                    all(rail.is_horizontal() for rail in rails)
+                    or all(rail.is_vertical() for rail in rails)
+                )
+                and self._adjacent_mine_or_factory(Vec2(x, y))
+                and Vec2(x, y) not in self.stations
+            ):
+                self._create_station(x, y)

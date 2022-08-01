@@ -1,5 +1,6 @@
+import itertools
 from collections import defaultdict
-from typing import Iterable
+from typing import Collection, Iterable, Sequence
 import arcade
 from arcade import color
 from pyglet.math import Vec2
@@ -99,7 +100,7 @@ class Drawer:
             del self.station_sprite_from_position[position]
 
     def create_terrain(
-        self, water: list[Vec2], sand: list[Vec2], mountains: list[Vec2]
+        self, water: Collection[Vec2], sand: Collection[Vec2], mountains: Collection[Vec2]
     ):
         print(f"{len(water)=}, {len(sand)=}, {len(mountains)=}")
         for positions, terrain_color in [
@@ -171,9 +172,8 @@ class Drawer:
         for shape in self.rail_shapes_from_position[position]:
             self.rails_shape_element_list.remove(shape)
             removed_shapes.append(shape)
-        for position in self.rail_shapes_from_position:
-            for shape in removed_shapes:
-                self.rail_shapes_from_position[position].discard(shape)
+        for position, shape in itertools.product(self.rail_shapes_from_position, removed_shapes):
+            self.rail_shapes_from_position[position].discard(shape)
         # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
         # the draw() method crashes, so we have to recreate the list if it becomes empty.
         if not self.rails_shape_element_list:
