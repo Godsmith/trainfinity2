@@ -1,11 +1,16 @@
-import arcade
 from collections import namedtuple
 from dataclasses import dataclass, field, replace
+from typing import TYPE_CHECKING
 
 from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE
 from gui import Gui
+
+if TYPE_CHECKING:
+    from drawer import Drawer
+    from grid import Grid
+
 
 Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")
@@ -46,7 +51,7 @@ class Station:
 @dataclass
 class Player:
     gui: Gui
-    drawer: "Drawer"
+    grid: "Grid"
     _score: int = 0
     _level = 0
 
@@ -68,7 +73,7 @@ class Player:
         self._score = value
         while self._score >= self.LEVELS[self._level + 1]:
             self._level += 1
-            self.drawer.enlarge_grid()
+            self.grid.enlarge_grid()
         self.gui.update_score(value, self._level, self.score_to_grid_increase())
 
 

@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from typing import Collection, Iterable, Sequence
+from typing import Collection, Iterable, TYPE_CHECKING
 import arcade
 from arcade import color
 from pyglet.math import Vec2
@@ -18,7 +18,9 @@ from constants import (
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
 )
-from model import Factory, Mine, Player, Rail, Station, Train, Water
+
+if TYPE_CHECKING:
+    from model import Factory, Mine, Player, Rail, Station, Train, Water
 
 
 class Drawer:
@@ -74,19 +76,19 @@ class Drawer:
                 )
             )
 
-    def create_mine(self, mine: Mine):
+    def create_mine(self, mine: "Mine"):
         sprite = arcade.create_text_sprite(
             "M", mine.x, mine.y, color=color.WHITE, font_size=24
         )
         self.mine_sprite_list.append(sprite)
 
-    def create_factory(self, factory: Factory):
+    def create_factory(self, factory: "Factory"):
         sprite = arcade.create_text_sprite(
             "F", factory.x, factory.y, color=color.WHITE, font_size=24
         )
         self.factory_sprite_list.append(sprite)
 
-    def create_station(self, station: Station):
+    def create_station(self, station: "Station"):
         sprite = arcade.create_text_sprite(
             "S", station.x, station.y, color=color.WHITE, font_size=24
         )
@@ -100,7 +102,10 @@ class Drawer:
             del self.station_sprite_from_position[position]
 
     def create_terrain(
-        self, water: Collection[Vec2], sand: Collection[Vec2], mountains: Collection[Vec2]
+        self,
+        water: Collection[Vec2],
+        sand: Collection[Vec2],
+        mountains: Collection[Vec2],
     ):
         print(f"{len(water)=}, {len(sand)=}, {len(mountains)=}")
         for positions, terrain_color in [
@@ -119,10 +124,10 @@ class Drawer:
         )
         self.shape_list.append(shape)
 
-    def create_train(self, train: Train):
+    def create_train(self, train: "Train"):
         self._trains.append(train)
 
-    def create_rail(self, rails: Iterable[Rail]):
+    def create_rail(self, rails: Iterable["Rail"]):
         for rail in rails:
             x1, y1, x2, y2 = [
                 coordinate + GRID_BOX_SIZE / 2
@@ -172,14 +177,16 @@ class Drawer:
         for shape in self.rail_shapes_from_position[position]:
             self.rails_shape_element_list.remove(shape)
             removed_shapes.append(shape)
-        for position, shape in itertools.product(self.rail_shapes_from_position, removed_shapes):
+        for position, shape in itertools.product(
+            self.rail_shapes_from_position, removed_shapes
+        ):
             self.rail_shapes_from_position[position].discard(shape)
         # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
         # the draw() method crashes, so we have to recreate the list if it becomes empty.
         if not self.rails_shape_element_list:
             self.rails_shape_element_list = arcade.ShapeElementList()
 
-    def show_rails_being_built(self, rails: Iterable[Rail]):
+    def show_rails_being_built(self, rails: Iterable["Rail"]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         for rail in rails:
             color = BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR

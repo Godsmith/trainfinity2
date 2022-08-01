@@ -2,7 +2,7 @@ import math
 import random
 from collections import defaultdict
 from itertools import pairwise, product
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Type
 from perlin_noise import PerlinNoise
 
 from pyglet.math import Vec2
@@ -111,9 +111,12 @@ class Grid:
         self.drawer.create_mine(mine)
         return mine
 
-    def _create_mines(self):
+    def _create_mine_in_random_unoccupied_location(self):
         x, y = self._get_unoccupied_position()
         self._create_mine(x, y)
+
+    def _create_mines(self):
+        self._create_mine_in_random_unoccupied_location()
 
     def _create_factory(self, x, y):
         factory = Factory(x, y)
@@ -121,9 +124,21 @@ class Grid:
         self.drawer.create_factory(factory)
         return factory
 
-    def _create_factories(self):
+    def _create_factory_in_random_unoccupied_location(self):
         x, y = self._get_unoccupied_position()
         self._create_factory(x, y)
+
+    def _create_in_random_unoccupied_location(
+        self, building: Type[Factory] | Type[Mine]
+    ):
+        # TODO: pass the type all the way down to drawer
+        if building == Factory:
+            self._create_factory_in_random_unoccupied_location()
+        elif building == Mine:
+            self._create_mine_in_random_unoccupied_location()
+
+    def _create_factories(self):
+        self._create_factory_in_random_unoccupied_location()
 
     def snap_to(self, x, y) -> tuple[int, int]:
         return self.snap_to_x(x), self.snap_to_y(y)
@@ -161,18 +176,17 @@ class Grid:
                 return route
         return None
 
+    def _rail_is_in_occupied_position(self, rail: Rail):
+        return (
+            Vec2(rail.x1, rail.y1) in self.occupied_positions
+            or Vec2(rail.x2, rail.y2) in self.occupied_positions
+        )
+
     def _mark_illegal_rail(self, rails: Iterable[Rail]) -> list[Rail]:
-        marked_rail = []
-        occupied_positions = self.occupied_positions
-        for rail in rails:
-            if (
-                Vec2(rail.x1, rail.y1) in occupied_positions
-                or Vec2(rail.x2, rail.y2) in occupied_positions
-            ):
-                marked_rail.append(rail.to_illegal())
-            else:
-                marked_rail.append(rail)
-        return marked_rail
+        return [
+            (rail.to_illegal() if self._rail_is_in_occupied_position(rail) else rail)
+            for rail in rails
+        ]
 
     def click_and_drag(self, x, y, start_x, start_y, mode: Mode):
         x = self.snap_to_x(x)
@@ -249,3 +263,8 @@ class Grid:
                 and Vec2(x, y) not in self.stations
             ):
                 self._create_station(x, y)
+
+    def enlarge_grid(self):
+        self.drawer.enlarge_grid()
+        self._create_in_random_unoccupied_location(Factory)
+        self._create_in_random_unoccupied_location(Mine)
