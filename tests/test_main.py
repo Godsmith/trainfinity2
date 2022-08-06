@@ -165,22 +165,38 @@ class TestGrid:
 
         assert len(game.grid.rails) == 0
 
-    def test_building_horizontal_station(self, game: MyGame):
-        mine = Mine(0, 30, game.drawer)
-        game.grid.mines = {Vec2(0, 30): mine}
-        game.on_mouse_press(x=-30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        game.on_mouse_motion(x=30, y=0, dx=30, dy=0)
-        game.on_mouse_release(x=30, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+    def drag_one_tile_outside_grid(self, game: MyGame):
+        game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=-15, y=15, dx=-30, dy=0)
+        game.on_mouse_release(x=-15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 0): Station(0, 0, mine)}
+    def test_cannot_build_rail_outside_grid(self, game: MyGame):
+        self.drag_one_tile_outside_grid(game)
+
+        assert len(game.grid.rails) == 0
+
+    @pytest.mark.xfail(reason="Not yet implemented")
+    def test_can_build_rail_outside_grid_when_grid_has_enlarged(self, game: MyGame):
+        game.grid.enlarge_grid()
+        self.drag_one_tile_outside_grid(game)
+
+        assert len(game.grid.rails) == 1
+
+    def test_building_horizontal_station(self, game: MyGame):
+        mine = game.grid._create_mine(30, 30)
+        game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=75, y=15, dx=60, dy=0)
+        game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+
+        assert game.grid.stations == {Vec2(30, 0): Station(30, 0, mine)}
 
     def test_building_vertical_station(self, game: MyGame):
-        game.grid.factories = {Vec2(30, 0): Factory(30, 0)}
-        game.on_mouse_press(x=0, y=-30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        game.on_mouse_motion(x=0, y=30, dx=0, dy=30)
-        game.on_mouse_release(x=0, y=30, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        factory = game.grid._create_factory(30, 30)
+        game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=15, y=75, dx=0, dy=60)
+        game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 0): Station(0, 0, Factory(30, 0))}
+        assert game.grid.stations == {Vec2(0, 30): Station(0, 30, factory)}
 
 
 @pytest.fixture
@@ -347,7 +363,9 @@ def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
     game.on_update(1 / 60)
 
     assert game.grid.mines[Vec2(30, 30)].iron == 1
-    assert len(game.drawer.iron_shape_element_list) == 2 # One for the interior, one for the frame
+    assert (
+        len(game.drawer.iron_shape_element_list) == 2
+    )  # One for the interior, one for the frame
 
 
 def test_trains_are_moved_in_on_update(game_with_train):

@@ -51,6 +51,11 @@ class Grid:
         self.rails_being_built = []
         self.rails = []
 
+        self.left = 0
+        self.bottom = 0
+        self.right = GRID_WIDTH
+        self.top = GRID_HEIGHT
+
         if terrain:
             self._create_terrain()
         self._create_mines()
@@ -182,11 +187,24 @@ class Grid:
             or Vec2(rail.x2, rail.y2) in self.occupied_positions
         )
 
+    def _rail_is_inside_grid(self, rail: Rail):
+        return all(
+            self._is_inside(x, y) for x, y in ((rail.x1, rail.y1), (rail.x2, rail.y2))
+        )
+
     def _mark_illegal_rail(self, rails: Iterable[Rail]) -> list[Rail]:
         return [
-            (rail.to_illegal() if self._rail_is_in_occupied_position(rail) else rail)
+            (
+                rail.to_illegal()
+                if self._rail_is_in_occupied_position(rail)
+                or not self._rail_is_inside_grid(rail)
+                else rail
+            )
             for rail in rails
         ]
+
+    def _is_inside(self, x, y):
+        return self.left <= x < self.right and self.bottom <= y < self.top
 
     def click_and_drag(self, x, y, start_x, start_y, mode: Mode):
         x = self.snap_to_x(x)

@@ -74,7 +74,7 @@ class MyGame(arcade.Window):
 
         self.drawer = Drawer(GRID_WIDTH, GRID_HEIGHT)
         self.grid = Grid(self.drawer, terrain=terrain)
-        self.player = Player(self.gui, self.drawer)
+        self.player = Player(self.gui, self.grid)
 
         self.trains: list[Train] = []
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
