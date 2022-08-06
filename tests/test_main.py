@@ -175,7 +175,6 @@ class TestGrid:
 
         assert len(game.grid.rails) == 0
 
-    @pytest.mark.xfail(reason="Not yet implemented")
     def test_can_build_rail_outside_grid_when_grid_has_enlarged(self, game: MyGame):
         game.grid.enlarge_grid()
         self.drag_one_tile_outside_grid(game)

@@ -19,15 +19,11 @@ from constants import (
     RAIL_LINE_WIDTH,
 )
 
-from model import Factory, Mine, Player, Rail, Station, Train, Water, Building
+from model import Factory, Mine, Rail, Station, Train, Building
 
 
 class Drawer:
-    def __init__(self, grid_width, grid_height):
-        self._grid_width = grid_width
-        self._grid_height = grid_height
-        self._grid_left = 0
-        self._grid_bottom = 0
+    def __init__(self, left, bottom, right, top):
 
         self._grid_shape_list = arcade.ShapeElementList()
         self.shape_list = arcade.ShapeElementList()
@@ -47,32 +43,30 @@ class Drawer:
         self.iron_shape_element_list = arcade.ShapeElementList()
 
         self._trains = []
-        self._create_grid()
+        self.create_grid(left, bottom, right, top)
 
         self._fps_sprite = arcade.Sprite()
         self._score_sprite = arcade.Sprite()
         self.sprite_list.append(self._fps_sprite)
         self.sprite_list.append(self._score_sprite)
 
-    def _create_grid(self):
+    def create_grid(self, left, bottom, right, top):
         self._grid_shape_list = arcade.ShapeElementList()
-        for x in range(self._grid_left, self._grid_width + 1, GRID_BOX_SIZE):
+        for x in range(left, right + 1, GRID_BOX_SIZE):
             self._grid_shape_list.append(
                 arcade.create_line(
                     x,
-                    self._grid_bottom,
+                    bottom,
                     x,
-                    self._grid_height,
+                    top,
                     GRID_COLOR,
                     GRID_LINE_WIDTH,
                 )
             )
 
-        for y in range(self._grid_bottom, self._grid_height + 1, GRID_BOX_SIZE):
+        for y in range(bottom, top + 1, GRID_BOX_SIZE):
             self._grid_shape_list.append(
-                arcade.create_line(
-                    self._grid_left, y, self._grid_width, y, GRID_COLOR, GRID_LINE_WIDTH
-                )
+                arcade.create_line(left, y, right, y, GRID_COLOR, GRID_LINE_WIDTH)
             )
 
     def _create_building_sprite(self, building: Building):
@@ -233,10 +227,3 @@ class Drawer:
         self.iron_shape_element_list.draw()
 
         self._draw_trains()
-
-    def enlarge_grid(self):
-        self._grid_left -= GRID_BOX_SIZE
-        self._grid_bottom -= GRID_BOX_SIZE
-        self._grid_width += 2 * GRID_BOX_SIZE
-        self._grid_height += 2 * GRID_BOX_SIZE
-        self._create_grid()

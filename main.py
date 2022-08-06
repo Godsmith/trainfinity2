@@ -72,7 +72,7 @@ class MyGame(arcade.Window):
 
         self.gui = Gui()
 
-        self.drawer = Drawer(GRID_WIDTH, GRID_HEIGHT)
+        self.drawer = Drawer(0, 0, GRID_WIDTH, GRID_HEIGHT)
         self.grid = Grid(self.drawer, terrain=terrain)
         self.player = Player(self.gui, self.grid)
 

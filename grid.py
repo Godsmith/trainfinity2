@@ -55,6 +55,7 @@ class Grid:
         self.bottom = 0
         self.right = GRID_WIDTH
         self.top = GRID_HEIGHT
+        self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
 
         if terrain:
             self._create_terrain()
@@ -283,6 +284,10 @@ class Grid:
                 self._create_station(x, y)
 
     def enlarge_grid(self):
-        self.drawer.enlarge_grid()
+        self.left -= GRID_BOX_SIZE
+        self.bottom -= GRID_BOX_SIZE
+        self.right += GRID_BOX_SIZE
+        self.top += GRID_BOX_SIZE
+        self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)
