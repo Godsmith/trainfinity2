@@ -269,6 +269,20 @@ class TestTrain:
 
         assert len(game.drawer.highlight_shape_element_list) == 1
 
+    def test_hovering_over_connected_station_highlights_route(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+        game.gui.disable()
+
+        # Click first station
+        game.on_left_click(30, 0)
+        # Hover over next station
+        game.on_mouse_motion(90, 0, 0, 0)
+
+        assert len(game.drawer.highlight_shape_element_list) == 3
+
     def test_clicking_two_connected_stations_creates_train(
         self, game_with_factory_and_mine: MyGame
     ):
@@ -290,6 +304,20 @@ class TestTrain:
         game.on_left_click(90, 0)
 
         assert len(game.trains) == 1
+
+    def test_clicking_two_connected_stations_removes_highlight(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+
+        # TODO: it would be nice for readability if I could just say station.click() here.
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(90, 0)
+
+        assert len(game.drawer.highlight_shape_element_list) == 0
 
     def test_clicking_two_unconnected_stations_does_not_create_train(
         self, game_with_factory_and_mine: MyGame

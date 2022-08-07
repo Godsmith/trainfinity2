@@ -173,6 +173,7 @@ class MyGame(arcade.Window):
                             self.drawer.create_train(train)
                             self.gui.mode = Mode.SELECT
                             self.train_placement_station_list.clear()
+                            self.drawer.highlight([])
                             # TODO: Select train here
 
     def on_right_click(self, x, y):
@@ -206,6 +207,24 @@ class MyGame(arcade.Window):
             self.grid.click_and_drag(
                 x, y, self.mouse1_pressed_x, self.mouse1_pressed_y, self.gui.mode
             )
+        elif (
+            self.gui.mode == Mode.TRAIN
+            and self.train_placement_mode == TrainPlacementMode.SECOND_STATION
+        ):
+            if station := self.grid.get_station(x, y):
+                if route := self.grid.connect_stations(
+                    self.train_placement_station_list[0], station
+                ):
+                    self.drawer.highlight(route)
+            else:
+                self.drawer.highlight(
+                    [
+                        Vec2(
+                            self.train_placement_station_list[0].x,
+                            self.train_placement_station_list[0].y,
+                        )
+                    ]
+                )
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         scale_delta = 0.1 if scroll_y < 0 else -0.1

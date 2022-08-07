@@ -237,6 +237,7 @@ class Grid:
         self.drawer.show_rails_being_built(self.rails_being_built)
 
     def get_station(self, x, y) -> Optional[Station]:
+        print(x, y)
         x, y = self.snap_to(x, y)
         return self.stations.get(Vec2(x, y))
 
