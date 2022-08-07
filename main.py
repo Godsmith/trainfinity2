@@ -156,6 +156,7 @@ class MyGame(arcade.Window):
                     case TrainPlacementMode.FIRST_STATION:
                         self.train_placement_station_list.append(station)
                         self.train_placement_mode = TrainPlacementMode.SECOND_STATION
+                        self.drawer.highlight([Vec2(station.x, station.y)])
                     case _:  # second station
                         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
                         self.train_placement_station_list.append(station)

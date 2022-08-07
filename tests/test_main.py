@@ -243,9 +243,6 @@ class TestTrain:
     def test_clicking_station_in_train_mode_changes_train_placement_mode(
         self, game_with_factory_and_mine: MyGame
     ):
-        """
-        When clicking a station in TRAIN mode
-        """
         game = game_with_factory_and_mine
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
@@ -257,6 +254,20 @@ class TestTrain:
         game.on_left_click(30, 0)
 
         assert game.train_placement_mode == TrainPlacementMode.SECOND_STATION
+
+    def test_clicking_station_in_train_mode_highlights_station(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+        game.gui.disable()
+
+        assert len(game.drawer.highlight_shape_element_list) == 0
+
+        # Click first station
+        game.on_left_click(30, 0)
+
+        assert len(game.drawer.highlight_shape_element_list) == 1
 
     def test_clicking_two_connected_stations_creates_train(
         self, game_with_factory_and_mine: MyGame

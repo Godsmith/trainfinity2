@@ -8,6 +8,7 @@ GRID_COLOR = color.BLACK
 FINISHED_RAIL_COLOR = [128, 128, 128]  # Gray
 BUILDING_RAIL_COLOR = [128, 128, 128, 128]  # Gray translucent
 BUILDING_ILLEGAL_RAIL_COLOR = [255, 0, 0, 128]  # Red translucent
+HIGHLIGHT_COLOR = [128, 128, 255, 128] # Light blue translucent
 RAIL_LINE_WIDTH = 5
 WATER_TILES = 20
 

@@ -17,6 +17,7 @@ from constants import (
     IRON_SIZE,
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
+    HIGHLIGHT_COLOR,
 )
 
 from model import Factory, Mine, Rail, Station, Train, Building
@@ -41,6 +42,8 @@ class Drawer:
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.rails_shape_element_list = arcade.ShapeElementList()
         self.iron_shape_element_list = arcade.ShapeElementList()
+
+        self.highlight_shape_element_list = arcade.ShapeElementList()
 
         self._trains = []
         self.create_grid(left, bottom, right, top)
@@ -214,6 +217,18 @@ class Drawer:
                     color=color.BLACK,
                 )
 
+    def highlight(self, positions: Iterable[Vec2]):
+        self.highlight_shape_element_list = arcade.ShapeElementList()
+        for position in positions:
+            shape = arcade.create_rectangle_filled(
+                position.x + GRID_BOX_SIZE / 2,
+                position.y + GRID_BOX_SIZE / 2,
+                GRID_BOX_SIZE,
+                GRID_BOX_SIZE,
+                color=HIGHLIGHT_COLOR,
+            )
+            self.highlight_shape_element_list.append(shape)
+
     def draw(self):
         self._grid_shape_list.draw()
         self.shape_list.draw()
@@ -225,5 +240,7 @@ class Drawer:
         self.mine_sprite_list.draw()
         self.factory_sprite_list.draw()
         self.iron_shape_element_list.draw()
+
+        self.highlight_shape_element_list.draw()
 
         self._draw_trains()
