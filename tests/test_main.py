@@ -454,3 +454,25 @@ def test_train_delivers_iron_to_factory_gives_score(game_with_train: MyGame):
 def test_on_resize(game):
     # For code coverage
     game.on_resize(800, 600)
+
+
+class TestSelect:
+    def test_clicking_outside_all_trains_deselects_all_trains(self, game_with_train):
+        game_with_train.gui.disable()
+        game_with_train.gui.mode = Mode.SELECT
+        train = game_with_train.trains[0]
+        train.selected = True
+
+        game_with_train.on_left_click(500, 500)
+
+        assert not train.selected
+
+    def test_clicking_a_train_selects_the_train(self, game_with_train):
+        game_with_train.gui.disable()
+        game_with_train.gui.mode = Mode.SELECT
+        train = game_with_train.trains[0]
+        assert not train.selected
+
+        game_with_train.on_left_click(45, 15)
+
+        assert train.selected

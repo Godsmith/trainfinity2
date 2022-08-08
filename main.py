@@ -145,6 +145,8 @@ class MyGame(arcade.Window):
 
     def on_left_click(self, x, y):
         if self.gui.on_left_click(x, y):
+            for train in self.trains:
+                train.selected = False
             return
         # TODO: if train view is selected again, revert to TrainPlacementMode.FIRST_STATION
         # TODO: Abort by pressing Escape
@@ -174,7 +176,14 @@ class MyGame(arcade.Window):
                             self.gui.mode = Mode.SELECT
                             self.train_placement_station_list.clear()
                             self.drawer.highlight([])
-                            # TODO: Select train here
+                            train.selected = True
+        elif self.gui.mode == Mode.SELECT:
+            for train in self.trains:
+                if train.is_at(x, y):
+                    train.selected = True
+                    return
+                else:
+                    train.selected = False
 
     def on_right_click(self, x, y):
         pass

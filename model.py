@@ -104,6 +104,7 @@ class Train:
     target_y: int = field(init=False)
     current_target_route_index: int = field(init=False)
     iron: int = 0
+    selected = False
 
     TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
 
@@ -131,6 +132,9 @@ class Train:
             and abs(self.y - self.target_y) < train_displacement
         ):
             self._select_next_position_in_route()
+
+    def is_at(self, x, y):
+        return self.x < x < self.x + GRID_BOX_SIZE and self.y < y < self.y + GRID_BOX_SIZE
 
     def _is_at_station(self) -> Station | None:
         for station in (self.first_station, self.second_station):

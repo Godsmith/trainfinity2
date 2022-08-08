@@ -216,6 +216,18 @@ class Drawer:
                     IRON_SIZE,
                     color=color.BLACK,
                 )
+            if train.selected:
+                arcade.draw_circle_outline(
+                    x, y, GRID_BOX_SIZE / 2, color=color.BLUE, border_width=5
+                )
+                for position in set(train.route):
+                    arcade.draw_rectangle_filled(
+                        position.x + GRID_BOX_SIZE / 2,
+                        position.y + GRID_BOX_SIZE / 2,
+                        GRID_BOX_SIZE,
+                        GRID_BOX_SIZE,
+                        color=HIGHLIGHT_COLOR,
+                    )
 
     def highlight(self, positions: Iterable[Vec2]):
         self.highlight_shape_element_list = arcade.ShapeElementList()
