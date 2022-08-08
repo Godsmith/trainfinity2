@@ -51,6 +51,22 @@ class Station:
 Building = Mine | Factory | Station
 
 
+def get_level_scores() -> list[int]:
+    """
+    The number of points required to reach a certain level.
+    - Level 0: 0 points
+    - Level 1: 10 points
+    - Level 2: 30 points
+    - ...
+    """
+    score_increase = 10
+    scores = [0]
+    for _ in range(1000):
+        scores.append(scores[-1] + score_increase)
+        score_increase += 10
+    return scores
+
+
 @dataclass
 class Player:
     gui: Gui
@@ -58,11 +74,7 @@ class Player:
     _score: int = 0
     _level = 0
 
-    # The number of points required to reach a certain level.
-    # Level 0: 0 points
-    # Level 1: 10 points
-    # ...
-    LEVELS = list(range(0, 10000, 10))
+    LEVELS = get_level_scores()
 
     def score_to_grid_increase(self):
         return self.LEVELS[self._level + 1] - self._score
