@@ -49,7 +49,7 @@ class Grid:
         self.factories = {}
         self.stations = {}
         self.rails_being_built = []
-        self.rails = []
+        self.rails: list[Rail] = []
 
         self.left = 0
         self.bottom = 0
@@ -155,29 +155,31 @@ class Grid:
     def snap_to_y(self, y) -> int:
         return math.floor(y / GRID_BOX_SIZE) * GRID_BOX_SIZE
 
-    def connect_stations(self, station1: Station, station2: Station):
+    def connect_stations(
+        self, station1: Station, station2: Station
+    ) -> list[Rail] | None:
         self.rails_from_vec2 = defaultdict(list)
         for rail in self.rails:
             self.rails_from_vec2[Vec2(rail.x1, rail.y1)].append(rail)
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
-        return self._explore([Vec2(station1.x, station1.y)], station2)
+        return self._explore([], Vec2(station1.x, station1.y), station2)
+
+    def _rails_at_position(self, x, y):
+        return {rail for rail in self.rails if rail.is_at_position(x, y)}
 
     def _explore(
-        self, previous_locations: list[Vec2], target_station: Station
-    ) -> Optional[list[Vec2]]:
-        if (
-            previous_locations[-1].x == target_station.x
-            and previous_locations[-1].y == target_station.y
-        ):
-            return previous_locations
-        next_locations = set()
-        for rail in self.rails_from_vec2[previous_locations[-1]]:
-            next_locations.add(Vec2(rail.x1, rail.y1))
-            next_locations.add(Vec2(rail.x2, rail.y2))
-        next_locations -= set(previous_locations)
-        for next_location in next_locations:
+        self,
+        previous_rails: list[Rail],
+        current_position: Vec2,
+        target_station: Station,
+    ) -> Optional[list[Rail]]:
+        if previous_rails and previous_rails[-1].is_at_station(target_station):
+            return previous_rails
+        next_rails = self._rails_at_position(*current_position) - set(previous_rails)
+        for rail in next_rails:
+            other_end = rail.other_end(*current_position)
             if route := self._explore(
-                previous_locations + [next_location], target_station
+                previous_rails + [rail], other_end, target_station
             ):
                 return route
         return None

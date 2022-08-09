@@ -1,6 +1,7 @@
 from collections import namedtuple
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING
+from itertools import pairwise
+from typing import TYPE_CHECKING, Iterable
 
 from pyglet.math import Vec2
 
@@ -92,70 +93,6 @@ class Player:
         self.gui.update_score(value, self._level, self.score_to_grid_increase())
 
 
-@dataclass
-class Train:
-    player: Player
-    first_station: Station
-    second_station: Station
-    route: list[Vec2]
-    x: float = field(init=False)
-    y: float = field(init=False)
-    target_x: int = field(init=False)
-    target_y: int = field(init=False)
-    current_target_route_index: int = field(init=False)
-    iron: int = 0
-    selected = False
-
-    TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
-
-    def __post_init__(self):
-        self.x = self.first_station.x
-        self.y = self.first_station.y
-        self.target_x = self.route[1].x
-        self.target_y = self.route[1].y
-        self.current_target_route_index = 1
-        self.route = self.route + self.route[-2:0:-1]
-
-    def move(self, delta_time):
-        train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
-
-        if self.x > self.target_x + train_displacement:
-            self.x -= train_displacement
-        elif self.x < self.target_x - train_displacement:
-            self.x += train_displacement
-        if self.y > self.target_y + train_displacement:
-            self.y -= train_displacement
-        elif self.y < self.target_y - train_displacement:
-            self.y += train_displacement
-        if (
-            abs(self.x - self.target_x) < train_displacement
-            and abs(self.y - self.target_y) < train_displacement
-        ):
-            self._select_next_position_in_route()
-
-    def is_at(self, x, y):
-        return self.x < x < self.x + GRID_BOX_SIZE and self.y < y < self.y + GRID_BOX_SIZE
-
-    def _is_at_station(self) -> Station | None:
-        for station in (self.first_station, self.second_station):
-            if _is_close(self, station):
-                return station
-
-    def _select_next_position_in_route(self):
-        self.current_target_route_index += 1
-        self.current_target_route_index %= len(self.route)
-        self.target_x = self.route[self.current_target_route_index].x
-        self.target_y = self.route[self.current_target_route_index].y
-
-        if station := self._is_at_station():
-            if isinstance(station.mine_or_factory, Mine):
-                self.iron += station.mine_or_factory.remove_all_iron()
-            else:
-                # Factory
-                self.player.score += self.iron
-                self.iron = 0
-
-
 @dataclass(frozen=True)
 class Rail:
     x1: int
@@ -175,3 +112,90 @@ class Rail:
 
     def is_at_position(self, x, y):
         return (self.x1 == x and self.y1 == y) or (self.x2 == x and self.y2 == y)
+
+    def is_at_station(self, station: Station):
+        return self.is_at_position(station.x, station.y)
+
+    def other_end(self, x, y) -> Vec2:
+        if self.x1 == x and self.y1 == y:
+            return Vec2(self.x2, self.y2)
+        if self.x2 == x and self.y2 == y:
+            return Vec2(self.x1, self.y1)
+        raise ValueError("The provided coordinates was not at either end of the rail.")
+
+    @property
+    def positions(self) -> set[Vec2]:
+        return {Vec2(self.x1, self.y1), Vec2(self.x2, self.y2)}
+
+
+@dataclass
+class Train:
+    player: Player
+    first_station: Station
+    second_station: Station
+    rails: list[Rail]
+    x: float = field(init=False)
+    y: float = field(init=False)
+    target_x: int = field(init=False)
+    target_y: int = field(init=False)
+    current_target_route_index: int = field(init=False)
+    iron: int = 0
+    selected = False
+
+    TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
+
+    def __post_init__(self):
+        self.x = self.first_station.x
+        self.y = self.first_station.y
+        self.current_target_route_index = 1
+        route = list(self._route_from_rails())
+        self.target_x = route[1].x
+        self.target_y = route[1].y
+        self._route = route + route[-2:0:-1]
+
+    def _route_from_rails(self) -> Iterable[Vec2]:
+        for rail1, rail2 in pairwise(self.rails):
+            yield (rail1.positions - rail2.positions).pop()
+        yield self.rails[-1].positions.intersection(self.rails[-2].positions).pop()
+        yield (self.rails[-1].positions - self.rails[-2].positions).pop()
+
+    def move(self, delta_time):
+        train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
+
+        if self.x > self.target_x + train_displacement:
+            self.x -= train_displacement
+        elif self.x < self.target_x - train_displacement:
+            self.x += train_displacement
+        if self.y > self.target_y + train_displacement:
+            self.y -= train_displacement
+        elif self.y < self.target_y - train_displacement:
+            self.y += train_displacement
+        if (
+            abs(self.x - self.target_x) < train_displacement
+            and abs(self.y - self.target_y) < train_displacement
+        ):
+            self._select_next_position_in_route()
+
+    def is_at(self, x, y):
+        return (
+            self.x < x < self.x + GRID_BOX_SIZE and self.y < y < self.y + GRID_BOX_SIZE
+        )
+
+    def _is_at_station(self) -> Station | None:
+        for station in (self.first_station, self.second_station):
+            if _is_close(self, station):
+                return station
+
+    def _select_next_position_in_route(self):
+        self.current_target_route_index += 1
+        self.current_target_route_index %= len(self._route)
+        self.target_x = self._route[self.current_target_route_index].x
+        self.target_y = self._route[self.current_target_route_index].y
+
+        if station := self._is_at_station():
+            if isinstance(station.mine_or_factory, Mine):
+                self.iron += station.mine_or_factory.remove_all_iron()
+            else:
+                # Factory
+                self.player.score += self.iron
+                self.iron = 0

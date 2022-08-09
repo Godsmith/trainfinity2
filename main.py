@@ -162,14 +162,14 @@ class MyGame(arcade.Window):
                     case _:  # second station
                         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
                         self.train_placement_station_list.append(station)
-                        if route := self.grid.connect_stations(
+                        if rails := self.grid.connect_stations(
                             *self.train_placement_station_list
                         ):
                             train = Train(
                                 self.player,
                                 self.train_placement_station_list[0],
                                 self.train_placement_station_list[1],
-                                route,
+                                rails,
                             )
                             self.trains.append(train)
                             self.drawer.create_train(train)
@@ -221,10 +221,13 @@ class MyGame(arcade.Window):
             and self.train_placement_mode == TrainPlacementMode.SECOND_STATION
         ):
             if station := self.grid.get_station(x, y):
-                if route := self.grid.connect_stations(
+                if rails := self.grid.connect_stations(
                     self.train_placement_station_list[0], station
                 ):
-                    self.drawer.highlight(route)
+                    positions = {
+                        position for rail in rails for position in rail.positions
+                    }
+                    self.drawer.highlight(positions)
             else:
                 self.drawer.highlight(
                     [

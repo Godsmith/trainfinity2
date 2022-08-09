@@ -38,14 +38,7 @@ def game_with_train(game: MyGame) -> MyGame:
     game.grid._create_factory(90, 30)
     station1 = game.grid._create_station(30, 0)
     station2 = game.grid._create_station(90, 0)
-    game.trains = [
-        Train(
-            game.player,
-            station1,
-            station2,
-            [Vec2(30, 0), Vec2(60, 0), Vec2(90, 0), Vec2(60, 0)],
-        )
-    ]
+    game.trains = [Train(game.player, station1, station2, game.grid.rails)]
     return game
 
 

@@ -220,7 +220,10 @@ class Drawer:
                 arcade.draw_circle_outline(
                     x, y, GRID_BOX_SIZE / 2, color=HIGHLIGHT_COLOR, border_width=5
                 )
-                for position in set(train.route):
+                positions = {
+                    position for rail in train.rails for position in rail.positions
+                }
+                for position in positions:
                     arcade.draw_rectangle_filled(
                         position.x + GRID_BOX_SIZE / 2,
                         position.y + GRID_BOX_SIZE / 2,
