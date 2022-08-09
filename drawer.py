@@ -218,7 +218,7 @@ class Drawer:
                 )
             if train.selected:
                 arcade.draw_circle_outline(
-                    x, y, GRID_BOX_SIZE / 2, color=color.BLUE, border_width=5
+                    x, y, GRID_BOX_SIZE / 2, color=HIGHLIGHT_COLOR, border_width=5
                 )
                 for position in set(train.route):
                     arcade.draw_rectangle_filled(
