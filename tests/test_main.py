@@ -265,9 +265,8 @@ class TestTrain:
 
         assert len(game.drawer.highlight_shape_element_list) == 1
 
-    def test_hovering_over_connected_station_highlights_route(
-        self, game_with_factory_and_mine: MyGame
-    ):
+    @pytest.fixture
+    def hover_over_connected_station(self, game_with_factory_and_mine: MyGame):
         game = game_with_factory_and_mine
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
@@ -276,8 +275,22 @@ class TestTrain:
         game.on_left_click(30, 0)
         # Hover over next station
         game.on_mouse_motion(90, 0, 0, 0)
+        return game
 
+    def test_hovering_over_connected_station_highlights_route(
+        self, hover_over_connected_station: MyGame
+    ):
+        game = hover_over_connected_station
         assert len(game.drawer.highlight_shape_element_list) == 3
+
+    def test_stopping_hovering_over_connected_station_only_highlights_station_again(
+        self, hover_over_connected_station: MyGame
+    ):
+        game = hover_over_connected_station
+        # Hover outside station
+        game.on_mouse_motion(500, 500, 0, 0)
+
+        assert len(game.drawer.highlight_shape_element_list) == 1
 
     def test_clicking_two_connected_stations_creates_train(
         self, game_with_factory_and_mine: MyGame
