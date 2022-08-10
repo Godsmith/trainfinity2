@@ -220,11 +220,19 @@ class Grid:
             self.rails_being_built = self._mark_illegal_rail(rails_being_built)
             self.drawer.show_rails_being_built(self.rails_being_built)
         elif mode == Mode.DESTROY:
-            self.rails = [rail for rail in self.rails if not rail.is_at_position(x, y)]
+            new_rails = []
+            for rail in self.rails:
+                if rail.is_at_position(x, y):
+                    rail.destroy()
+                else:
+                    new_rails.append(rail)
+            self.rails = new_rails
+
+            self.drawer.remove_rail((x, y))
+
             if Vec2(x, y) in self.stations:
                 self.drawer.remove_building(self.stations[Vec2(x, y)])
                 del self.stations[Vec2(x, y)]
-            self.drawer.remove_rail((x, y))
 
     def _create_rail(self, rails: Iterable[Rail]):
         self.rails.extend(rails)

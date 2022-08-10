@@ -11,9 +11,7 @@ from constants import (
     FINISHED_RAIL_COLOR,
     GRID_BOX_SIZE,
     GRID_COLOR,
-    GRID_HEIGHT,
     GRID_LINE_WIDTH,
-    GRID_WIDTH,
     IRON_SIZE,
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
@@ -21,6 +19,7 @@ from constants import (
 )
 
 from model import Factory, Mine, Rail, Station, Train, Building
+from destroy_notifier import DestroyNotifier, Destroyable
 
 
 class Drawer:
@@ -118,6 +117,11 @@ class Drawer:
 
     def create_train(self, train: Train):
         self._trains.append(train)
+        DestroyNotifier.register_observer(self, train)
+
+    def destroyable_is_destroyed(self, destroyable: Destroyable):
+        if isinstance(destroyable, Train):
+            self._trains.remove(destroyable)
 
     def create_rail(self, rails: Iterable[Rail]):
         for rail in rails:

@@ -1,5 +1,6 @@
 from calendar import c
 from enum import Enum
+from typing import Iterable
 
 import arcade
 from arcade import color
@@ -11,9 +12,10 @@ from constants import (
     GRID_WIDTH,
     SECONDS_BETWEEN_IRON_CREATION,
 )
+from destroy_notifier import DestroyNotifier, Destroyable
 from drawer import Drawer
 from gui import Gui, Mode
-from model import Player, Train
+from model import Player, Rail, Station, Train
 from grid import Grid
 from camera import Camera
 
@@ -165,18 +167,11 @@ class MyGame(arcade.Window):
                         if rails := self.grid.connect_stations(
                             *self.train_placement_station_list
                         ):
-                            train = Train(
-                                self.player,
+                            self._create_train(
+                                rails,
                                 self.train_placement_station_list[0],
                                 self.train_placement_station_list[1],
-                                rails,
                             )
-                            self.trains.append(train)
-                            self.drawer.create_train(train)
-                            self.gui.mode = Mode.SELECT
-                            self.train_placement_station_list.clear()
-                            self.drawer.highlight([])
-                            train.selected = True
         elif self.gui.mode == Mode.SELECT:
             for train in self.trains:
                 if train.is_at(x, y):
@@ -184,6 +179,25 @@ class MyGame(arcade.Window):
                     return
                 else:
                     train.selected = False
+
+    def _create_train(self, rails: list[Rail], station1: Station, station2: Station):
+        train = Train(
+            self.player,
+            station1,
+            station2,
+            rails,
+        )
+        self.trains.append(train)
+        DestroyNotifier.register_observer(self, train)
+        self.drawer.create_train(train)
+        self.gui.mode = Mode.SELECT
+        self.train_placement_station_list.clear()
+        self.drawer.highlight([])
+        train.selected = True
+
+    def destroyable_is_destroyed(self, destroyable: Destroyable):
+        if isinstance(destroyable, Train):
+            self.trains.remove(destroyable)
 
     def on_right_click(self, x, y):
         pass

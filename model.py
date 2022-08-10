@@ -8,6 +8,7 @@ from pyglet.math import Vec2
 from constants import GRID_BOX_SIZE
 from gui import Gui
 from protocols import IronDrawer
+from destroy_notifier import DestroyNotifier, Destroyable
 
 if TYPE_CHECKING:
     from grid import Grid
@@ -127,6 +128,9 @@ class Rail:
     def positions(self) -> set[Vec2]:
         return {Vec2(self.x1, self.y1), Vec2(self.x2, self.y2)}
 
+    def destroy(self):
+        DestroyNotifier.destroyable_is_destroyed(self)
+
 
 @dataclass
 class Train:
@@ -152,6 +156,8 @@ class Train:
         self.target_x = route[1].x
         self.target_y = route[1].y
         self._route = route + route[-2:0:-1]
+        for rail in self.rails:
+            DestroyNotifier.register_observer(self, rail)
 
     def _route_from_rails(self) -> Iterable[Vec2]:
         for rail1, rail2 in pairwise(self.rails):
@@ -199,3 +205,10 @@ class Train:
                 # Factory
                 self.player.score += self.iron
                 self.iron = 0
+
+    def destroyable_is_destroyed(self, destroyable: Destroyable):
+        # Has to be rail since it is not observing anything else
+        self.destroy()
+
+    def destroy(self):
+        DestroyNotifier.destroyable_is_destroyed(self)
