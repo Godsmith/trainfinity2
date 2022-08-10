@@ -1,4 +1,5 @@
 from calendar import c
+from collections import deque
 from enum import Enum
 from typing import Iterable
 
@@ -61,7 +62,9 @@ class MyGame(arcade.Window):
         self.mouse2_pressed_y = 0
 
         self.frame_count = 0
-        self.seconds_since_last_frame_count_display = 0.0
+        self.score_last_second = 0
+        self.score_increase_per_second_last_minute = deque(maxlen=60)
+        self.seconds_since_last_gui_figures_update = 0.0
 
     def setup(self, terrain: Terrain):
         """Initialize variables. Run before each test to avoid having to
@@ -92,18 +95,27 @@ class MyGame(arcade.Window):
                 mine.add_iron()
             self.iron_counter = 0
 
-        self._update_fps_display(delta_time)
+        self._update_gui_figures(delta_time)
 
         for train in self.trains:
             train.move(delta_time)
 
-    def _update_fps_display(self, delta_time):
+    def _update_gui_figures(self, delta_time):
         self.frame_count += 1
-        self.seconds_since_last_frame_count_display += delta_time
-        if self.seconds_since_last_frame_count_display > 1:
+        self.seconds_since_last_gui_figures_update += delta_time
+        if self.seconds_since_last_gui_figures_update > 1:
             self.gui.update_fps_number(self.frame_count)
             self.frame_count = 0
-            self.seconds_since_last_frame_count_display = 0
+
+            self.score_increase_per_second_last_minute.append(
+                self.player.score - self.score_last_second
+            )
+            self.score_last_second = self.player.score
+            self.gui.update_score_per_minute(
+                sum(self.score_increase_per_second_last_minute)
+            )
+
+            self.seconds_since_last_gui_figures_update -= 1
 
     def on_draw(self):
         self.clear()

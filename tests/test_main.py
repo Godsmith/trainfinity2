@@ -436,7 +436,7 @@ def test_trains_are_moved_in_on_update(game_with_train):
 
 def test_fps_is_updated_every_second(game: MyGame):
     # For code coverage
-    game.seconds_since_last_frame_count_display = 0.99
+    game.seconds_since_last_gui_figures_update = 0.99
 
     game.on_update(1 / 60)
 
