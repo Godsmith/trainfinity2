@@ -25,11 +25,11 @@ class Mine:
         self.iron += 1
         self.iron_drawer.add_iron((self.x, self.y))
 
-    def remove_all_iron(self) -> int:
-        iron = self.iron
-        self.iron = 0
-        self.iron_drawer.remove_all_iron((self.x, self.y))
-        return iron
+    def remove_iron(self, amount) -> int:
+        amount_taken = amount if amount <= self.iron else self.iron
+        self.iron -= amount_taken
+        self.iron_drawer.remove_iron((self.x, self.y), amount_taken)
+        return amount_taken
 
 
 def _is_close(pos1, pos2):
@@ -196,7 +196,7 @@ class Train:
 
         if station := self._is_at_station():
             if isinstance(station.mine_or_factory, Mine):
-                self.iron += station.mine_or_factory.remove_all_iron()
+                self.iron += station.mine_or_factory.remove_iron(1)
             else:
                 # Factory
                 self.player.score += self.iron

@@ -36,7 +36,7 @@ class Drawer:
         # Needed to easily remove sprites and shapes
         self._building_sprite_from_position = {}
         self.rail_shapes_from_position = defaultdict(set)
-        self.iron_shapes_from_position = defaultdict(set)
+        self.iron_shapes_from_position = defaultdict(list)
 
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.rails_shape_element_list = arcade.ShapeElementList()
@@ -153,15 +153,17 @@ class Drawer:
             IRON_SIZE,
             color=color.BLACK,
         )
-        self.iron_shapes_from_position[position].add(filled_rectangle)
-        self.iron_shapes_from_position[position].add(rectangle_outline)
+        self.iron_shapes_from_position[position].append(filled_rectangle)
+        self.iron_shapes_from_position[position].append(rectangle_outline)
         self.iron_shape_element_list.append(filled_rectangle)
         self.iron_shape_element_list.append(rectangle_outline)
 
-    def remove_all_iron(self, position: tuple[int, int]):
-        for shape in self.iron_shapes_from_position[position]:
-            self.iron_shape_element_list.remove(shape)
-        self.iron_shapes_from_position[position].clear()
+    def remove_iron(self, position: tuple[int, int], amount_taken: int):
+        for _ in range(amount_taken):
+            filled_rectangle = self.iron_shapes_from_position[position].pop()
+            rectangle_outline = self.iron_shapes_from_position[position].pop()
+            self.iron_shape_element_list.remove(filled_rectangle)
+            self.iron_shape_element_list.remove(rectangle_outline)
         # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
         # the draw() method crashes, so we have to recreate the list if it becomes empty.
         if not self.iron_shape_element_list:

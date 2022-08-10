@@ -451,6 +451,8 @@ def test_train_picks_up_iron_from_mine(game_with_train: MyGame):
     mine.add_iron()
     train.x = 30
     train.target_x = 30
+    assert mine.iron == 1
+    assert train.iron == 0
 
     game_with_train.on_update(1 / 60)
 
