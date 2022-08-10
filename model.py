@@ -7,12 +7,8 @@ from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE
 from gui import Gui
-from protocols import IronDrawer
+from protocols import GridEnlarger, IronDrawer
 from destroy_notifier import DestroyNotifier, Destroyable
-
-if TYPE_CHECKING:
-    from grid import Grid
-
 
 Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")
@@ -72,7 +68,7 @@ def get_level_scores() -> list[int]:
 @dataclass
 class Player:
     gui: Gui
-    grid: "Grid"
+    grid_enlarger: GridEnlarger
     _score: int = 0
     _level = 0
 
@@ -90,7 +86,7 @@ class Player:
         self._score = value
         while self._score >= self.LEVELS[self._level + 1]:
             self._level += 1
-            self.grid.enlarge_grid()
+            self.grid_enlarger.enlarge_grid()
         self.gui.update_score(value, self._level, self.score_to_grid_increase())
 
 
