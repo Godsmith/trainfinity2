@@ -1,6 +1,7 @@
 from calendar import c
 from collections import deque
 from enum import Enum
+from itertools import combinations
 from typing import Iterable
 
 import arcade
@@ -99,6 +100,11 @@ class MyGame(arcade.Window):
 
         for train in self.trains:
             train.move(delta_time)
+
+        for train1, train2 in combinations(self.trains, 2):
+            if train1.is_colliding_with(train2):
+                train1.destroy()
+                train2.destroy()
 
     def _update_gui_figures(self, delta_time):
         self.frame_count += 1

@@ -362,7 +362,8 @@ class TestTrain:
         assert len(game.trains) == 0
         assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
 
-    def test_create_two_trains(self, game_with_factory_and_mine: MyGame):
+    @pytest.fixture
+    def two_trains(self, game_with_factory_and_mine):
         """
         The grid is lain out as follows:
 
@@ -385,7 +386,14 @@ class TestTrain:
         # Click next station
         game.on_left_click(90, 0)
 
-        assert len(game.trains) == 2
+        return game
+
+    def test_create_two_trains(self, two_trains: MyGame):
+        assert len(two_trains.trains) == 2
+
+    def test_two_trains_colliding_are_destroyed(self, two_trains: MyGame):
+        two_trains.on_update(1 / 60)
+        assert len(two_trains.trains) == 0
 
 
 def test_clicking_position_in_destroy_mode_destroys_station_and_rail(

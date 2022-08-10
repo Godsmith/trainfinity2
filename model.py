@@ -211,3 +211,9 @@ class Train:
 
     def destroy(self):
         DestroyNotifier.destroyable_is_destroyed(self)
+
+    def is_colliding_with(self, train):
+        return (
+            abs(self.x - train.x) < GRID_BOX_SIZE / 2
+            and abs(self.y - train.y) < GRID_BOX_SIZE / 2
+        )
