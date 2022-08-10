@@ -7,6 +7,8 @@ from pyglet.math import Vec2
 from pytest import approx
 import time
 
+from terrain import Terrain
+
 
 @pytest.fixture(autouse=True, scope="session")
 def common_game() -> MyGame:
@@ -15,8 +17,8 @@ def common_game() -> MyGame:
 
 @pytest.fixture
 def game(common_game: MyGame) -> MyGame:
-    common_game.setup(terrain=False)
-    common_game.grid.water = {}
+    # Add a single water tile for code coverage
+    common_game.setup(terrain=Terrain(water=[Vec2(210, 210)]))
     common_game.grid.mines = {}
     common_game.grid.factories = {}
     return common_game
@@ -44,6 +46,7 @@ def game_with_train(game: MyGame) -> MyGame:
 
 def test_draw(game_with_train: MyGame):
     # Mainly for code coverage
+    game_with_train.trains[0].iron = 1
     game_with_train.on_draw()
 
 
@@ -464,13 +467,23 @@ def test_on_resize(game):
 
 
 class TestSelect:
-    def test_clicking_outside_all_trains_deselects_all_trains(self, game_with_train):
+    def test_clicking_outside_all_trains_in_select_mode_deselects_all_trains(
+        self, game_with_train
+    ):
         game_with_train.gui.disable()
         game_with_train.gui.mode = Mode.SELECT
         train = game_with_train.trains[0]
         train.selected = True
 
         game_with_train.on_left_click(500, 500)
+
+        assert not train.selected
+
+    def test_clicking_gui_deselects_all_trains(self, game_with_train):
+        train = game_with_train.trains[0]
+        train.selected = True
+
+        game_with_train.on_left_click(15, 15)
 
         assert not train.selected
 

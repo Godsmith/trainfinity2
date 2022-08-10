@@ -18,6 +18,7 @@ from gui import Gui, Mode
 from model import Player, Rail, Station, Train
 from grid import Grid
 from camera import Camera
+from terrain import Terrain
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -62,7 +63,7 @@ class MyGame(arcade.Window):
         self.frame_count = 0
         self.seconds_since_last_frame_count_display = 0.0
 
-    def setup(self, terrain=True):
+    def setup(self, terrain: Terrain):
         """Initialize variables. Run before each test to avoid having to
         recreate the entire window for each test case."""
 
@@ -75,7 +76,7 @@ class MyGame(arcade.Window):
         self.gui = Gui()
 
         self.drawer = Drawer(0, 0, GRID_WIDTH, GRID_HEIGHT)
-        self.grid = Grid(self.drawer, terrain=terrain)
+        self.grid = Grid(self.drawer, terrain)
         self.player = Player(self.gui, self.grid)
 
         self.trains: list[Train] = []
@@ -270,5 +271,5 @@ class MyGame(arcade.Window):
 
 if __name__ == "__main__":
     window = MyGame()
-    window.setup()
+    window.setup(Terrain())
     arcade.run()

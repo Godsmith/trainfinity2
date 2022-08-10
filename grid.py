@@ -3,7 +3,6 @@ import random
 from collections import defaultdict
 from itertools import pairwise, product
 from typing import Iterable, Optional, Type
-from perlin_noise import PerlinNoise
 
 from pyglet.math import Vec2
 
@@ -11,6 +10,7 @@ from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
 from drawer import Drawer
 from model import Factory, Mine, Rail, Station, Water
 from gui import Mode
+from terrain import Terrain
 
 
 def positions_between(start: Vec2, end: Vec2):
@@ -41,7 +41,7 @@ def get_random_position() -> Vec2:
 
 
 class Grid:
-    def __init__(self, drawer: Drawer, terrain: bool) -> None:
+    def __init__(self, drawer: Drawer, terrain: Terrain) -> None:
         self.drawer = drawer
 
         self.water: dict[Vec2, Water] = {}
@@ -57,10 +57,16 @@ class Grid:
         self.top = GRID_HEIGHT
         self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
 
-        if terrain:
-            self._create_terrain()
+        self._create_terrain(terrain)
         self._create_mines()
         self._create_factories()
+
+    def _create_terrain(self, terrain: Terrain):
+        for position in terrain.water:
+            self.water[position] = Water(*position)
+        self.drawer.create_terrain(
+            water=terrain.water, sand=terrain.sand, mountains=terrain.mountains
+        )
 
     @property
     def occupied_positions(self) -> set[Vec2]:
@@ -82,34 +88,6 @@ class Grid:
 
     def _get_unoccupied_position(self) -> Vec2:
         return self._get_unoccupied_positions(1).pop()
-
-    def _create_terrain(self):
-        print("create_terrain in grid")
-        sand = []
-        mountains = []
-        noise1 = PerlinNoise(octaves=3)
-        noise2 = PerlinNoise(octaves=6)
-        noise3 = PerlinNoise(octaves=12)
-        noise4 = PerlinNoise(octaves=24)
-        for x, y in product(
-            range(-GRID_WIDTH * 2, GRID_WIDTH * 3 + 1, GRID_BOX_SIZE),
-            range(-GRID_HEIGHT * 2, GRID_HEIGHT * 3 + 1, GRID_BOX_SIZE),
-        ):
-            noise_val = noise1([x / GRID_WIDTH, y / GRID_WIDTH])
-            noise_val += 0.5 * noise2([x / GRID_WIDTH, y / GRID_WIDTH])
-            noise_val += 0.25 * noise3([x / GRID_WIDTH, y / GRID_WIDTH])
-            # noise_val += 0.125 * noise4([x / GRID_WIDTH, y / GRID_WIDTH])
-
-            if noise_val < -0.1:
-                self.water[Vec2(x, y)] = Water(x, y)
-            elif noise_val < 0:
-                sand.append(Vec2(x, y))
-            elif noise_val > 0.4:
-                mountains.append(Vec2(x, y))
-
-        self.drawer.create_terrain(
-            water=self.water.keys(), sand=sand, mountains=mountains
-        )
 
     def _create_mine(self, x, y):
         mine = Mine(x, y, self.drawer)
