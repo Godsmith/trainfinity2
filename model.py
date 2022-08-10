@@ -13,6 +13,8 @@ from destroy_notifier import DestroyNotifier, Destroyable
 Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")
 
+MAX_IRON_AT_MINE = 8
+
 
 @dataclass
 class Mine:
@@ -22,8 +24,9 @@ class Mine:
     iron: int = 0
 
     def add_iron(self):
-        self.iron += 1
-        self.iron_drawer.add_iron((self.x, self.y))
+        if self.iron < MAX_IRON_AT_MINE:
+            self.iron += 1
+            self.iron_drawer.add_iron((self.x, self.y))
 
     def remove_iron(self, amount) -> int:
         amount_taken = amount if amount <= self.iron else self.iron
