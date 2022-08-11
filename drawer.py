@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from typing import Collection, Iterable, TYPE_CHECKING
+from typing import Any, Collection, Iterable, TYPE_CHECKING
 import arcade
 from arcade import color
 from pyglet.math import Vec2
@@ -17,9 +17,19 @@ from constants import (
     RAIL_LINE_WIDTH,
     HIGHLIGHT_COLOR,
 )
+from grid import Grid, RailsBeingBuiltEvent
 
-from model import Factory, Mine, Rail, Station, Train, Building
-from destroy_notifier import DestroyNotifier, Destroyable
+from model import (
+    Factory,
+    Mine,
+    Rail,
+    Station,
+    Building,
+    IronAddedEvent,
+    IronRemovedEvent,
+)
+from train import Train
+from observer import CreateEvent, DestroyEvent, Event
 
 
 class Drawer:
@@ -35,7 +45,7 @@ class Drawer:
 
         # Needed to easily remove sprites and shapes
         self._building_sprite_from_position = {}
-        self.rail_shapes_from_position = defaultdict(set)
+        self.rail_shapes_from_rail = defaultdict(set)
         self.iron_shapes_from_position = defaultdict(list)
 
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
@@ -117,24 +127,40 @@ class Drawer:
 
     def create_train(self, train: Train):
         self._trains.append(train)
-        DestroyNotifier.register_observer(self, train)
+        train.add_observer(self, DestroyEvent)
 
-    def destroyable_is_destroyed(self, destroyable: Destroyable):
-        if isinstance(destroyable, Train):
-            self._trains.remove(destroyable)
+    def on_notify(self, object: Any, event: Event):
+        match object, event:
+            case Mine(), IronAddedEvent():
+                self.add_iron((event.x, event.y))
+            case Mine(), IronRemovedEvent():
+                self.remove_iron((event.x, event.y), event.amount)
+            case Mine(), CreateEvent():
+                self.create_building(object)
+                object.add_observer(self, IronAddedEvent)
+                object.add_observer(self, IronRemovedEvent)
+            case Train(), DestroyEvent():
+                self._trains.remove(object)
+            case Rail(), DestroyEvent():
+                # TODO: change remove_rail to take rail object instead
+                self.remove_rail(object)
+            case Mine() | Station() | Factory(), DestroyEvent():
+                self.remove_building(object)
+            case Rail(), CreateEvent():
+                self.create_rail(object)
+            case Grid(), RailsBeingBuiltEvent():
+                self.show_rails_being_built(event.rails)
+            case Factory() | Station(), CreateEvent():
+                self.create_building(object)
 
-    def create_rail(self, rails: Iterable[Rail]):
-        for rail in rails:
-            x1, y1, x2, y2 = [
-                coordinate + GRID_BOX_SIZE / 2
-                for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
-            ]
-            shape = arcade.create_line(
-                x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH
-            )
-            self.rails_shape_element_list.append(shape)
-            self.rail_shapes_from_position[(rail.x1, rail.y1)].add(shape)
-            self.rail_shapes_from_position[(rail.x2, rail.y2)].add(shape)
+    def create_rail(self, rail: Rail):
+        x1, y1, x2, y2 = [
+            coordinate + GRID_BOX_SIZE / 2
+            for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
+        ]
+        shape = arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
+        self.rails_shape_element_list.append(shape)
+        self.rail_shapes_from_rail[rail].add(shape)
 
     def add_iron(self, position: tuple[int, int]):
         x, y = position
@@ -158,8 +184,8 @@ class Drawer:
         self.iron_shape_element_list.append(filled_rectangle)
         self.iron_shape_element_list.append(rectangle_outline)
 
-    def remove_iron(self, position: tuple[int, int], amount_taken: int):
-        for _ in range(amount_taken):
+    def remove_iron(self, position: tuple[int, int], amount: int):
+        for _ in range(amount):
             filled_rectangle = self.iron_shapes_from_position[position].pop()
             rectangle_outline = self.iron_shapes_from_position[position].pop()
             self.iron_shape_element_list.remove(filled_rectangle)
@@ -169,16 +195,15 @@ class Drawer:
         if not self.iron_shape_element_list:
             self.iron_shape_element_list = arcade.ShapeElementList()
 
-    def remove_rail(self, position: tuple[int, int]):
-        """Does nothing if there is no rail at position."""
+    def remove_rail(self, rail: Rail):
         removed_shapes = []
-        for shape in self.rail_shapes_from_position[position]:
+        for shape in self.rail_shapes_from_rail[rail]:
             self.rails_shape_element_list.remove(shape)
             removed_shapes.append(shape)
-        for position, shape in itertools.product(
-            self.rail_shapes_from_position, removed_shapes
+        for rail, shape in itertools.product(
+            self.rail_shapes_from_rail, removed_shapes
         ):
-            self.rail_shapes_from_position[position].discard(shape)
+            self.rail_shapes_from_rail[rail].discard(shape)
         # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
         # the draw() method crashes, so we have to recreate the list if it becomes empty.
         if not self.rails_shape_element_list:

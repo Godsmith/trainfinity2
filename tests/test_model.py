@@ -1,10 +1,9 @@
-import arcade
-
-from pytest import MonkeyPatch
 import pytest
-from drawer import Drawer
-from gui import Gui
-from model import Mine, Player, Rail, Station, Train
+from grid import Grid
+from model import Mine, Player, Rail, Station
+from train import Train
+from pyglet.math import Vec2
+from terrain import Terrain
 
 
 @pytest.fixture
@@ -33,6 +32,11 @@ def player(mock_gui, mock_drawer):
     return Player(mock_gui(), mock_drawer(800, 600))
 
 
+@pytest.fixture
+def mock_grid():
+    return Grid(Terrain(water=[Vec2(0, 0)]))
+
+
 class TestPlayer:
     def test_level_is_increased_when_score_passes_threshold(self, player):
         player.score = 10
@@ -48,9 +52,15 @@ class TestRail:
 
 
 @pytest.fixture
-def train(player, mock_drawer):
+def train(player, mock_drawer, mock_grid):
     station = Station(0, 0, Mine(0, 0, mock_drawer))
-    return Train(player, station, station, [Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)])
+    return Train(
+        player,
+        station,
+        station,
+        mock_grid,
+        [Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)],
+    )
 
 
 class TestTrain:

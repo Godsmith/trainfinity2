@@ -1,16 +1,22 @@
+from dataclasses import dataclass
 import math
 import random
 from collections import defaultdict
 from itertools import pairwise, product
-from typing import Iterable, Optional, Type
+from typing import Any, Iterable, Optional, Type
 
 from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
-from drawer import Drawer
 from model import Factory, Mine, Rail, Station, Water
 from gui import Mode
+from observer import CreateEvent, DestroyEvent, Event, Subject
 from terrain import Terrain
+
+
+@dataclass
+class RailsBeingBuiltEvent(Event):
+    rails: Iterable[Rail]
 
 
 def positions_between(start: Vec2, end: Vec2):
@@ -40,10 +46,9 @@ def get_random_position() -> Vec2:
     return Vec2(x, y)
 
 
-class Grid:
-    def __init__(self, drawer: Drawer, terrain: Terrain) -> None:
-        self.drawer = drawer
-
+class Grid(Subject):
+    def __init__(self, terrain: Terrain) -> None:
+        super().__init__()
         self.water: dict[Vec2, Water] = {}
         self.mines: dict[Vec2, Mine] = {}
         self.factories = {}
@@ -55,18 +60,15 @@ class Grid:
         self.bottom = 0
         self.right = GRID_WIDTH
         self.top = GRID_HEIGHT
-        self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
-
         self._create_terrain(terrain)
+
+    def create_buildings(self):
         self._create_mines()
         self._create_factories()
 
     def _create_terrain(self, terrain: Terrain):
         for position in terrain.water:
             self.water[position] = Water(*position)
-        self.drawer.create_terrain(
-            water=terrain.water, sand=terrain.sand, mountains=terrain.mountains
-        )
 
     @property
     def occupied_positions(self) -> set[Vec2]:
@@ -90,9 +92,9 @@ class Grid:
         return self._get_unoccupied_positions(1).pop()
 
     def _create_mine(self, x, y):
-        mine = Mine(x, y, self.drawer)
+        mine = Mine(x, y)
         self.mines[Vec2(x, y)] = mine
-        self.drawer.create_building(mine)
+        self._notify_about_other_object(mine, CreateEvent())
         return mine
 
     def _create_mine_in_random_unoccupied_location(self):
@@ -105,7 +107,7 @@ class Grid:
     def _create_factory(self, x, y):
         factory = Factory(x, y)
         self.factories[Vec2(x, y)] = factory
-        self.drawer.create_building(factory)
+        self._notify_about_other_object(factory, CreateEvent())
         return factory
 
     def _create_factory_in_random_unoccupied_location(self):
@@ -136,6 +138,8 @@ class Grid:
     def connect_stations(
         self, station1: Station, station2: Station
     ) -> list[Rail] | None:
+        if station1 == station2:
+            return None
         self.rails_from_vec2 = defaultdict(list)
         for rail in self.rails:
             self.rails_from_vec2[Vec2(rail.x1, rail.y1)].append(rail)
@@ -196,25 +200,32 @@ class Grid:
         if mode == Mode.RAIL:
             rails_being_built = rails_between(Vec2(start_x, start_y), Vec2(x, y))
             self.rails_being_built = self._mark_illegal_rail(rails_being_built)
-            self.drawer.show_rails_being_built(self.rails_being_built)
+            self.notify(RailsBeingBuiltEvent(self.rails_being_built))
         elif mode == Mode.DESTROY:
-            new_rails = []
-            for rail in self.rails:
-                if rail.is_at_position(x, y):
-                    rail.destroy()
-                else:
-                    new_rails.append(rail)
-            self.rails = new_rails
+            self._remove_rail(x, y)
 
-            self.drawer.remove_rail((x, y))
+    def _remove_rail(self, x, y):
+        new_rails = []
+        for rail in self.rails:
+            if rail.is_at_position(x, y):
+                self._notify_about_other_object(rail, DestroyEvent())
+            else:
+                new_rails.append(rail)
+        self.rails = new_rails
 
-            if Vec2(x, y) in self.stations:
-                self.drawer.remove_building(self.stations[Vec2(x, y)])
-                del self.stations[Vec2(x, y)]
+        if Vec2(x, y) in self.stations:
+            station = self.stations[Vec2(x, y)]
+            self._notify_about_other_object(station, DestroyEvent())
+            del self.stations[Vec2(x, y)]
+
+    def _notify_about_other_object(self, other_object: Any, event: Event):
+        for observer in self._observers[type(event)]:
+            observer.on_notify(other_object, event)
 
     def _create_rail(self, rails: Iterable[Rail]):
         self.rails.extend(rails)
-        self.drawer.create_rail(rails)
+        for rail in rails:
+            self._notify_about_other_object(rail, CreateEvent())
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
@@ -222,7 +233,7 @@ class Grid:
             self._create_stations()
 
         self.rails_being_built.clear()
-        self.drawer.show_rails_being_built(self.rails_being_built)
+        self.notify(RailsBeingBuiltEvent(self.rails_being_built))
 
     def get_station(self, x, y) -> Optional[Station]:
         x, y = self.snap_to(x, y)
@@ -251,7 +262,8 @@ class Grid:
         assert mine_or_factory
         station = Station(x, y, mine_or_factory)
         self.stations[Vec2(x, y)] = station
-        self.drawer.create_building(station)
+        self._notify_about_other_object(station, CreateEvent())
+
         return station
 
     def _create_stations(self):
@@ -276,6 +288,6 @@ class Grid:
         self.bottom -= GRID_BOX_SIZE
         self.right += GRID_BOX_SIZE
         self.top += GRID_BOX_SIZE
-        self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
+        # self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)

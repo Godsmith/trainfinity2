@@ -1,11 +1,10 @@
 import arcade
 import pytest
 from constants import SECONDS_BETWEEN_IRON_CREATION
-from main import MyGame, Mode, Train, TrainPlacementMode
-from model import Player, Rail, Station, Mine, Factory, Train, Water
+from main import MyGame, Mode, TrainPlacementMode
+from model import Rail, Station, Water
 from pyglet.math import Vec2
 from pytest import approx
-import time
 
 from terrain import Terrain
 

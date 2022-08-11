@@ -1,8 +1,7 @@
-from calendar import c
 from collections import deque
 from enum import Enum
 from itertools import combinations
-from typing import Iterable
+from typing import Any
 
 import arcade
 from arcade import color
@@ -14,12 +13,13 @@ from constants import (
     GRID_WIDTH,
     SECONDS_BETWEEN_IRON_CREATION,
 )
-from destroy_notifier import DestroyNotifier, Destroyable
 from drawer import Drawer
 from gui import Gui, Mode
-from model import Player, Rail, Station, Train
-from grid import Grid
+from model import Player, Rail, Station
+from train import Train
+from grid import Grid, RailsBeingBuiltEvent
 from camera import Camera
+from observer import CreateEvent, DestroyEvent, Event
 from terrain import Terrain
 
 SCREEN_WIDTH = 800
@@ -80,7 +80,12 @@ class MyGame(arcade.Window):
         self.gui = Gui()
 
         self.drawer = Drawer(0, 0, GRID_WIDTH, GRID_HEIGHT)
-        self.grid = Grid(self.drawer, terrain)
+        self.grid = Grid(terrain)
+        self.grid.add_observer(self.drawer, CreateEvent)
+        self.grid.add_observer(self.drawer, DestroyEvent)
+        self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
+        self.grid.create_buildings()
+
         self.player = Player(self.gui, self.grid)
 
         self.trains: list[Train] = []
@@ -88,6 +93,13 @@ class MyGame(arcade.Window):
         self.train_placement_station_list = []
 
         self.iron_counter = 0
+
+        self.drawer.create_grid(
+            self.grid.left, self.grid.bottom, self.grid.right, self.grid.top
+        )
+        self.drawer.create_terrain(
+            water=terrain.water, sand=terrain.sand, mountains=terrain.mountains
+        )
 
     def on_update(self, delta_time):
         self.iron_counter += delta_time
@@ -204,19 +216,21 @@ class MyGame(arcade.Window):
             self.player,
             station1,
             station2,
+            self.grid,
             rails,
         )
         self.trains.append(train)
-        DestroyNotifier.register_observer(self, train)
+        train.add_observer(self, DestroyEvent)
         self.drawer.create_train(train)
         self.gui.mode = Mode.SELECT
         self.train_placement_station_list.clear()
         self.drawer.highlight([])
         train.selected = True
 
-    def destroyable_is_destroyed(self, destroyable: Destroyable):
-        if isinstance(destroyable, Train):
-            self.trains.remove(destroyable)
+    def on_notify(self, object: Any, event: Event):
+        match object, event:
+            case Train(), DestroyEvent():
+                self.trains.remove(object)
 
     def on_right_click(self, x, y):
         pass
@@ -253,6 +267,7 @@ class MyGame(arcade.Window):
             self.gui.mode == Mode.TRAIN
             and self.train_placement_mode == TrainPlacementMode.SECOND_STATION
         ):
+            x, y = self.camera.to_world_coordinates(x, y)
             if station := self.grid.get_station(x, y):
                 if rails := self.grid.connect_stations(
                     self.train_placement_station_list[0], station
