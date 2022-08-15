@@ -1,6 +1,7 @@
 import itertools
 from collections import defaultdict
 from typing import Any, Collection, Iterable, TYPE_CHECKING
+import typing
 import arcade
 from arcade import color
 from pyglet.math import Vec2
@@ -130,10 +131,12 @@ class Drawer:
         train.add_observer(self, DestroyEvent)
 
     def on_notify(self, object: Any, event: Event):
-        match object, event:
+        match (object, event):
             case Mine(), IronAddedEvent():
+                event = typing.cast(IronAddedEvent, event)
                 self.add_iron((event.x, event.y))
             case Mine(), IronRemovedEvent():
+                event = typing.cast(IronRemovedEvent, event)
                 self.remove_iron((event.x, event.y), event.amount)
             case Mine(), CreateEvent():
                 self.create_building(object)
@@ -149,6 +152,7 @@ class Drawer:
             case Rail(), CreateEvent():
                 self.create_rail(object)
             case Grid(), RailsBeingBuiltEvent():
+                event = typing.cast(RailsBeingBuiltEvent, event)
                 self.show_rails_being_built(event.rails)
             case Factory() | Station(), CreateEvent():
                 self.create_building(object)
