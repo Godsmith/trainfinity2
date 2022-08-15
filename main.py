@@ -79,7 +79,7 @@ class MyGame(arcade.Window):
 
         self.gui = Gui()
 
-        self.drawer = Drawer(0, 0, GRID_WIDTH, GRID_HEIGHT)
+        self.drawer = Drawer.create_instance()
         self.grid = Grid(terrain)
         self.grid.add_observer(self.drawer, CreateEvent)
         self.grid.add_observer(self.drawer, DestroyEvent)
@@ -94,9 +94,7 @@ class MyGame(arcade.Window):
 
         self.iron_counter = 0
 
-        self.drawer.create_grid(
-            self.grid.left, self.grid.bottom, self.grid.right, self.grid.top
-        )
+        self.drawer.upsert(self.grid)
         self.drawer.create_terrain(
             water=terrain.water, sand=terrain.sand, mountains=terrain.mountains
         )
@@ -304,5 +302,5 @@ class MyGame(arcade.Window):
 
 if __name__ == "__main__":
     window = MyGame()
-    window.setup(Terrain())
+    window.setup(Terrain(water=[Vec2(0, 0)]))
     arcade.run()

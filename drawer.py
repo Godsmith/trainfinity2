@@ -12,7 +12,9 @@ from constants import (
     FINISHED_RAIL_COLOR,
     GRID_BOX_SIZE,
     GRID_COLOR,
+    GRID_HEIGHT,
     GRID_LINE_WIDTH,
+    GRID_WIDTH,
     IRON_SIZE,
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
@@ -34,20 +36,20 @@ from observer import CreateEvent, DestroyEvent, Event
 
 
 class Drawer:
-    def __init__(self, left, bottom, right, top):
+    _instance = None
+
+    def __init__(self):
 
         self._grid_shape_list = arcade.ShapeElementList()
-        self.shape_list = arcade.ShapeElementList()
-        self.sprite_list = arcade.SpriteList()
-
-        self.station_sprite_list = arcade.SpriteList()
-        self.mine_sprite_list = arcade.SpriteList()
-        self.factory_sprite_list = arcade.SpriteList()
+        self._shape_list = arcade.ShapeElementList()
+        self._sprite_list = arcade.SpriteList()
 
         # Needed to easily remove sprites and shapes
-        self._building_sprite_from_position = {}
         self.rail_shapes_from_rail = defaultdict(set)
         self.iron_shapes_from_position = defaultdict(list)
+
+        self._sprites_from_object_id = defaultdict(list)
+        self._shapes_from_object_id = defaultdict(list)
 
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.rails_shape_element_list = arcade.ShapeElementList()
@@ -56,52 +58,80 @@ class Drawer:
         self.highlight_shape_element_list = arcade.ShapeElementList()
 
         self._trains = []
-        self.create_grid(left, bottom, right, top)
 
         self._fps_sprite = arcade.Sprite()
         self._score_sprite = arcade.Sprite()
-        self.sprite_list.append(self._fps_sprite)
-        self.sprite_list.append(self._score_sprite)
+        self._sprite_list.append(self._fps_sprite)
+        self._sprite_list.append(self._score_sprite)
 
-    def create_grid(self, left, bottom, right, top):
+    @classmethod
+    def create_instance(cls):
+        cls._instance = Drawer()
+        return cls._instance
+
+    @classmethod
+    @property
+    def instance(cls) -> "Drawer":
+        cls._instance = typing.cast(Drawer, cls._instance)
+        return cls._instance
+
+    @classmethod
+    def upsert(cls, object: Any):
+        self = cls.instance
+        match object:
+            case Grid():
+                self._create_grid(object)
+                print("create_grid")
+            case Factory() | Mine() | Station():
+                self._create_building(object)
+
+    @classmethod
+    def remove(cls, object: Any):
+        self = cls.instance
+        for sprite in self._sprites_from_object_id[id(object)]:
+            self._sprite_list.remove(sprite)
+            del self._sprites_from_object_id[id(object)]
+        for shape in self._shapes_from_object_id[id(object)]:
+            self._shape_list.remove(shape)
+            del self._shapes_from_object_id[object]
+
+    def _create_grid(self, grid: Grid):
         self._grid_shape_list = arcade.ShapeElementList()
-        for x in range(left, right + 1, GRID_BOX_SIZE):
+        for x in range(grid.left, grid.right + 1, GRID_BOX_SIZE):
             self._grid_shape_list.append(
                 arcade.create_line(
                     x,
-                    bottom,
+                    grid.bottom,
                     x,
-                    top,
+                    grid.top,
                     GRID_COLOR,
                     GRID_LINE_WIDTH,
                 )
             )
 
-        for y in range(bottom, top + 1, GRID_BOX_SIZE):
+        for y in range(grid.bottom, grid.top + 1, GRID_BOX_SIZE):
             self._grid_shape_list.append(
-                arcade.create_line(left, y, right, y, GRID_COLOR, GRID_LINE_WIDTH)
+                arcade.create_line(
+                    grid.left, y, grid.right, y, GRID_COLOR, GRID_LINE_WIDTH
+                )
             )
 
-    def _create_building_sprite(self, building: Building):
-        if isinstance(building, Factory):
-            character = "F"
-        elif isinstance(building, Mine):
-            character = "M"
-        elif isinstance(building, Station):
-            character = "S"
-        return arcade.create_text_sprite(
+    def _create_building(self, building: Building):
+        match building:
+            case Factory():
+                character = "F"
+            case Mine():
+                character = "M"
+            case Station():
+                character = "S"
+        sprite = arcade.create_text_sprite(
             character, building.x, building.y, color=color.WHITE, font_size=24
         )
+        self._add_sprite(sprite, building)
 
-    def create_building(self, building: Building):
-        sprite = self._create_building_sprite(building)
-        self.sprite_list.append(sprite)
-        self._building_sprite_from_position[(building.x, building.y)] = sprite
-
-    def remove_building(self, building: Building):
-        sprite = self._building_sprite_from_position[(building.x, building.y)]
-        del self._building_sprite_from_position[(building.x, building.y)]
-        self.sprite_list.remove(sprite)
+    def _add_sprite(self, sprite: arcade.Sprite, object: Any):
+        self._sprite_list.append(sprite)
+        self._sprites_from_object_id[id(object)].append(sprite)
 
     def create_terrain(
         self,
@@ -124,7 +154,7 @@ class Drawer:
         shape = arcade.create_rectangle_filled(
             center_x, center_y, GRID_BOX_SIZE, GRID_BOX_SIZE, color=color
         )
-        self.shape_list.append(shape)
+        self._shape_list.append(shape)
 
     def create_train(self, train: Train):
         self._trains.append(train)
@@ -139,7 +169,7 @@ class Drawer:
                 event = typing.cast(IronRemovedEvent, event)
                 self.remove_iron((event.x, event.y), event.amount)
             case Mine(), CreateEvent():
-                self.create_building(object)
+                self.upsert(object)
                 object.add_observer(self, IronAddedEvent)
                 object.add_observer(self, IronRemovedEvent)
             case Train(), DestroyEvent():
@@ -148,14 +178,14 @@ class Drawer:
                 # TODO: change remove_rail to take rail object instead
                 self.remove_rail(object)
             case Mine() | Station() | Factory(), DestroyEvent():
-                self.remove_building(object)
+                self.remove(object)
             case Rail(), CreateEvent():
                 self.create_rail(object)
             case Grid(), RailsBeingBuiltEvent():
                 event = typing.cast(RailsBeingBuiltEvent, event)
                 self.show_rails_being_built(event.rails)
             case Factory() | Station(), CreateEvent():
-                self.create_building(object)
+                self.upsert(object)
 
     def create_rail(self, rail: Rail):
         x1, y1, x2, y2 = [
@@ -281,14 +311,11 @@ class Drawer:
 
     def draw(self):
         self._grid_shape_list.draw()
-        self.shape_list.draw()
-        self.sprite_list.draw()
+        self._shape_list.draw()
+        self._sprite_list.draw()
 
         self.rails_shape_element_list.draw()
         self.rails_being_built_shape_element_list.draw()
-        self.station_sprite_list.draw()
-        self.mine_sprite_list.draw()
-        self.factory_sprite_list.draw()
         self.iron_shape_element_list.draw()
 
         self.highlight_shape_element_list.draw()
