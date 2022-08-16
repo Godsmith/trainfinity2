@@ -1,4 +1,3 @@
-import itertools
 from collections import defaultdict
 from typing import Any, Collection, Iterable, TYPE_CHECKING
 import typing
@@ -12,9 +11,7 @@ from constants import (
     FINISHED_RAIL_COLOR,
     GRID_BOX_SIZE,
     GRID_COLOR,
-    GRID_HEIGHT,
     GRID_LINE_WIDTH,
-    GRID_WIDTH,
     IRON_SIZE,
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
