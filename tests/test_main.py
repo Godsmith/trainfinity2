@@ -1,7 +1,6 @@
 import arcade
 import pytest
 from constants import SECONDS_BETWEEN_IRON_CREATION
-from drawer import Drawer
 from main import MyGame, Mode, TrainPlacementMode
 from model import Rail, Station, Water
 from pyglet.math import Vec2

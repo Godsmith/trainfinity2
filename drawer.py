@@ -36,8 +36,6 @@ from observer import CreateEvent, DestroyEvent, Event
 
 
 class Drawer:
-    _instance = None
-
     def __init__(self):
 
         self._grid_shape_list = arcade.ShapeElementList()
@@ -62,20 +60,7 @@ class Drawer:
         self._sprite_list.append(self._fps_sprite)
         self._sprite_list.append(self._score_sprite)
 
-    @classmethod
-    def create_instance(cls):
-        cls._instance = Drawer()
-        return cls._instance
-
-    @classmethod
-    @property
-    def instance(cls) -> "Drawer":
-        cls._instance = typing.cast(Drawer, cls._instance)
-        return cls._instance
-
-    @classmethod
-    def upsert(cls, object: Any):
-        self = cls.instance
+    def upsert(self, object: Any):
         match object:
             case Grid():
                 self._create_grid(object)
@@ -84,9 +69,7 @@ class Drawer:
             case Rail():
                 self.create_rail(object)
 
-    @classmethod
-    def remove(cls, object: Any):
-        self = cls.instance
+    def remove(self, object: Any):
         for sprite in self._sprites_from_object_id[id(object)]:
             self._sprite_list.remove(sprite)
             del self._sprites_from_object_id[id(object)]

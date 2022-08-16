@@ -79,7 +79,7 @@ class MyGame(arcade.Window):
 
         self.gui = Gui()
 
-        self.drawer = Drawer.create_instance()
+        self.drawer = Drawer()
         self.grid = Grid(terrain)
         self.grid.add_observer(self.drawer, CreateEvent)
         self.grid.add_observer(self.drawer, DestroyEvent)
