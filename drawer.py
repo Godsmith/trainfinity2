@@ -45,14 +45,12 @@ class Drawer:
         self._sprite_list = arcade.SpriteList()
 
         # Needed to easily remove sprites and shapes
-        self.rail_shapes_from_rail = defaultdict(set)
         self.iron_shapes_from_position = defaultdict(list)
 
         self._sprites_from_object_id = defaultdict(list)
         self._shapes_from_object_id = defaultdict(list)
 
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
-        self.rails_shape_element_list = arcade.ShapeElementList()
         self.iron_shape_element_list = arcade.ShapeElementList()
 
         self.highlight_shape_element_list = arcade.ShapeElementList()
@@ -81,9 +79,10 @@ class Drawer:
         match object:
             case Grid():
                 self._create_grid(object)
-                print("create_grid")
             case Factory() | Mine() | Station():
                 self._create_building(object)
+            case Rail():
+                self.create_rail(object)
 
     @classmethod
     def remove(cls, object: Any):
@@ -93,7 +92,7 @@ class Drawer:
             del self._sprites_from_object_id[id(object)]
         for shape in self._shapes_from_object_id[id(object)]:
             self._shape_list.remove(shape)
-            del self._shapes_from_object_id[object]
+            del self._shapes_from_object_id[id(object)]
 
     def _create_grid(self, grid: Grid):
         self._grid_shape_list = arcade.ShapeElementList()
@@ -132,6 +131,10 @@ class Drawer:
     def _add_sprite(self, sprite: arcade.Sprite, object: Any):
         self._sprite_list.append(sprite)
         self._sprites_from_object_id[id(object)].append(sprite)
+
+    def _add_shape(self, shape: arcade.Shape, object: Any):
+        self._shape_list.append(shape)
+        self._shapes_from_object_id[id(object)].append(shape)
 
     def create_terrain(
         self,
@@ -176,11 +179,11 @@ class Drawer:
                 self._trains.remove(object)
             case Rail(), DestroyEvent():
                 # TODO: change remove_rail to take rail object instead
-                self.remove_rail(object)
+                self.remove(object)
             case Mine() | Station() | Factory(), DestroyEvent():
                 self.remove(object)
             case Rail(), CreateEvent():
-                self.create_rail(object)
+                self.upsert(object)
             case Grid(), RailsBeingBuiltEvent():
                 event = typing.cast(RailsBeingBuiltEvent, event)
                 self.show_rails_being_built(event.rails)
@@ -193,8 +196,7 @@ class Drawer:
             for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
         ]
         shape = arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
-        self.rails_shape_element_list.append(shape)
-        self.rail_shapes_from_rail[rail].add(shape)
+        self._add_shape(shape, rail)
 
     def add_iron(self, position: tuple[int, int]):
         x, y = position
@@ -228,20 +230,6 @@ class Drawer:
         # the draw() method crashes, so we have to recreate the list if it becomes empty.
         if not self.iron_shape_element_list:
             self.iron_shape_element_list = arcade.ShapeElementList()
-
-    def remove_rail(self, rail: Rail):
-        removed_shapes = []
-        for shape in self.rail_shapes_from_rail[rail]:
-            self.rails_shape_element_list.remove(shape)
-            removed_shapes.append(shape)
-        for rail, shape in itertools.product(
-            self.rail_shapes_from_rail, removed_shapes
-        ):
-            self.rail_shapes_from_rail[rail].discard(shape)
-        # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
-        # the draw() method crashes, so we have to recreate the list if it becomes empty.
-        if not self.rails_shape_element_list:
-            self.rails_shape_element_list = arcade.ShapeElementList()
 
     def show_rails_being_built(self, rails: Iterable[Rail]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
@@ -314,7 +302,6 @@ class Drawer:
         self._shape_list.draw()
         self._sprite_list.draw()
 
-        self.rails_shape_element_list.draw()
         self.rails_being_built_shape_element_list.draw()
         self.iron_shape_element_list.draw()
 
