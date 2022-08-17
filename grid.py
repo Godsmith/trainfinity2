@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from heapq import heappop, heappush
 import math
 import random
 from collections import defaultdict
@@ -25,8 +26,8 @@ def positions_between(start: Vec2, end: Vec2):
         current = positions[-1]
         abs_dx = abs(current.x - end.x)
         abs_dy = abs(current.y - end.y)
-        x_step = (end.x - current.x) / abs_dx if abs_dx else 0
-        y_step = (end.y - current.y) / abs_dy if abs_dy else 0
+        x_step = (end.x - current.x) // abs_dx if abs_dx else 0
+        y_step = (end.y - current.y) // abs_dy if abs_dy else 0
         new_x = current.x + GRID_BOX_SIZE * (abs_dx >= abs_dy) * x_step
         new_y = current.y + GRID_BOX_SIZE * (abs_dy >= abs_dx) * y_step
         positions.append(Vec2(new_x, new_y))
@@ -152,21 +153,40 @@ class Grid(Subject):
     def _explore(
         self,
         previous_rails: list[Rail],
-        current_position: Vec2,
+        initial_position: Vec2,
         target_station: Station,
     ) -> Optional[list[Rail]]:
         """Finds a route (list of Rail) to a station from a specific station.
-        
+
         It is not guaranteed to be the shortest route; just the first route that is found."""
-        if previous_rails and previous_rails[-1].is_at_station(target_station):
-            return previous_rails
-        next_rails = self.rails_at_position(*current_position) - set(previous_rails)
-        for rail in next_rails:
-            other_end = rail.other_end(*current_position)
-            if route := self._explore(
-                previous_rails + [rail], other_end, target_station
-            ):
-                return route
+        distance_at_position = defaultdict(lambda: 999999999)
+        distance_at_position[initial_position] = 0
+        rail_in_shortest_route_from_position: dict[Vec2, Rail] = {}
+        visited_positions = set()
+        unvisited_position_distances_and_positions = [(0, initial_position)]
+
+        while unvisited_position_distances_and_positions:
+            _, current_position = heappop(unvisited_position_distances_and_positions)
+            visited_positions.add(current_position)
+            if current_position == Vec2(target_station.x, target_station.y):
+                route: list[Rail] = []
+                while current_position != initial_position:
+                    rail = rail_in_shortest_route_from_position[current_position]
+                    route.append(rail)
+                    current_position = rail.other_end(*current_position)
+                return route[::-1]
+
+            for rail in self.rails_at_position(*current_position):
+                adjacent_position = rail.other_end(*current_position)
+                if adjacent_position not in visited_positions:
+                    adjacent_distance = distance_at_position[current_position] + 1
+                    if distance_at_position[adjacent_position] > adjacent_distance:
+                        distance_at_position[adjacent_position] = adjacent_distance
+                        heappush(
+                            unvisited_position_distances_and_positions,
+                            (adjacent_distance, adjacent_position),
+                        )
+                        rail_in_shortest_route_from_position[adjacent_position] = rail
         return None
 
     def _rail_is_in_occupied_position(self, rail: Rail):
