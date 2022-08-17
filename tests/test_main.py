@@ -39,7 +39,7 @@ def game_with_train(game: MyGame) -> MyGame:
     game.grid._create_factory(90, 30)
     station1 = game.grid._create_station(30, 0)
     station2 = game.grid._create_station(90, 0)
-    game._create_train(game.grid.rails[1:3], station1, station2)
+    game._create_train(station1, station2)
     return game
 
 
@@ -411,18 +411,6 @@ def test_clicking_position_in_destroy_mode_destroys_station_and_rail(
     assert len(game.grid.rails) == 2
 
 
-def test_destroying_rail_destroys_train(game_with_train):
-    game = game_with_train
-    game.gui.mode = Mode.DESTROY
-
-    assert len(game.trains) == 1
-
-    game.on_mouse_press(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-    game.on_mouse_motion(x=76, y=15, dx=1, dy=0)
-
-    assert len(game.trains) == 0
-
-
 def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
     game = game_with_factory_and_mine
     # Start just before creating a new iron
@@ -458,6 +446,7 @@ def test_train_picks_up_iron_from_mine(game_with_train: MyGame):
     mine.add_iron()
     train.x = 30
     train.target_x = 30
+    train._target_station = game_with_train.grid.stations[Vec2(30, 0)]
     assert mine.iron == 1
     assert train.iron == 0
 

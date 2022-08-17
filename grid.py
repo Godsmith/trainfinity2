@@ -146,7 +146,7 @@ class Grid(Subject):
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
         return self._explore([], Vec2(station1.x, station1.y), station2)
 
-    def _rails_at_position(self, x, y):
+    def rails_at_position(self, x, y):
         return {rail for rail in self.rails if rail.is_at_position(x, y)}
 
     def _explore(
@@ -155,9 +155,12 @@ class Grid(Subject):
         current_position: Vec2,
         target_station: Station,
     ) -> Optional[list[Rail]]:
+        """Finds a route (list of Rail) to a station from a specific station.
+        
+        It is not guaranteed to be the shortest route; just the first route that is found."""
         if previous_rails and previous_rails[-1].is_at_station(target_station):
             return previous_rails
-        next_rails = self._rails_at_position(*current_position) - set(previous_rails)
+        next_rails = self.rails_at_position(*current_position) - set(previous_rails)
         for rail in next_rails:
             other_end = rail.other_end(*current_position)
             if route := self._explore(

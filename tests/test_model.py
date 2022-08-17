@@ -52,14 +52,15 @@ class TestRail:
 
 
 @pytest.fixture
-def train(player, mock_drawer, mock_grid):
-    station = Station(0, 0, Mine(0, 0, mock_drawer))
+def train(player, mock_grid: Grid):
+    station1 = Station(0, 0, Mine(0, 0))
+    station2 = Station(30, 0, Mine(0, 0))
+    mock_grid._create_rail([Rail(0, 0, 30, 0)])
     return Train(
         player,
-        station,
-        station,
+        station1,
+        station2,
         mock_grid,
-        [Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)],
     )
 
 

@@ -193,11 +193,10 @@ class MyGame(arcade.Window):
                     case _:  # second station
                         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
                         self.train_placement_station_list.append(station)
-                        if rails := self.grid.connect_stations(
+                        if self.grid.connect_stations(
                             *self.train_placement_station_list
                         ):
                             self._create_train(
-                                rails,
                                 self.train_placement_station_list[0],
                                 self.train_placement_station_list[1],
                             )
@@ -209,13 +208,12 @@ class MyGame(arcade.Window):
                 else:
                     train.selected = False
 
-    def _create_train(self, rails: list[Rail], station1: Station, station2: Station):
+    def _create_train(self, station1: Station, station2: Station):
         train = Train(
             self.player,
             station1,
             station2,
             self.grid,
-            rails,
         )
         self.trains.append(train)
         train.add_observer(self, DestroyEvent)

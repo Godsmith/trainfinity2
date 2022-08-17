@@ -254,7 +254,7 @@ class Drawer:
                     x, y, GRID_BOX_SIZE / 2, color=HIGHLIGHT_COLOR, border_width=5
                 )
                 positions = {
-                    position for rail in train.rails for position in rail.positions
+                    position for rail in train.rails[1:] for position in rail.positions
                 }
                 for position in positions:
                     arcade.draw_rectangle_filled(
