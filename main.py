@@ -235,32 +235,13 @@ class MyGame(arcade.Window):
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         if self.is_mouse2_pressed:
-            delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)
-
-            # Required for panning to work correctly when zoomed in or out
-            delta = delta.scale(self.camera.scale)
-
-            previous_camera_position = self.camera.position
-            new_position = self.camera_position_when_mouse2_pressed - delta
-
-            min_x = -self.camera.viewport_width / 2
-            max_x = GRID_WIDTH + min_x
-            min_y = -self.camera.viewport_height / 2
-            max_y = GRID_HEIGHT + min_y
-
-            new_position = Vec2(max(min_x, new_position.x), new_position.y)
-            new_position = Vec2(min(max_x, new_position.x), new_position.y)
-            new_position = Vec2(new_position.x, max(min_y, new_position.y))
-            new_position = Vec2(new_position.x, min(max_y, new_position.y))
-            self.camera.move(new_position)
-
-            camera_dx, camera_dy = new_position - previous_camera_position
-            self.gui.pan(camera_dx, camera_dy)
+            self._on_mouse_move_when_mouse_2_pressed(x, y)
         elif self.is_mouse1_pressed:
             x, y = self.camera.to_world_coordinates(x, y)
             self.grid.click_and_drag(
                 x, y, self.mouse1_pressed_x, self.mouse1_pressed_y, self.gui.mode
             )
+
         elif (
             self.gui.mode == Mode.TRAIN
             and self.train_placement_mode == TrainPlacementMode.SECOND_STATION
@@ -283,6 +264,23 @@ class MyGame(arcade.Window):
                         )
                     ]
                 )
+
+    def _on_mouse_move_when_mouse_2_pressed(self, x, y):
+        delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)
+        delta = delta.scale(self.camera.scale)
+        previous_camera_position = self.camera.position
+        new_position = self.camera_position_when_mouse2_pressed - delta
+        min_x = -self.camera.viewport_width / 2
+        max_x = GRID_WIDTH + min_x
+        min_y = -self.camera.viewport_height / 2
+        max_y = GRID_HEIGHT + min_y
+        new_position = Vec2(max(min_x, new_position.x), new_position.y)
+        new_position = Vec2(min(max_x, new_position.x), new_position.y)
+        new_position = Vec2(new_position.x, max(min_y, new_position.y))
+        new_position = Vec2(new_position.x, min(max_y, new_position.y))
+        self.camera.move(new_position)
+        camera_dx, camera_dy = new_position - previous_camera_position
+        self.gui.pan(camera_dx, camera_dy)
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         scale_delta = 0.1 if scroll_y < 0 else -0.1
