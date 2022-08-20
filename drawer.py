@@ -23,6 +23,7 @@ from model import (
     Factory,
     Mine,
     Rail,
+    Signal,
     Station,
     Building,
     IronAddedEvent,
@@ -33,8 +34,9 @@ from observer import CreateEvent, DestroyEvent, Event
 
 
 class Drawer:
-    def __init__(self):
+    def __init__(self, grid: Grid):
 
+        self._grid = grid
         self._grid_shape_list = arcade.ShapeElementList()
         self._shape_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
@@ -65,6 +67,8 @@ class Drawer:
                 self._create_building(object)
             case Rail():
                 self.create_rail(object)
+            case Signal():
+                self._update_signal(object)
 
     def remove(self, object: Any):
         for sprite in self._sprites_from_object_id[id(object)]:
@@ -107,6 +111,34 @@ class Drawer:
             character, building.x, building.y, color=color.WHITE, font_size=24
         )
         self._add_sprite(sprite, building)
+
+    def _update_signal(self, signal: Signal):
+        self.remove(signal)
+        rails = self._grid.rails_at_position(signal.x, signal.y)
+        for rail in rails:
+            signal_color = (
+                color.RED if self._grid.signal_is_stop(signal, rail) else color.GREEN
+            )
+            position = rail.other_end(signal.x, signal.y)
+            x, y = self._get_signal_sprite_position(signal, position)
+            shape = arcade.create_ellipse_filled(
+                x, y, GRID_BOX_SIZE / 6, GRID_BOX_SIZE / 6, signal_color
+            )
+            self._add_shape(shape, signal)
+
+    @staticmethod
+    def _get_signal_sprite_position(signal: Signal, position: Vec2) -> Vec2:
+        x = signal.x + GRID_BOX_SIZE / 2
+        y = signal.y + GRID_BOX_SIZE / 2
+        if position.x < signal.x:
+            x -= GRID_BOX_SIZE / 6
+        elif position.x > signal.x:
+            x += GRID_BOX_SIZE / 6
+        if position.y < signal.y:
+            y -= GRID_BOX_SIZE / 6
+        elif position.y > signal.y:
+            y += GRID_BOX_SIZE / 6
+        return Vec2(x, y)
 
     def _add_sprite(self, sprite: arcade.Sprite, object: Any):
         self._sprite_list.append(sprite)
@@ -167,7 +199,7 @@ class Drawer:
             case Grid(), RailsBeingBuiltEvent():
                 event = typing.cast(RailsBeingBuiltEvent, event)
                 self.show_rails_being_built(event.rails)
-            case Factory() | Station(), CreateEvent():
+            case Factory() | Station() | Signal(), CreateEvent():
                 self.upsert(object)
 
     def create_rail(self, rail: Rail):

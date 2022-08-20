@@ -56,6 +56,10 @@ class Station:
 
 Building = Mine | Factory | Station
 
+@dataclass
+class Signal:
+    x: int
+    y: int
 
 def get_level_scores() -> list[int]:
     """

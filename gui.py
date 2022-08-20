@@ -1,5 +1,5 @@
 from collections import namedtuple
-from enum import Enum
+from enum import Enum, auto
 
 import arcade
 from arcade import color
@@ -15,10 +15,11 @@ Box = namedtuple("Box", "text mode")
 
 
 class Mode(Enum):
-    SELECT = 1
-    RAIL = 2
-    TRAIN = 3
-    DESTROY = 4
+    SELECT = auto()
+    RAIL = auto()
+    TRAIN = auto()
+    SIGNAL = auto()
+    DESTROY = auto()
 
 
 class Gui:
@@ -27,6 +28,7 @@ class Gui:
             Box("SELECT", Mode.SELECT),
             Box("RAIL", Mode.RAIL),
             Box("TRAIN", Mode.TRAIN),
+            Box("SIGNAL", Mode.SIGNAL),
             Box("DESTROY", Mode.DESTROY),
         ]
         self._mode = Mode.RAIL

@@ -9,7 +9,7 @@ from typing import Any, Iterable, Optional, Type
 from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
-from model import Factory, Mine, Rail, Station, Water
+from model import Factory, Mine, Rail, Signal, Station, Water
 from gui import Mode
 from observer import CreateEvent, DestroyEvent, Event, Subject
 from terrain import Terrain
@@ -54,6 +54,7 @@ class Grid(Subject):
         self.mines: dict[Vec2, Mine] = {}
         self.factories = {}
         self.stations = {}
+        self.signals = {}
         self.rails_being_built = []
         self.rails: list[Rail] = []
 
@@ -78,6 +79,7 @@ class Grid(Subject):
             | self.mines.keys()
             | self.factories.keys()
             | self.stations.keys()
+            | self.signals.keys()
         )
 
     def _get_unoccupied_positions(self, count: int) -> set[Vec2]:
@@ -326,3 +328,17 @@ class Grid(Subject):
         # self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)
+
+    def _can_place_signal(self, x, y):
+        return len(self.rails_at_position(x, y))
+
+    def create_signal(self, x, y):
+        x, y = self.snap_to(x, y)
+        if not self._can_place_signal(x, y):
+            return
+        signal = Signal(x, y)
+        self.signals[Vec2(x, y)] = signal
+        self._notify_about_other_object(signal, CreateEvent())
+
+    def signal_is_stop(self, signal: Signal, towards_rail: Rail):
+        return True

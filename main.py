@@ -79,8 +79,8 @@ class MyGame(arcade.Window):
 
         self.gui = Gui()
 
-        self.drawer = Drawer()
         self.grid = Grid(terrain)
+        self.drawer = Drawer(self.grid)
         self.grid.add_observer(self.drawer, CreateEvent)
         self.grid.add_observer(self.drawer, DestroyEvent)
         self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
@@ -207,6 +207,8 @@ class MyGame(arcade.Window):
                     return
                 else:
                     train.selected = False
+        elif self.gui.mode == Mode.SIGNAL:
+            self.grid.create_signal(x, y)
 
     def _create_train(self, station1: Station, station2: Station):
         train = Train(
