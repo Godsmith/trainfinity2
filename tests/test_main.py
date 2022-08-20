@@ -394,6 +394,23 @@ class TestTrain:
         two_trains.on_update(1 / 60)
         assert len(two_trains.trains) == 0
 
+    def test_destroying_the_rails_under_train_destroys_train(
+        self, game_with_train: MyGame
+    ):
+        train = game_with_train.trains[0]
+        train.target_x = 30
+        game_with_train.grid.remove_rail(30, 0)
+        game_with_train.on_update(1 / 60)
+        assert not game_with_train.trains
+
+    def test_destroying_rail_on_train_route_does_not_crash_game(
+        self, game_with_train: MyGame
+    ):
+        train = game_with_train.trains[0]
+        train.target_x = 30
+        game_with_train.grid.remove_rail(60, 0)
+        game_with_train.on_update(1 / 60)
+
 
 def test_clicking_position_in_destroy_mode_destroys_station_and_rail(
     game_with_factory_and_mine,

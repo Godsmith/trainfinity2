@@ -50,7 +50,7 @@ class Drawer:
 
         self.highlight_shape_element_list = arcade.ShapeElementList()
 
-        self._trains = []
+        self._trains: list[Train] = []
 
         self._fps_sprite = arcade.Sprite()
         self._score_sprite = arcade.Sprite()
@@ -253,17 +253,20 @@ class Drawer:
                 arcade.draw_circle_outline(
                     x, y, GRID_BOX_SIZE / 2, color=HIGHLIGHT_COLOR, border_width=5
                 )
-                positions = {
-                    position for rail in train.rails[1:] for position in rail.positions
-                }
-                for position in positions:
-                    arcade.draw_rectangle_filled(
-                        position.x + GRID_BOX_SIZE / 2,
-                        position.y + GRID_BOX_SIZE / 2,
-                        GRID_BOX_SIZE,
-                        GRID_BOX_SIZE,
-                        color=HIGHLIGHT_COLOR,
-                    )
+                if train.rails_on_route:
+                    positions = {
+                        position
+                        for rail in train.rails_on_route[1:]
+                        for position in rail.positions
+                    }
+                    for position in positions:
+                        arcade.draw_rectangle_filled(
+                            position.x + GRID_BOX_SIZE / 2,
+                            position.y + GRID_BOX_SIZE / 2,
+                            GRID_BOX_SIZE,
+                            GRID_BOX_SIZE,
+                            color=HIGHLIGHT_COLOR,
+                        )
 
     def highlight(self, positions: Iterable[Vec2]):
         self.highlight_shape_element_list = arcade.ShapeElementList()

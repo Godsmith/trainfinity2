@@ -145,16 +145,16 @@ class Grid(Subject):
         for rail in self.rails:
             self.rails_from_vec2[Vec2(rail.x1, rail.y1)].append(rail)
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
-        return self._explore([], Vec2(station1.x, station1.y), station2)
+        return self._find_route(Vec2(station1.x, station1.y), station2)
 
     def rails_at_position(self, x, y):
         return {rail for rail in self.rails if rail.is_at_position(x, y)}
 
-    def _explore(
+    def _find_route(
         self,
-        previous_rails: list[Rail],
         initial_position: Vec2,
         target_station: Station,
+        previous_rail: Rail | None = None,  # Assures the train can not just reverse
     ) -> Optional[list[Rail]]:
         """Finds a route (list of Rail) to a station from a specific station.
 
@@ -176,7 +176,7 @@ class Grid(Subject):
                     current_position = rail.other_end(*current_position)
                 return route[::-1]
 
-            for rail in self.rails_at_position(*current_position):
+            for rail in self._possible_next_rails(current_position, previous_rail):
                 adjacent_position = rail.other_end(*current_position)
                 if adjacent_position not in visited_positions:
                     adjacent_distance = distance_at_position[current_position] + 1
@@ -188,6 +188,18 @@ class Grid(Subject):
                         )
                         rail_in_shortest_route_from_position[adjacent_position] = rail
         return None
+
+    def _possible_next_rails(
+        self, position: tuple[int, int], previous_rail: Rail | None
+    ):
+        """Given a position and where the train came from, return a list of possible rails
+        it can continue on.
+        Current rules:
+        1. The train cannot reverse (if previous_rail = None, the train is at a standstill, e.g. at a station)
+        Possible future rules:
+        2. The train cannot turn more than X degrees
+        3. The train cannot go into a red light"""
+        return self.rails_at_position(*position) - {previous_rail}
 
     def _rail_is_in_occupied_position(self, rail: Rail):
         return (
@@ -225,9 +237,9 @@ class Grid(Subject):
             self.rails_being_built = self._mark_illegal_rail(rails_being_built)
             self.notify(RailsBeingBuiltEvent(self.rails_being_built))
         elif mode == Mode.DESTROY:
-            self._remove_rail(x, y)
+            self.remove_rail(x, y)
 
-    def _remove_rail(self, x, y):
+    def remove_rail(self, x, y):
         new_rails = []
         for rail in self.rails:
             if rail.is_at_position(x, y):

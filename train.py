@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from itertools import pairwise
+import random
 from typing import Any, Iterable
 
 from pyglet.math import Vec2
@@ -38,12 +39,13 @@ class Train(Subject, Observer):
         self.x = self.first_station.x
         self.y = self.first_station.y
         self._target_station = self.first_station
-        self._rails = []
+        self._rails_on_route = []
+        self._current_rail: Rail | None = None
         self._select_next_target(self.first_station.x, self.first_station.y)
 
     @property
-    def rails(self):
-        return self._rails
+    def rails_on_route(self):
+        return self._rails_on_route
 
     def _select_next_target(self, x: int, y: int):
         if _is_close(self, self._target_station):
@@ -58,18 +60,47 @@ class Train(Subject, Observer):
                 if self._target_station == self.first_station
                 else self.first_station
             )
+            # Ensure that the train can reverse at the station
+            self._current_rail = None
 
-        self._rails = self.grid._explore([], Vec2(x, y), self._target_station)
-        if self._rails:
-            next_rail = self._rails[0]
-            if next_rail.x1 == x and next_rail.y1 == y:
-                self.target_x = next_rail.x2
-                self.target_y = next_rail.y2
-            else:
-                self.target_x = next_rail.x1
-                self.target_y = next_rail.y1
+        self._rails_on_route = self.grid._find_route(
+            Vec2(x, y), self._target_station, previous_rail=self._current_rail
+        )
+        next_rail = self._get_next_rail(x, y)
+
+        if next_rail:
+            self._set_current_rail(next_rail, x, y)
         else:
-            raise NotImplementedError("Need to handle the case where no path is found")
+            self.destroy()
+
+    def _set_current_rail(self, next_rail: Rail, x, y):
+        self._current_rail = next_rail
+        if self._current_rail.x1 == x and self._current_rail.y1 == y:
+            self.target_x = self._current_rail.x2
+            self.target_y = self._current_rail.y2
+        else:
+            self.target_x = self._current_rail.x1
+            self.target_y = self._current_rail.y1
+
+    def _get_next_rail(self, x, y) -> Rail | None:
+        """1. If there is a route to the target, choose the first rail on that route.
+        2. If not, choose a random rail.
+        3. If there is no rail to choose, reverse, then choose a random rail (possible change: return None?)
+        4. If there is still no rail to choose, return None."""
+        if self._rails_on_route:
+            return self._rails_on_route[0]
+        else:
+            possible_next_rails = self.grid._possible_next_rails(
+                Vec2(x, y), previous_rail=self._current_rail
+            )
+            if not possible_next_rails:
+                # At end of line; reverse
+                possible_next_rails = self.grid._possible_next_rails(
+                    Vec2(x, y), previous_rail=None
+                )
+                if not possible_next_rails:
+                    return None
+            return random.choice(list(possible_next_rails))
 
     def move(self, delta_time):
         train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND

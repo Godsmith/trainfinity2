@@ -118,9 +118,6 @@ class Rail:
     def is_at_position(self, x, y):
         return (self.x1 == x and self.y1 == y) or (self.x2 == x and self.y2 == y)
 
-    def is_at_station(self, station: Station):
-        return self.is_at_position(station.x, station.y)
-
     def other_end(self, x, y) -> Vec2:
         if self.x1 == x and self.y1 == y:
             return Vec2(self.x2, self.y2)
