@@ -3,7 +3,7 @@ from heapq import heappop, heappush
 import math
 import random
 from collections import defaultdict
-from itertools import pairwise, product
+from itertools import pairwise
 from typing import Any, Iterable, Optional, Type
 
 from pyglet.math import Vec2
@@ -339,6 +339,3 @@ class Grid(Subject):
         signal = Signal(x, y)
         self.signals[Vec2(x, y)] = signal
         self._notify_about_other_object(signal, CreateEvent())
-
-    def signal_is_stop(self, signal: Signal, towards_rail: Rail):
-        return True

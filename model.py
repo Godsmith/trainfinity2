@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass, replace
+from enum import Enum, auto
 
 from pyglet.math import Vec2
 
@@ -56,10 +57,6 @@ class Station:
 
 Building = Mine | Factory | Station
 
-@dataclass
-class Signal:
-    x: int
-    y: int
 
 def get_level_scores() -> list[int]:
     """
@@ -132,3 +129,25 @@ class Rail:
     @property
     def positions(self) -> set[Vec2]:
         return {Vec2(self.x1, self.y1), Vec2(self.x2, self.y2)}
+
+
+@dataclass(frozen=True)
+class Signal:
+    x: int
+    y: int
+    rail1: Rail
+    rail2: Rail
+
+    def other_rail(self, rail: Rail):
+        if self.rail1 == rail:
+            return self.rail2
+        elif self.rail2 == rail:
+            return self.rail1
+        raise ValueError(f"{rail} is not adjacent to signal {self}.")
+
+
+class SignalColor(Enum):
+    RED = auto()
+    GREEN = auto()
+
+

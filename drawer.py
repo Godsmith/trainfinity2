@@ -29,14 +29,16 @@ from model import (
     IronAddedEvent,
     IronRemovedEvent,
 )
+from signal_controller import SignalController
 from train import Train
 from observer import CreateEvent, DestroyEvent, Event
 
 
 class Drawer:
-    def __init__(self, grid: Grid):
+    def __init__(self, grid: Grid, signal_controller: SignalController):
 
         self._grid = grid
+        self._signal_controller = signal_controller
         self._grid_shape_list = arcade.ShapeElementList()
         self._shape_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
@@ -117,7 +119,9 @@ class Drawer:
         rails = self._grid.rails_at_position(signal.x, signal.y)
         for rail in rails:
             signal_color = (
-                color.RED if self._grid.signal_is_stop(signal, rail) else color.GREEN
+                color.RED
+                if self._signal_controller.signal_is_stop(signal, rail)
+                else color.GREEN
             )
             position = rail.other_end(signal.x, signal.y)
             x, y = self._get_signal_sprite_position(signal, position)
