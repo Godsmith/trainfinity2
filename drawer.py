@@ -1,37 +1,38 @@
-from collections import defaultdict
-from typing import Any, Collection, Iterable, TYPE_CHECKING
 import typing
+from collections import defaultdict
+from typing import Any, Collection, Iterable
+
 import arcade
 from arcade import color
 from pyglet.math import Vec2
 
 from constants import (
-    BUILDING_RAIL_COLOR,
     BUILDING_ILLEGAL_RAIL_COLOR,
+    BUILDING_RAIL_COLOR,
     FINISHED_RAIL_COLOR,
     GRID_BOX_SIZE,
     GRID_COLOR,
     GRID_LINE_WIDTH,
+    HIGHLIGHT_COLOR,
     IRON_SIZE,
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
-    HIGHLIGHT_COLOR,
 )
 from grid import Grid, RailsBeingBuiltEvent
-
 from model import (
+    Building,
     Factory,
+    IronAddedEvent,
+    IronRemovedEvent,
     Mine,
     Rail,
     Signal,
+    SignalColor,
     Station,
-    Building,
-    IronAddedEvent,
-    IronRemovedEvent,
 )
+from observer import ChangeEvent, CreateEvent, DestroyEvent, Event
 from signal_controller import SignalController
 from train import Train
-from observer import CreateEvent, DestroyEvent, Event
 
 
 class Drawer:
@@ -71,14 +72,16 @@ class Drawer:
                 self.create_rail(object)
             case Signal():
                 self._update_signal(object)
+            case _:
+                raise ValueError(f"Received unknown object {object}")
 
     def remove(self, object: Any):
         for sprite in self._sprites_from_object_id[id(object)]:
             self._sprite_list.remove(sprite)
-            del self._sprites_from_object_id[id(object)]
+        del self._sprites_from_object_id[id(object)]
         for shape in self._shapes_from_object_id[id(object)]:
             self._shape_list.remove(shape)
-            del self._shapes_from_object_id[id(object)]
+        del self._shapes_from_object_id[id(object)]
 
     def _create_grid(self, grid: Grid):
         self._grid_shape_list = arcade.ShapeElementList()
@@ -116,17 +119,17 @@ class Drawer:
 
     def _update_signal(self, signal: Signal):
         self.remove(signal)
-        rails = self._grid.rails_at_position(signal.x, signal.y)
-        for rail in rails:
-            signal_color = (
-                color.RED
-                if self._signal_controller.signal_is_stop(signal, rail)
-                else color.GREEN
-            )
-            position = rail.other_end(signal.x, signal.y)
+        for connection in signal.connections:
+            position = connection.rail.other_end(signal.x, signal.y)
             x, y = self._get_signal_sprite_position(signal, position)
             shape = arcade.create_ellipse_filled(
-                x, y, GRID_BOX_SIZE / 6, GRID_BOX_SIZE / 6, signal_color
+                x,
+                y,
+                GRID_BOX_SIZE / 6,
+                GRID_BOX_SIZE / 6,
+                color.RED
+                if connection.signal_color == SignalColor.RED
+                else color.GREEN,
             )
             self._add_shape(shape, signal)
 
@@ -205,6 +208,12 @@ class Drawer:
                 self.show_rails_being_built(event.rails)
             case Factory() | Station() | Signal(), CreateEvent():
                 self.upsert(object)
+            case Signal(), CreateEvent() | ChangeEvent():
+                self.upsert(object)
+            case _:
+                raise ValueError(
+                    f"Received unexpected combination {object} and {event}"
+                )
 
     def create_rail(self, rail: Rail):
         x1, y1, x2, y2 = [

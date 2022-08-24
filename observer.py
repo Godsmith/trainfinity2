@@ -10,10 +10,13 @@ class Event:
 class DestroyEvent(Event):
     pass
 
+
 class CreateEvent(Event):
     pass
 
 
+class ChangeEvent(Event):
+    pass
 
 
 class Observer(Protocol):
@@ -24,6 +27,7 @@ class Observer(Protocol):
 class Subject:
     def __init__(self):
         self._observers: dict[Type[Event], list[Observer]] = defaultdict(list)
+        super().__init__()
 
     def add_observer(self, observer: Observer, event_type: Type[Event]):
         self._observers[event_type].append(observer)

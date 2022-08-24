@@ -524,3 +524,20 @@ class TestSelect:
         game_with_train.on_left_click(45, 15)
 
         assert train.selected
+
+
+class TestSignals:
+    def test_create_signal_blocks(self, game_with_factory_and_mine: MyGame):
+        game_with_factory_and_mine.grid.create_signal(60, 0)
+        blocks = game_with_factory_and_mine.signal_controller._signal_blocks
+        assert len(blocks) == 2
+        assert blocks[0].rails == frozenset({Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)})
+        assert len(blocks[0].signals) == 1
+        assert blocks[1].rails == frozenset({Rail(60, 0, 90, 0), Rail(90, 0, 120, 0)})
+        assert len(blocks[1].signals) == 1
+
+    def test_create_signal(self, game_with_factory_and_mine: MyGame):
+        signal = game_with_factory_and_mine.grid.create_signal(60, 0)
+        assert signal
+        assert signal.connections[0].rail == Rail(30, 0, 60, 0)
+        assert signal.connections[1].rail == Rail(60, 0, 90, 0)

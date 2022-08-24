@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
-from itertools import pairwise
 import random
-from typing import Any, Iterable
 
 from pyglet.math import Vec2
 
@@ -9,6 +7,11 @@ from constants import GRID_BOX_SIZE
 from grid import Grid
 from model import Mine, Player, Rail, Station
 from observer import DestroyEvent, Event, Observer, Subject
+
+
+@dataclass
+class RailChangedEvent(Event):
+    rail: Rail
 
 
 def _is_close(pos1, pos2):
@@ -70,6 +73,7 @@ class Train(Subject, Observer):
 
         if next_rail:
             self._set_current_rail(next_rail, x, y)
+            self.notify(RailChangedEvent(next_rail))
         else:
             self.destroy()
 

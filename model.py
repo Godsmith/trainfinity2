@@ -131,23 +131,24 @@ class Rail:
         return {Vec2(self.x1, self.y1), Vec2(self.x2, self.y2)}
 
 
-@dataclass(frozen=True)
-class Signal:
-    x: int
-    y: int
-    rail1: Rail
-    rail2: Rail
-
-    def other_rail(self, rail: Rail):
-        if self.rail1 == rail:
-            return self.rail2
-        elif self.rail2 == rail:
-            return self.rail1
-        raise ValueError(f"{rail} is not adjacent to signal {self}.")
-
-
 class SignalColor(Enum):
     RED = auto()
     GREEN = auto()
 
+@dataclass
+class SignalConnection:
+    rail: Rail
+    signal_color: SignalColor
 
+@dataclass
+class Signal:
+    x: int
+    y: int
+    connections: tuple[SignalConnection, SignalConnection]
+
+    def other_rail(self, rail: Rail):
+        if self.connections[0].rail == rail:
+            return self.connections[1].rail
+        elif self.connections[1] == rail:
+            return self.connections[0].rail
+        raise ValueError(f"{rail} is not adjacent to signal {self}.")

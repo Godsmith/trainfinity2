@@ -9,7 +9,16 @@ from typing import Any, Iterable, Optional, Type
 from pyglet.math import Vec2
 
 from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
-from model import Factory, Mine, Rail, Signal, Station, Water
+from model import (
+    Factory,
+    Mine,
+    Rail,
+    Signal,
+    SignalConnection,
+    Station,
+    Water,
+    SignalColor,
+)
 from gui import Mode
 from observer import CreateEvent, DestroyEvent, Event, Subject
 from terrain import Terrain
@@ -52,9 +61,9 @@ class Grid(Subject):
         super().__init__()
         self.water: dict[Vec2, Water] = {}
         self.mines: dict[Vec2, Mine] = {}
-        self.factories = {}
-        self.stations = {}
-        self.signals = {}
+        self.factories: dict[Vec2, Factory] = {}
+        self.stations: dict[Vec2, Station] = {}
+        self.signals: dict[Vec2, Signal] = {}
         self.rails_being_built = []
         self.rails: list[Rail] = []
 
@@ -329,13 +338,21 @@ class Grid(Subject):
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)
 
-    def _can_place_signal(self, x, y):
-        return len(self.rails_at_position(x, y))
+    def _two_rails_at_position(self, x, y) -> tuple[Rail, Rail] | None:
+        rails = self.rails_at_position(x, y)
+        return tuple(rails) if len(rails) == 2 else None
 
     def create_signal(self, x, y):
         x, y = self.snap_to(x, y)
-        if not self._can_place_signal(x, y):
-            return
-        signal = Signal(x, y)
-        self.signals[Vec2(x, y)] = signal
-        self._notify_about_other_object(signal, CreateEvent())
+        if rails := self._two_rails_at_position(x, y):
+            signal = Signal(
+                x,
+                y,
+                (
+                    SignalConnection(rails[0], SignalColor.GREEN),
+                    SignalConnection(rails[1], SignalColor.GREEN),
+                ),
+            )
+            self.signals[Vec2(x, y)] = signal
+            self._notify_about_other_object(signal, CreateEvent())
+            return signal
