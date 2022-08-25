@@ -536,7 +536,18 @@ class TestSignals:
         assert blocks[1].rails == frozenset({Rail(60, 0, 90, 0), Rail(90, 0, 120, 0)})
         assert len(blocks[1].signals) == 1
 
-    def test_create_signal(self, game_with_factory_and_mine: MyGame):
+    def test_clicking_grid_in_signal_mode_creates_signal(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        assert len(game_with_factory_and_mine.grid.signals) == 0
+        game_with_factory_and_mine.gui.disable()
+        game_with_factory_and_mine.gui.mode = Mode.SIGNAL
+        game_with_factory_and_mine.on_left_click(61, 1)
+        assert len(game_with_factory_and_mine.grid.signals) == 1
+
+    def test_signal_connections_contain_adjacent_rail(
+        self, game_with_factory_and_mine: MyGame
+    ):
         signal = game_with_factory_and_mine.grid.create_signal(60, 0)
         assert signal
         assert signal.connections[0].rail == Rail(30, 0, 60, 0)
