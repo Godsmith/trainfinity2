@@ -6,7 +6,7 @@ from pyglet.math import Vec2
 
 from gui import Gui
 from protocols import GridEnlarger
-from observer import Event, Subject
+from observer import ChangeEvent, Event, Subject
 
 Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")
@@ -135,20 +135,26 @@ class SignalColor(Enum):
     RED = auto()
     GREEN = auto()
 
+
 @dataclass
 class SignalConnection:
     rail: Rail
     signal_color: SignalColor
 
+
 @dataclass
-class Signal:
+class Signal(Subject):
     x: int
     y: int
     connections: tuple[SignalConnection, SignalConnection]
 
-    def other_rail(self, rail: Rail):
-        if self.connections[0].rail == rail:
-            return self.connections[1].rail
-        elif self.connections[1] == rail:
-            return self.connections[0].rail
-        raise ValueError(f"{rail} is not adjacent to signal {self}.")
+    def __post_init__(self):
+        super().__init__()
+
+    def set_signal_color(self, rail: Rail, color: SignalColor):
+        connection = [
+            connection for connection in self.connections if connection.rail == rail
+        ][0]
+        if connection.signal_color != color:
+            self.notify(ChangeEvent())
+        connection.signal_color = color

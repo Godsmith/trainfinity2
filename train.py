@@ -6,12 +6,8 @@ from pyglet.math import Vec2
 from constants import GRID_BOX_SIZE
 from grid import Grid
 from model import Mine, Player, Rail, Station
-from observer import DestroyEvent, Event, Observer, Subject
-
-
-@dataclass
-class RailChangedEvent(Event):
-    rail: Rail
+from observer import DestroyEvent, Subject
+from signal_controller import SignalController
 
 
 def _is_close(pos1, pos2):
@@ -22,11 +18,12 @@ def _is_close(pos1, pos2):
 
 
 @dataclass
-class Train(Subject, Observer):
+class Train(Subject):
     player: Player
     first_station: Station
     second_station: Station
     grid: Grid
+    signal_controller: SignalController
     x: float = field(init=False)
     y: float = field(init=False)
     target_x: int = field(init=False)
@@ -73,11 +70,11 @@ class Train(Subject, Observer):
 
         if next_rail:
             self._set_current_rail(next_rail, x, y)
-            self.notify(RailChangedEvent(next_rail))
         else:
             self.destroy()
 
     def _set_current_rail(self, next_rail: Rail, x, y):
+        self.signal_controller.update_signals()
         self._current_rail = next_rail
         if self._current_rail.x1 == x and self._current_rail.y1 == y:
             self.target_x = self._current_rail.x2

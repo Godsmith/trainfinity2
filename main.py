@@ -15,8 +15,8 @@ from constants import (
 )
 from drawer import Drawer
 from gui import Gui, Mode
-from model import Player, Rail, Station
-from train import RailChangedEvent, Train
+from model import Player, Station
+from train import Train
 from grid import Grid, RailsBeingBuiltEvent
 from camera import Camera
 from observer import ChangeEvent, CreateEvent, DestroyEvent, Event
@@ -85,13 +85,11 @@ class MyGame(arcade.Window):
         self.train_placement_station_list = []
 
         self.grid = Grid(terrain)
-        self.signal_controller = SignalController(self, self.grid, self.grid)
-        self.drawer = Drawer(self.grid, self.signal_controller)
+        self.signal_controller = SignalController(self)
+        self.drawer = Drawer()
         self.grid.add_observer(self.drawer, CreateEvent)
         self.grid.add_observer(self.drawer, DestroyEvent)
         self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
-        self.signal_controller.add_observer(self.drawer, ChangeEvent)
-        self.grid.add_observer(self.signal_controller, CreateEvent)
         self.grid.create_buildings()
 
         self.player = Player(self.gui, self.grid)
@@ -212,13 +210,19 @@ class MyGame(arcade.Window):
                 else:
                     train.selected = False
         elif self.gui.mode == Mode.SIGNAL:
-            self.grid.create_signal(x, y)
+            self._create_signal(x, y)
+
+    def _create_signal(self, x, y):
+        if signal := self.grid.create_signal(x, y):
+            signal.add_observer(self.drawer, ChangeEvent)
+            self.signal_controller.create_signal_blocks(self.grid, self.grid)
 
     def _create_train(self, station1: Station, station2: Station):
-        train = Train(self.player, station1, station2, self.grid)
+        train = Train(
+            self.player, station1, station2, self.grid, self.signal_controller
+        )
         self.trains.append(train)
         train.add_observer(self, DestroyEvent)
-        train.add_observer(self.signal_controller, RailChangedEvent)
         self.drawer.create_train(train)
         self.gui.mode = Mode.SELECT
         self.train_placement_station_list.clear()

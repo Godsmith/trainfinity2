@@ -528,7 +528,7 @@ class TestSelect:
 
 class TestSignals:
     def test_create_signal_blocks(self, game_with_factory_and_mine: MyGame):
-        game_with_factory_and_mine.grid.create_signal(60, 0)
+        game_with_factory_and_mine._create_signal(60, 0)
         blocks = game_with_factory_and_mine.signal_controller._signal_blocks
         assert len(blocks) == 2
         assert blocks[0].rails == frozenset({Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)})

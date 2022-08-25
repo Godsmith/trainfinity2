@@ -31,15 +31,12 @@ from model import (
     Station,
 )
 from observer import ChangeEvent, CreateEvent, DestroyEvent, Event
-from signal_controller import SignalController
 from train import Train
 
 
 class Drawer:
-    def __init__(self, grid: Grid, signal_controller: SignalController):
+    def __init__(self):
 
-        self._grid = grid
-        self._signal_controller = signal_controller
         self._grid_shape_list = arcade.ShapeElementList()
         self._shape_list = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()

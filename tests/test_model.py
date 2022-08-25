@@ -1,6 +1,7 @@
 import pytest
 from grid import Grid
 from model import Mine, Player, Rail, Station
+from signal_controller import SignalController
 from train import Train
 from pyglet.math import Vec2
 from terrain import Terrain
@@ -25,6 +26,10 @@ def mock_drawer():
             pass
 
     return MockDrawer
+
+
+class MockTrainCollection:
+    trains: list[Train] = []
 
 
 @pytest.fixture
@@ -57,10 +62,7 @@ def train(player, mock_grid: Grid):
     station2 = Station(30, 0, Mine(0, 0))
     mock_grid._create_rail([Rail(0, 0, 30, 0)])
     return Train(
-        player,
-        station1,
-        station2,
-        mock_grid,
+        player, station1, station2, mock_grid, SignalController(MockTrainCollection())
     )
 
 
