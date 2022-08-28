@@ -41,11 +41,13 @@ class Train(Subject):
         self._target_station = self.first_station
         self._rails_on_route = []
         self._current_rail: Rail | None = None
-        self._select_next_target(self.first_station.x, self.first_station.y)
 
     @property
     def rails_on_route(self):
         return self._rails_on_route
+
+    def start(self):
+        self._select_next_target(self.first_station.x, self.first_station.y)
 
     def _select_next_target(self, x: int, y: int):
         if _is_close(self, self._target_station):
@@ -66,15 +68,14 @@ class Train(Subject):
         self._rails_on_route = self.grid._find_route(
             Vec2(x, y), self._target_station, previous_rail=self._current_rail
         )
-        next_rail = self._get_next_rail(x, y)
 
-        if next_rail:
+        if next_rail := self._get_next_rail(x, y):
             self._set_current_rail(next_rail, x, y)
+            self.signal_controller.update_signals()
         else:
             self.destroy()
 
     def _set_current_rail(self, next_rail: Rail, x, y):
-        self.signal_controller.update_signals()
         self._current_rail = next_rail
         if self._current_rail.x1 == x and self._current_rail.y1 == y:
             self.target_x = self._current_rail.x2

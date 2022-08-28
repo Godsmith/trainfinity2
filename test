@@ -1,2 +1,2 @@
 #!/bin/bash
-python -m pytest --cov
+.venv/Scripts/python -m pytest --cov

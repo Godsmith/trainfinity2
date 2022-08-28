@@ -142,7 +142,7 @@ class SignalConnection:
     signal_color: SignalColor
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Signal(Subject):
     x: int
     y: int
@@ -151,10 +151,14 @@ class Signal(Subject):
     def __post_init__(self):
         super().__init__()
 
+    @property
+    def position(self):
+        return Vec2(self.x, self.y)
+
     def set_signal_color(self, rail: Rail, color: SignalColor):
         connection = [
             connection for connection in self.connections if connection.rail == rail
         ][0]
-        if connection.signal_color != color:
-            self.notify(ChangeEvent())
+        # if connection.signal_color != color:
+        self.notify(ChangeEvent())
         connection.signal_color = color

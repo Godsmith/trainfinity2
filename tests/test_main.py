@@ -2,7 +2,7 @@ import arcade
 import pytest
 from constants import SECONDS_BETWEEN_IRON_CREATION
 from main import MyGame, Mode, TrainPlacementMode
-from model import Rail, Station, Water
+from model import Rail, SignalColor, Station, Water
 from pyglet.math import Vec2
 from pytest import approx
 
@@ -532,9 +532,7 @@ class TestSignals:
         blocks = game_with_factory_and_mine.signal_controller._signal_blocks
         assert len(blocks) == 2
         assert blocks[0].rails == frozenset({Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)})
-        assert len(blocks[0].signals) == 1
         assert blocks[1].rails == frozenset({Rail(60, 0, 90, 0), Rail(90, 0, 120, 0)})
-        assert len(blocks[1].signals) == 1
 
     def test_clicking_grid_in_signal_mode_creates_signal(
         self, game_with_factory_and_mine: MyGame
@@ -552,3 +550,21 @@ class TestSignals:
         assert signal
         assert signal.connections[0].rail == Rail(30, 0, 60, 0)
         assert signal.connections[1].rail == Rail(60, 0, 90, 0)
+
+    def test_signal_color_without_trains_is_green(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        signal = game_with_factory_and_mine._create_signal(60, 0)
+        assert signal
+        assert signal.connections[0].signal_color == SignalColor.GREEN
+        assert signal.connections[1].signal_color == SignalColor.GREEN
+
+    def test_signal_color_with_train_is_RED(self, game_with_factory_and_mine: MyGame):
+        game = game_with_factory_and_mine
+        stations = game.grid.stations.values()
+        signal = game._create_signal(60, 0)
+        game._create_train(*stations)
+
+        assert signal
+        assert signal.connections[0].signal_color == SignalColor.GREEN
+        assert signal.connections[1].signal_color == SignalColor.RED

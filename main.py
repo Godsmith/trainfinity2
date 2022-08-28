@@ -15,7 +15,7 @@ from constants import (
 )
 from drawer import Drawer
 from gui import Gui, Mode
-from model import Player, Station
+from model import Player, Signal, Station
 from train import Train
 from grid import Grid, RailsBeingBuiltEvent
 from camera import Camera
@@ -212,10 +212,11 @@ class MyGame(arcade.Window):
         elif self.gui.mode == Mode.SIGNAL:
             self._create_signal(x, y)
 
-    def _create_signal(self, x, y):
+    def _create_signal(self, x, y) -> Signal | None:
         if signal := self.grid.create_signal(x, y):
             signal.add_observer(self.drawer, ChangeEvent)
             self.signal_controller.create_signal_blocks(self.grid, self.grid)
+        return signal
 
     def _create_train(self, station1: Station, station2: Station):
         train = Train(
@@ -228,6 +229,7 @@ class MyGame(arcade.Window):
         self.train_placement_station_list.clear()
         self.drawer.highlight([])
         train.selected = True
+        train.start()
 
     def on_notify(self, object: Any, event: Event):
         match object, event:
