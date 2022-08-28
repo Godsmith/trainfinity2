@@ -162,3 +162,11 @@ class Signal(Subject):
         # if connection.signal_color != color:
         self.notify(ChangeEvent())
         connection.signal_color = color
+
+    def other_rail(self, rail: Rail):
+        if rail == self.connections[0].rail:
+            return self.connections[1].rail
+        elif rail == self.connections[1].rail:
+            return self.connections[0].rail
+        else:
+            raise ValueError(f"Signal {self} is not next to rail {rail}")

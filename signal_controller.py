@@ -25,6 +25,7 @@ class SignalController:
         self._train_collection = train_collection
         self._signal_blocks: list[SignalBlock] = []
         self._signals: dict[Vec2, Signal] = {}
+        self._signal_block_from_rail: dict[Rail, SignalBlock] = {}
 
     def create_signal_blocks(
         self, rail_collection: RailCollection, signal_collection: SignalCollection
@@ -58,6 +59,11 @@ class SignalController:
             )
             for rail_set, signal_list in zip(rail_sets, signal_lists)
         ]
+        self._signal_block_from_rail = {
+            rail: signal_block
+            for signal_block in self._signal_blocks
+            for rail in signal_block.rails
+        }
 
     def _get_color(self, block: SignalBlock) -> SignalColor:
         return (
@@ -72,23 +78,9 @@ class SignalController:
             for train in self._train_collection.trains
         )
 
-    def _rail_leading_to_signal_block(self, signal: Signal, signal_block: SignalBlock):
-        return [
-            connection.rail
-            for connection in signal.connections
-            if connection.rail not in signal_block.rails
-        ][0]
-
     def update_signals(self):
-        signal_blocks_from_signal_position: dict[Vec2, set[SignalBlock]] = defaultdict(
-            set
-        )
-        for signal_block in self._signal_blocks:
-            for position in signal_block.signal_positions:
-                signal_blocks_from_signal_position[position].add(signal_block)
-        for position, signal in self._signals.items():
-            for signal_block in signal_blocks_from_signal_position[position]:
-                rail = self._rail_leading_to_signal_block(signal, signal_block)
+        for signal in self._signals.values():
+            for connection in signal.connections:
+                signal_block = self._signal_block_from_rail[connection.rail]
                 color = self._get_color(signal_block)
-                signal.set_signal_color(rail, color)
-        # TODO: handle crash when signal block loops in on itself
+                signal.set_signal_color(signal.other_rail(connection.rail), color)
