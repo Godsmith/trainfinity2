@@ -155,13 +155,16 @@ class Signal(Subject):
     def position(self):
         return Vec2(self.x, self.y)
 
-    def set_signal_color(self, rail: Rail, color: SignalColor):
-        connection = [
+    def _connection_from_rail(self, rail:Rail):
+        return [
             connection for connection in self.connections if connection.rail == rail
         ][0]
+
+
+    def set_signal_color(self, rail: Rail, color: SignalColor):
         # if connection.signal_color != color:
+        self._connection_from_rail(rail).signal_color = color
         self.notify(ChangeEvent())
-        connection.signal_color = color
 
     def other_rail(self, rail: Rail):
         if rail == self.connections[0].rail:
@@ -170,3 +173,6 @@ class Signal(Subject):
             return self.connections[0].rail
         else:
             raise ValueError(f"Signal {self} is not next to rail {rail}")
+
+    def signal_color_coming_from(self, rail: Rail):
+        return self._connection_from_rail(rail).signal_color

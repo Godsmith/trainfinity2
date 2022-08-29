@@ -28,7 +28,6 @@ class Train(Subject):
     y: float = field(init=False)
     target_x: int = field(init=False)
     target_y: int = field(init=False)
-    current_target_route_index: int = field(init=False)
     iron: int = 0
     selected = False
 

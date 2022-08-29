@@ -200,17 +200,26 @@ class Grid(Subject):
                         rail_in_shortest_route_from_position[adjacent_position] = rail
         return None
 
-    def _possible_next_rails(
-        self, position: tuple[int, int], previous_rail: Rail | None
-    ):
+    def _is_red_signal(self, signal_position: Vec2, rail: Rail):
+        if signal := self.signals.get(signal_position):
+            return signal.signal_color_coming_from(rail) == SignalColor.RED
+        return False
+
+    def _possible_next_rails(self, position: Vec2, previous_rail: Rail | None):
         """Given a position and where the train came from, return a list of possible rails
         it can continue on.
         Current rules:
         1. The train cannot reverse (if previous_rail = None, the train is at a standstill, e.g. at a station)
+        2. The train cannot go into a red light
         Possible future rules:
-        2. The train cannot turn more than X degrees
-        3. The train cannot go into a red light"""
-        return self.rails_at_position(*position) - {previous_rail}
+        3. The train cannot turn more than X degrees"""
+        rails = self.rails_at_position(*position) - {previous_rail}
+        rails = [
+            rail
+            for rail in rails
+            if not self._is_red_signal(rail.other_end(*position), rail)
+        ]
+        return rails
 
     def _rail_is_in_occupied_position(self, rail: Rail):
         return (
