@@ -139,6 +139,7 @@ class SignalColor(Enum):
 @dataclass
 class SignalConnection:
     rail: Rail
+    towards_position: Vec2
     signal_color: SignalColor
 
 
@@ -155,11 +156,14 @@ class Signal(Subject):
     def position(self):
         return Vec2(self.x, self.y)
 
-    def _connection_from_rail(self, rail:Rail):
+    @property
+    def rails(self):
+        return {connection.rail for connection in self.connections}
+
+    def _connection_from_rail(self, rail: Rail):
         return [
             connection for connection in self.connections if connection.rail == rail
         ][0]
-
 
     def set_signal_color(self, rail: Rail, color: SignalColor):
         # if connection.signal_color != color:

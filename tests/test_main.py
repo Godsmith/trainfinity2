@@ -531,8 +531,10 @@ class TestSignals:
         game_with_factory_and_mine._create_signal(60, 0)
         blocks = game_with_factory_and_mine.signal_controller._signal_blocks
         assert len(blocks) == 2
-        assert blocks[0].rails == frozenset({Rail(0, 0, 30, 0), Rail(30, 0, 60, 0)})
-        assert blocks[1].rails == frozenset({Rail(60, 0, 90, 0), Rail(90, 0, 120, 0)})
+        assert blocks[0].positions == frozenset({Vec2(0, 0), Vec2(30, 0), Vec2(60, 0)})
+        assert blocks[1].positions == frozenset(
+            {Vec2(60, 0), Vec2(90, 0), Vec2(120, 0)}
+        )
 
     def test_clicking_grid_in_signal_mode_creates_signal(
         self, game_with_factory_and_mine: MyGame
@@ -559,10 +561,12 @@ class TestSignals:
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
 
-    def test_signal_color_with_train_is_RED(self, game_with_factory_and_mine: MyGame):
+    def test_signal_color_towards_block_with_train_is_red_and_towards_block_without_train_is_green(
+        self, game_with_factory_and_mine: MyGame
+    ):
         game = game_with_factory_and_mine
         stations = game.grid.stations.values()
-        signal = game._create_signal(60, 0)
+        signal = game._create_signal(90, 0)
         game._create_train(*stations)
 
         assert signal

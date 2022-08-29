@@ -12,8 +12,7 @@ from protocols import RailCollection, SignalCollection, TrainCollection
 
 @dataclass(frozen=True)
 class SignalBlock:
-    rails: frozenset[Rail]
-    signal_positions: tuple[Vec2, Vec2]
+    positions: frozenset[Vec2]
 
 
 class SignalController:
@@ -25,44 +24,36 @@ class SignalController:
         self._train_collection = train_collection
         self._signal_blocks: list[SignalBlock] = []
         self._signals: dict[Vec2, Signal] = {}
-        self._signal_block_from_rail: dict[Rail, SignalBlock] = {}
+        self._signal_block_from_position: dict[Vec2, SignalBlock] = {}
 
     def create_signal_blocks(
         self, rail_collection: RailCollection, signal_collection: SignalCollection
     ):
         self._signals = signal_collection.signals
         rails = set(rail_collection.rails)
-        rail_sets: list[set[Rail]] = []
-        signal_lists: list[list[Signal]] = []
+        position_sets: list[set[Vec2]] = []
         while rails:
-            rail_sets.append(set())
-            signal_lists.append([])
+            position_sets.append(set())
             rail = list(rails)[0]
             positions = rail.positions
             while positions:
                 position = positions.pop()
-                if signal := signal_collection.signals.get(Vec2(*position)):
-                    if signal not in signal_lists[-1]:
-                        # TODO: make Signal immutable to make signal_lists to signal_sets instead
-                        signal_lists[-1].append(signal)
-                else:
+                position_sets[-1].add(position)
+                if position not in signal_collection.signals:
                     new_rails = rail_collection.rails_at_position(*position)
                     for rail in new_rails:
                         if rail in rails:
-                            rail_sets[-1].add(rail)
                             rails.remove(rail)
                             for position in rail.positions:
                                 positions.add(position)
         self._signal_blocks = [
-            SignalBlock(
-                frozenset(rail_set), tuple(signal.position for signal in signal_list)
-            )
-            for rail_set, signal_list in zip(rail_sets, signal_lists)
+            SignalBlock(frozenset(position_set)) for position_set in position_sets
         ]
-        self._signal_block_from_rail = {
-            rail: signal_block
+
+        self._signal_block_from_position = {
+            position: signal_block
             for signal_block in self._signal_blocks
-            for rail in signal_block.rails
+            for position in signal_block.positions
         }
 
     def _get_color(self, block: SignalBlock) -> SignalColor:
@@ -74,13 +65,16 @@ class SignalController:
 
     def _is_train_in_signal_block(self, block: SignalBlock):
         return any(
-            train._current_rail in block.rails
+            train._current_rail
+            and train._current_rail.positions.intersection(block.positions)
             for train in self._train_collection.trains
         )
 
     def update_signals(self):
         for signal in self._signals.values():
             for connection in signal.connections:
-                signal_block = self._signal_block_from_rail[connection.rail]
+                signal_block = self._signal_block_from_position[
+                    connection.towards_position
+                ]
                 color = self._get_color(signal_block)
                 signal.set_signal_color(signal.other_rail(connection.rail), color)
