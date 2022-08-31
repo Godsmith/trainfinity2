@@ -203,9 +203,9 @@ class Grid(Subject):
                         rail_in_shortest_route_from_position[adjacent_position] = rail
         return None
 
-    def _is_red_signal(self, signal_position: Vec2, rail: Rail):
+    def _is_red_signal(self, signal_position: Vec2, coming_from_rail: Rail):
         if signal := self.signals.get(signal_position):
-            return signal.signal_color_coming_from(rail) == SignalColor.RED
+            return signal.signal_color_coming_from(coming_from_rail) == SignalColor.RED
         return False
 
     def _possible_next_rails(self, position: Vec2, previous_rail: Rail | None):

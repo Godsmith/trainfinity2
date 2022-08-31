@@ -203,7 +203,7 @@ class Drawer:
             case Grid(), RailsBeingBuiltEvent():
                 event = typing.cast(RailsBeingBuiltEvent, event)
                 self.show_rails_being_built(event.rails)
-            case Factory() | Station() | Signal(), CreateEvent():
+            case Factory() | Station(), CreateEvent():
                 self.upsert(object)
             case Signal(), CreateEvent() | ChangeEvent():
                 self.upsert(object)

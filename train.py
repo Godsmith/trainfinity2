@@ -61,7 +61,8 @@ class Train(Subject):
                 if self._target_station == self.first_station
                 else self.first_station
             )
-            # Ensure that the train can reverse at the station
+            # This ensures that the train can immediately reverse at the station
+            # Otherwise it the train would prefer to continue forward and then reverse
             self._current_rail = None
 
         self._rails_on_route = self.grid._find_route(
