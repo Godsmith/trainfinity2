@@ -39,7 +39,7 @@ def player(mock_gui, mock_drawer):
 
 @pytest.fixture
 def mock_grid():
-    return Grid(Terrain(water=[Vec2(0, 0)]))
+    return Grid(Terrain(water=[Vec2(0, 0)]), SignalController(MockTrainCollection()))
 
 
 class TestPlayer:

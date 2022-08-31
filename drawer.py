@@ -196,7 +196,7 @@ class Drawer:
             case Rail(), DestroyEvent():
                 # TODO: change remove_rail to take rail object instead
                 self.remove(object)
-            case Mine() | Station() | Factory(), DestroyEvent():
+            case Mine() | Station() | Factory() | Signal(), DestroyEvent():
                 self.remove(object)
             case Rail(), CreateEvent():
                 self.upsert(object)

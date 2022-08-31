@@ -56,6 +56,8 @@ class SignalController:
             for position in signal_block.positions
         }
 
+        self.update_signals()
+
     def _get_color(self, block: SignalBlock) -> SignalColor:
         return (
             SignalColor.RED

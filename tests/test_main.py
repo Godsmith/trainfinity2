@@ -561,14 +561,25 @@ class TestSignals:
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
 
-    def test_signal_color_towards_block_with_train_is_red_and_towards_block_without_train_is_green(
-        self, game_with_factory_and_mine: MyGame
-    ):
+    @pytest.fixture
+    def game_with_train_and_signal(self, game_with_factory_and_mine: MyGame):
+        """
+         M F
+        =S=Ss==
+         ^
+         T
+        """
         game = game_with_factory_and_mine
+        game.grid._create_rail([Rail(120, 0, 150, 0), Rail(150, 0, 180, 0)])
         stations = game.grid.stations.values()
-        signal = game._create_signal(90, 0)
+        game._create_signal(120, 0)
         game._create_train(*stations)
+        return game
 
+    def test_signal_color_towards_block_with_train_is_red_and_towards_block_without_train_is_green(
+        self, game_with_train_and_signal: MyGame
+    ):
+        signal = game_with_train_and_signal.grid.signals[Vec2(120, 0)]
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.RED
@@ -602,3 +613,43 @@ class TestSignals:
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
+
+    def test_clicking_signal_in_destroy_mode_destroys_signal(
+        self,
+        game_with_factory_and_mine,
+    ):
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.DESTROY
+        game_with_factory_and_mine._create_signal(90, 0)
+
+        assert len(game.grid.signals) == 1
+
+        game.on_mouse_press(x=90, y=0, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=91, y=1, dx=1, dy=1)
+
+        assert len(game.grid.signals) == 0
+
+    def test_destroying_rail_resets_signal_blocks(
+        self,
+        game_with_train_and_signal: MyGame,
+    ):
+        game = game_with_train_and_signal
+
+        game.grid.remove_rail(60, 0)
+
+        signal = game.grid.signals[Vec2(120, 0)]
+        assert signal.connections[0].signal_color == SignalColor.GREEN
+        assert signal.connections[1].signal_color == SignalColor.GREEN
+
+    def test_adding_rail_resets_signal_blocks(
+        self,
+        game_with_train_and_signal: MyGame,
+    ):
+        game = game_with_train_and_signal
+
+        game.grid.remove_rail(60, 0)
+        game.grid._create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
+
+        signal = game.grid.signals[Vec2(120, 0)]
+        assert signal.connections[0].signal_color == SignalColor.GREEN
+        assert signal.connections[1].signal_color == SignalColor.RED

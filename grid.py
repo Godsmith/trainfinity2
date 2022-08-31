@@ -22,6 +22,7 @@ from model import (
 from gui import Mode
 from observer import CreateEvent, DestroyEvent, Event, Subject
 from terrain import Terrain
+from signal_controller import SignalController
 
 
 @dataclass
@@ -57,8 +58,10 @@ def get_random_position() -> Vec2:
 
 
 class Grid(Subject):
-    def __init__(self, terrain: Terrain) -> None:
+    def __init__(self, terrain: Terrain, signal_controller: SignalController) -> None:
         super().__init__()
+        self._signal_controller = signal_controller
+
         self.water: dict[Vec2, Water] = {}
         self.mines: dict[Vec2, Mine] = {}
         self.factories: dict[Vec2, Factory] = {}
@@ -273,6 +276,13 @@ class Grid(Subject):
             self._notify_about_other_object(station, DestroyEvent())
             del self.stations[Vec2(x, y)]
 
+        if Vec2(x, y) in self.signals:
+            signal = self.signals[Vec2(x, y)]
+            self._notify_about_other_object(signal, DestroyEvent())
+            del self.signals[Vec2(x, y)]
+
+        self._signal_controller.create_signal_blocks(self, self)
+
     def _notify_about_other_object(self, other_object: Any, event: Event):
         for observer in self._observers[type(event)]:
             observer.on_notify(other_object, event)
@@ -281,6 +291,7 @@ class Grid(Subject):
         self.rails.extend(rails)
         for rail in rails:
             self._notify_about_other_object(rail, CreateEvent())
+        self._signal_controller.create_signal_blocks(self, self)
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):

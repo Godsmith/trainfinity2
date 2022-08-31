@@ -84,8 +84,8 @@ class MyGame(arcade.Window):
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
-        self.grid = Grid(terrain)
         self.signal_controller = SignalController(self)
+        self.grid = Grid(terrain, self.signal_controller)
         self.drawer = Drawer()
         self.grid.add_observer(self.drawer, CreateEvent)
         self.grid.add_observer(self.drawer, DestroyEvent)
