@@ -37,6 +37,8 @@ class Train(Subject):
         super().__init__()
         self.x = self.first_station.x
         self.y = self.first_station.y
+        self.target_x = self.x
+        self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route = []
         self._current_rail: Rail | None = None
@@ -46,7 +48,7 @@ class Train(Subject):
         return self._rails_on_route
 
     def start(self):
-        self._select_next_target(self.first_station.x, self.first_station.y)
+        self._select_next_target()
 
     def move(self, delta_time):
         train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
@@ -63,7 +65,7 @@ class Train(Subject):
             abs(self.x - self.target_x) < train_displacement
             and abs(self.y - self.target_y) < train_displacement
         ):
-            self._select_next_target(self.target_x, self.target_y)
+            self._select_next_target()
 
     def is_at(self, x, y):
         return (
@@ -79,7 +81,7 @@ class Train(Subject):
             and abs(self.y - train.y) < GRID_BOX_SIZE / 2
         )
 
-    def _select_next_target(self, x: int, y: int):
+    def _select_next_target(self):
         if _is_close(self, self._target_station):
             if isinstance(self._target_station.mine_or_factory, Mine):
                 self.iron += self._target_station.mine_or_factory.remove_iron(1)
@@ -97,11 +99,13 @@ class Train(Subject):
             self._current_rail = None
 
         self._rails_on_route = self.grid._find_route(
-            Vec2(x, y), self._target_station, previous_rail=self._current_rail
+            Vec2(self.target_x, self.target_y),
+            self._target_station,
+            previous_rail=self._current_rail,
         )
 
-        if next_rail := self._get_next_rail(x, y):
-            self._set_current_rail(next_rail, x, y)
+        if next_rail := self._get_next_rail(self.target_x, self.target_y):
+            self._set_current_rail(next_rail, self.target_x, self.target_y)
             self.signal_controller.update_signals()
         else:
             self.destroy()
