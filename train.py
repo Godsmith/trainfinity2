@@ -48,62 +48,6 @@ class Train(Subject):
     def start(self):
         self._select_next_target(self.first_station.x, self.first_station.y)
 
-    def _select_next_target(self, x: int, y: int):
-        if _is_close(self, self._target_station):
-            if isinstance(self._target_station.mine_or_factory, Mine):
-                self.iron += self._target_station.mine_or_factory.remove_iron(1)
-            else:
-                # Factory
-                self.player.score += self.iron
-                self.iron = 0
-            self._target_station = (
-                self.second_station
-                if self._target_station == self.first_station
-                else self.first_station
-            )
-            # This ensures that the train can immediately reverse at the station
-            # Otherwise it the train would prefer to continue forward and then reverse
-            self._current_rail = None
-
-        self._rails_on_route = self.grid._find_route(
-            Vec2(x, y), self._target_station, previous_rail=self._current_rail
-        )
-
-        if next_rail := self._get_next_rail(x, y):
-            self._set_current_rail(next_rail, x, y)
-            self.signal_controller.update_signals()
-        else:
-            self.destroy()
-
-    def _set_current_rail(self, next_rail: Rail, x, y):
-        self._current_rail = next_rail
-        if self._current_rail.x1 == x and self._current_rail.y1 == y:
-            self.target_x = self._current_rail.x2
-            self.target_y = self._current_rail.y2
-        else:
-            self.target_x = self._current_rail.x1
-            self.target_y = self._current_rail.y1
-
-    def _get_next_rail(self, x, y) -> Rail | None:
-        """1. If there is a route to the target, choose the first rail on that route.
-        2. If not, choose a random rail.
-        3. If there is no rail to choose, reverse, then choose a random rail (possible change: return None?)
-        4. If there is still no rail to choose, return None."""
-        if self._rails_on_route:
-            return self._rails_on_route[0]
-        else:
-            possible_next_rails = self.grid._possible_next_rails(
-                Vec2(x, y), previous_rail=self._current_rail
-            )
-            if not possible_next_rails:
-                # At end of line; reverse
-                possible_next_rails = self.grid._possible_next_rails(
-                    Vec2(x, y), previous_rail=None
-                )
-                if not possible_next_rails:
-                    return None
-            return random.choice(list(possible_next_rails))
-
     def move(self, delta_time):
         train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
 
@@ -134,3 +78,59 @@ class Train(Subject):
             abs(self.x - train.x) < GRID_BOX_SIZE / 2
             and abs(self.y - train.y) < GRID_BOX_SIZE / 2
         )
+
+    def _select_next_target(self, x: int, y: int):
+        if _is_close(self, self._target_station):
+            if isinstance(self._target_station.mine_or_factory, Mine):
+                self.iron += self._target_station.mine_or_factory.remove_iron(1)
+            else:
+                # Factory
+                self.player.score += self.iron
+                self.iron = 0
+            self._target_station = (
+                self.second_station
+                if self._target_station == self.first_station
+                else self.first_station
+            )
+            # This ensures that the train can immediately reverse at the station
+            # Otherwise it the train would prefer to continue forward and then reverse
+            self._current_rail = None
+
+        self._rails_on_route = self.grid._find_route(
+            Vec2(x, y), self._target_station, previous_rail=self._current_rail
+        )
+
+        if next_rail := self._get_next_rail(x, y):
+            self._set_current_rail(next_rail, x, y)
+            self.signal_controller.update_signals()
+        else:
+            self.destroy()
+
+    def _get_next_rail(self, x, y) -> Rail | None:
+        """1. If there is a route to the target, choose the first rail on that route.
+        2. If not, choose a random rail.
+        3. If there is no rail to choose, reverse, then choose a random rail (possible change: return None?)
+        4. If there is still no rail to choose, return None."""
+        if self._rails_on_route:
+            return self._rails_on_route[0]
+        else:
+            possible_next_rails = self.grid._possible_next_rails(
+                Vec2(x, y), previous_rail=self._current_rail
+            )
+            if not possible_next_rails:
+                # At end of line; reverse
+                possible_next_rails = self.grid._possible_next_rails(
+                    Vec2(x, y), previous_rail=None
+                )
+                if not possible_next_rails:
+                    return None
+            return random.choice(list(possible_next_rails))
+
+    def _set_current_rail(self, next_rail: Rail, x, y):
+        self._current_rail = next_rail
+        if self._current_rail.x1 == x and self._current_rail.y1 == y:
+            self.target_x = self._current_rail.x2
+            self.target_y = self._current_rail.y2
+        else:
+            self.target_x = self._current_rail.x1
+            self.target_y = self._current_rail.y1
