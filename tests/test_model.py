@@ -68,7 +68,6 @@ def train(player, mock_grid: Grid):
 
 class TestTrain:
     def test_move_east(self, train):
-        train.start()
         train.target_x = 100
         train.x = 0
         train.move(1 / 60)
@@ -76,7 +75,6 @@ class TestTrain:
         assert train.x == pytest.approx(2)
 
     def test_move_west(self, train):
-        train.start()
         train.target_x = -100
         train.x = 0
         train.move(1 / 60)
@@ -84,7 +82,6 @@ class TestTrain:
         assert train.x == pytest.approx(-2)
 
     def test_move_north(self, train):
-        train.start()
         train.target_y = 100
         train.y = 0
         train.move(1 / 60)
@@ -92,7 +89,6 @@ class TestTrain:
         assert train.y == pytest.approx(2)
 
     def test_move_south(self, train):
-        train.start()
         train.target_y = -100
         train.y = 0
         train.move(1 / 60)

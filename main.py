@@ -229,7 +229,6 @@ class MyGame(arcade.Window):
         self.train_placement_station_list.clear()
         self.drawer.highlight([])
         train.selected = True
-        train.start()
 
     def on_notify(self, object: Any, event: Event):
         match object, event:

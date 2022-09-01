@@ -482,6 +482,7 @@ def test_train_delivers_iron_to_factory_gives_score(game_with_train: MyGame):
     train.iron = 1
     train.x = 90
     train.target_x = 90
+    train._target_station = game_with_train.grid.stations[Vec2(90, 0)]
 
     game_with_train.on_update(1 / 60)
 
@@ -580,6 +581,9 @@ class TestSignals:
         self, game_with_train_and_signal: MyGame
     ):
         signal = game_with_train_and_signal.grid.signals[Vec2(120, 0)]
+
+        game_with_train_and_signal.on_update(1 / 60)
+
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.RED
@@ -646,10 +650,11 @@ class TestSignals:
         game_with_train_and_signal: MyGame,
     ):
         game = game_with_train_and_signal
+        game.on_update(1 / 60)
 
         game.grid.remove_rail(60, 0)
         game.grid._create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
-
         signal = game.grid.signals[Vec2(120, 0)]
+
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.RED

@@ -47,9 +47,6 @@ class Train(Subject):
     def rails_on_route(self):
         return self._rails_on_route
 
-    def start(self):
-        self._select_next_target()
-
     def move(self, delta_time):
         train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
 
@@ -65,7 +62,7 @@ class Train(Subject):
             abs(self.x - self.target_x) < train_displacement
             and abs(self.y - self.target_y) < train_displacement
         ):
-            self._select_next_target()
+            self._on_reached_target()
 
     def is_at(self, x, y):
         return (
@@ -81,7 +78,7 @@ class Train(Subject):
             and abs(self.y - train.y) < GRID_BOX_SIZE / 2
         )
 
-    def _select_next_target(self):
+    def _on_reached_target(self):
         if _is_close(self, self._target_station):
             if isinstance(self._target_station.mine_or_factory, Mine):
                 self.iron += self._target_station.mine_or_factory.remove_iron(1)
