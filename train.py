@@ -28,6 +28,7 @@ class Train(Subject):
     y: float = field(init=False)
     target_x: int = field(init=False)
     target_y: int = field(init=False)
+    current_rail: Rail | None = None
     iron: int = 0
     selected = False
 
@@ -41,7 +42,6 @@ class Train(Subject):
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route = []
-        self._current_rail: Rail | None = None
 
     @property
     def rails_on_route(self):
@@ -93,12 +93,12 @@ class Train(Subject):
             )
             # This ensures that the train can immediately reverse at the station
             # Otherwise it the train would prefer to continue forward and then reverse
-            self._current_rail = None
+            self.current_rail = None
 
         self._rails_on_route = self.grid._find_route(
             Vec2(self.target_x, self.target_y),
             self._target_station,
-            previous_rail=self._current_rail,
+            previous_rail=self.current_rail,
         )
 
         if next_rail := self._get_next_rail(self.target_x, self.target_y):
@@ -116,7 +116,7 @@ class Train(Subject):
             return self._rails_on_route[0]
         else:
             possible_next_rails = self.grid._possible_next_rails(
-                Vec2(x, y), previous_rail=self._current_rail
+                Vec2(x, y), previous_rail=self.current_rail
             )
             if not possible_next_rails:
                 # At end of line; reverse
@@ -128,10 +128,10 @@ class Train(Subject):
             return random.choice(list(possible_next_rails))
 
     def _set_current_rail(self, next_rail: Rail, x, y):
-        self._current_rail = next_rail
-        if self._current_rail.x1 == x and self._current_rail.y1 == y:
-            self.target_x = self._current_rail.x2
-            self.target_y = self._current_rail.y2
+        self.current_rail = next_rail
+        if self.current_rail.x1 == x and self.current_rail.y1 == y:
+            self.target_x = self.current_rail.x2
+            self.target_y = self.current_rail.y2
         else:
-            self.target_x = self._current_rail.x1
-            self.target_y = self._current_rail.y1
+            self.target_x = self.current_rail.x1
+            self.target_y = self.current_rail.y1

@@ -67,8 +67,8 @@ class SignalController:
 
     def _is_train_in_signal_block(self, block: SignalBlock):
         return any(
-            train._current_rail
-            and train._current_rail.positions.intersection(block.positions)
+            train.current_rail
+            and train.current_rail.positions.intersection(block.positions)
             for train in self._train_collection.trains
         )
 
