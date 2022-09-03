@@ -28,10 +28,6 @@ def mock_drawer():
     return MockDrawer
 
 
-class MockTrainCollection:
-    trains: list[Train] = []
-
-
 @pytest.fixture
 def player(mock_gui, mock_drawer):
     return Player(mock_gui(), mock_drawer(800, 600))
@@ -39,7 +35,7 @@ def player(mock_gui, mock_drawer):
 
 @pytest.fixture
 def mock_grid():
-    return Grid(Terrain(water=[Vec2(0, 0)]), SignalController(MockTrainCollection()))
+    return Grid(Terrain(water=[Vec2(0, 0)]), SignalController())
 
 
 class TestPlayer:
@@ -61,9 +57,7 @@ def train(player, mock_grid: Grid):
     station1 = Station(0, 0, Mine(0, 0))
     station2 = Station(30, 0, Mine(0, 0))
     mock_grid._create_rail([Rail(0, 0, 30, 0)])
-    return Train(
-        player, station1, station2, mock_grid, SignalController(MockTrainCollection())
-    )
+    return Train(player, station1, station2, mock_grid, SignalController())
 
 
 class TestTrain:

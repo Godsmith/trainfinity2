@@ -68,7 +68,7 @@ class MyGame:
         self.train_placement_mode = TrainPlacementMode.FIRST_STATION
         self.train_placement_station_list = []
 
-        self.signal_controller = SignalController(self)
+        self.signal_controller = SignalController()
         self.grid = Grid(terrain, self.signal_controller)
         self.drawer = Drawer()
         self.grid.add_observer(self.drawer, CreateEvent)
@@ -198,7 +198,6 @@ class MyGame:
     def _create_signal(self, x, y) -> Signal | None:
         if signal := self.grid.create_signal(x, y):
             signal.add_observer(self.drawer, ChangeEvent)
-            self.signal_controller.create_signal_blocks(self.grid, self.grid)
         return signal
 
     def _create_train(self, station1: Station, station2: Station):

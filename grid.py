@@ -281,7 +281,7 @@ class Grid(Subject):
             self._notify_about_other_object(signal, DestroyEvent())
             del self.signals[Vec2(x, y)]
 
-        self._signal_controller.create_signal_blocks(self, self)
+        self._signal_controller.create_signal_blocks(self, self.signals)
 
     def _notify_about_other_object(self, other_object: Any, event: Event):
         for observer in self._observers[type(event)]:
@@ -291,7 +291,7 @@ class Grid(Subject):
         self.rails.extend(rails)
         for rail in rails:
             self._notify_about_other_object(rail, CreateEvent())
-        self._signal_controller.create_signal_blocks(self, self)
+        self._signal_controller.create_signal_blocks(self, self.signals)
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
@@ -379,4 +379,5 @@ class Grid(Subject):
             )
             self.signals[Vec2(x, y)] = signal
             self._notify_about_other_object(signal, CreateEvent())
+            self._signal_controller.create_signal_blocks(self, self.signals)
             return signal

@@ -669,7 +669,7 @@ class TestSignals:
 
     def test_signal_is_green_when_rail_loop(self, game_with_rail_loop: MyGame):
         signal = game_with_rail_loop._create_signal(0, 30)
-        game_with_rail_loop.signal_controller.update_signals()
+        game_with_rail_loop.signal_controller._update_signals()
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
@@ -695,22 +695,22 @@ class TestSignals:
     ):
         game = game_with_train_and_signal
 
+        assert len(game.signal_controller._signal_blocks) == 2
+
         game.grid.remove_rail(60, 0)
 
-        signal = game.grid.signals[Vec2(120, 0)]
-        assert signal.connections[0].signal_color == SignalColor.GREEN
-        assert signal.connections[1].signal_color == SignalColor.GREEN
+        assert len(game.signal_controller._signal_blocks) == 3
 
     def test_adding_rail_resets_signal_blocks(
         self,
         game_with_train_and_signal: MyGame,
     ):
         game = game_with_train_and_signal
-        game.on_update(1 / 60)
 
         game.grid.remove_rail(60, 0)
-        game.grid._create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
-        signal = game.grid.signals[Vec2(120, 0)]
 
-        assert signal.connections[0].signal_color == SignalColor.GREEN
-        assert signal.connections[1].signal_color == SignalColor.RED
+        assert len(game.signal_controller._signal_blocks) == 3
+
+        game.grid._create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
+
+        assert len(game.signal_controller._signal_blocks) == 2

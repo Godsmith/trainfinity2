@@ -95,15 +95,19 @@ class Train(Subject):
             # Otherwise it the train would prefer to continue forward and then reverse
             self.current_rail = None
 
+        current_position = Vec2(self.target_x, self.target_y)
+
         self._rails_on_route = self.grid._find_route(
-            Vec2(self.target_x, self.target_y),
+            current_position,
             self._target_station,
             previous_rail=self.current_rail,
         )
 
         if next_rail := self._get_next_rail(self.target_x, self.target_y):
             self._set_current_rail(next_rail, self.target_x, self.target_y)
-            self.signal_controller.update_signals()
+            self.signal_controller.change_block_reservation(
+                Vec2(self.target_x, self.target_y), current_position
+            )
         else:
             self.destroy()
 
