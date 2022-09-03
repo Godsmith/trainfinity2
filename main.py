@@ -40,20 +40,10 @@ class TrainPlacementMode(Enum):
     SECOND_STATION = 2
 
 
-class MyGame(arcade.Window):
-    def __init__(self, visible=True):
-        super().__init__(
-            width=SCREEN_WIDTH,
-            height=SCREEN_HEIGHT,
-            title="TRAINFINITY",
-            visible=visible,
-            resizable=True,
-        )  # type: ignore
-
+class MyGame:
+    def __init__(self):
         self.horizontal_grid_lines = []
         self.vertical_grid_lines = []
-
-        arcade.set_background_color(color.BUD_GREEN)
 
         self.is_mouse1_pressed = False
         self.mouse1_pressed_x = 0
@@ -69,12 +59,6 @@ class MyGame(arcade.Window):
         self.seconds_since_last_gui_figures_update = 0.0
 
     def setup(self, terrain: Terrain):
-        """Initialize variables. Run before each test to avoid having to
-        recreate the entire window for each test case."""
-
-        # Reset viewport for tests.
-        arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
-
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
@@ -136,7 +120,6 @@ class MyGame(arcade.Window):
             self.seconds_since_last_gui_figures_update -= 1
 
     def on_draw(self):
-        self.clear()
         self.drawer.draw()
 
         # Draw GUI here even though there are many draw calls, since the colors of the boxes
@@ -298,12 +281,53 @@ class MyGame(arcade.Window):
         self.gui.refresh()
 
     def on_resize(self, width, height):
-        super().on_resize(width, height)
         self.camera = Camera()
         self.gui.refresh()
 
 
+class MyWindow(arcade.Window):
+    def __init__(self, game: MyGame):
+        super().__init__(
+            width=SCREEN_WIDTH,
+            height=SCREEN_HEIGHT,
+            title="TRAINFINITY",
+            resizable=True,
+        )  # type: ignore
+        self._game = game
+        arcade.set_background_color(color.BUD_GREEN)
+
+    def on_update(self, delta_time: float):
+        super().on_update(delta_time)
+        self._game.on_update(delta_time)
+
+    def on_draw(self):
+        super().on_draw()
+        self.clear()
+        self._game.on_draw()
+
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self._game.on_resize(width, height)
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        super().on_mouse_motion(x, y, dx, dy)
+        self._game.on_mouse_motion(x, y, dx, dy)
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        super().on_mouse_press(x, y, button, modifiers)
+        self._game.on_mouse_press(x, y, button, modifiers)
+
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        super().on_mouse_release(x, y, button, modifiers)
+        self._game.on_mouse_release(x, y, button, modifiers)
+
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
+        super().on_mouse_scroll(x, y, scroll_x, scroll_y)
+        self._game.on_mouse_scroll(x, y, scroll_x, scroll_y)
+
+
 if __name__ == "__main__":
-    window = MyGame()
-    window.setup(Terrain(water=[Vec2(0, 0)]))
+    game = MyGame()
+    window = MyWindow(game)
+    game.setup(Terrain(water=[Vec2(0, 0)]))
     arcade.run()
