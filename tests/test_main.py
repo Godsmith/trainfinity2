@@ -4,7 +4,7 @@ import drawer
 import gui
 import pytest
 from constants import SECONDS_BETWEEN_IRON_CREATION
-from main import Mode, MyGame, TrainPlacementMode
+from main import Mode, MyGame
 from model import Rail, SignalColor, Station, Water
 from pyglet.math import Vec2
 from pytest import approx
@@ -291,20 +291,20 @@ class TestTrain:
 
         # game.on_left_click(100, 100)
 
-    def test_clicking_station_in_train_mode_changes_train_placement_mode(
+    def test_clicking_station_in_train_mode_starts_a_train_placement_session(
         self, game_with_factory_and_mine: MyGame
     ):
         game = game_with_factory_and_mine
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
 
-        assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
+        assert not game._train_placer.session
 
         # TODO: it would be nice for readability if I could just say station.click() here.
         # Click first station
         game.on_left_click(30, 0)
 
-        assert game.train_placement_mode == TrainPlacementMode.SECOND_STATION
+        assert game._train_placer.session
 
     def test_clicking_station_in_train_mode_highlights_station(
         self, game_with_factory_and_mine: MyGame
@@ -319,6 +319,21 @@ class TestTrain:
         game.on_left_click(30, 0)
 
         assert len(game.drawer.highlight_shape_element_list) == 1
+
+    def test_clicking_gui_stops_train_placing_session_and_removes_station_highlight(
+        self, game_with_factory_and_mine: MyGame
+    ):
+        game = game_with_factory_and_mine
+        game.gui.mode = Mode.TRAIN
+        game.gui.disable()
+        game.on_left_click(30, 0)
+        game.gui.enable()
+
+        # Click GUI
+        game.on_left_click(15, 15)
+
+        assert not game._train_placer.session
+        assert len(game.drawer.highlight_shape_element_list) == 0
 
     @pytest.fixture
     def hover_over_connected_station(self, game_with_factory_and_mine: MyGame):
@@ -392,8 +407,6 @@ class TestTrain:
         =S=
          M F
         =S=S=
-
-        When clicking two unconnected stations, the TrainPlacementMode goes back to FIRST_STATION again.
         """
         game = game_with_factory_and_mine
         game.gui.mode = Mode.TRAIN
@@ -415,7 +428,6 @@ class TestTrain:
         game.on_left_click(30, 90)
 
         assert len(game.trains) == 0
-        assert game.train_placement_mode == TrainPlacementMode.FIRST_STATION
 
     @pytest.fixture
     def two_trains(self, game_with_factory_and_mine):

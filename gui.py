@@ -53,6 +53,9 @@ class Gui:
         """Stop the GUI from taking clicks. Currently mostly useful for unit testing."""
         self._enabled = False
 
+    def enable(self):
+        self._enabled = True
+
     @property
     def mode(self):
         return self._mode

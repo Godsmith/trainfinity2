@@ -1,5 +1,5 @@
 from collections import deque
-from enum import Enum
+from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
 
@@ -35,9 +35,27 @@ MAX_CAMERA_SCALE = 4
 MIN_CAMERA_SCALE = 0.5
 
 
-class TrainPlacementMode(Enum):
-    FIRST_STATION = 1
-    SECOND_STATION = 2
+@dataclass(frozen=True)
+class TrainPlacerSession:
+    station: Station
+
+
+@dataclass
+class TrainPlacer:
+    drawer: Drawer
+    _session: TrainPlacerSession | None = None
+
+    @property
+    def session(self):
+        return self._session
+
+    def start_session(self, station: Station):
+        self._session = TrainPlacerSession(station)
+        self.drawer.highlight([Vec2(station.x, station.y)])
+
+    def stop_session(self):
+        self._session = None
+        self.drawer.highlight([])
 
 
 class MyGame:
@@ -65,8 +83,6 @@ class MyGame:
         self.gui = Gui()
 
         self.trains: list[Train] = []
-        self.train_placement_mode = TrainPlacementMode.FIRST_STATION
-        self.train_placement_station_list = []
 
         self.signal_controller = SignalController()
         self.grid = Grid(terrain, self.signal_controller)
@@ -84,6 +100,8 @@ class MyGame:
         self.drawer.create_terrain(
             water=terrain.water, sand=terrain.sand, mountains=terrain.mountains
         )
+
+        self._train_placer = TrainPlacer(self.drawer)
 
     def on_update(self, delta_time):
         self.iron_counter += delta_time
@@ -161,30 +179,20 @@ class MyGame:
 
     def on_left_click(self, x, y):
         if self.gui.on_left_click(x, y):
+            self._train_placer.stop_session()
             for train in self.trains:
                 train.selected = False
             return
-        # TODO: if train view is selected again, revert to TrainPlacementMode.FIRST_STATION
-        # TODO: Abort by pressing Escape
-        # TODO: Extract to class with separate state
-        # TODO: Indicate TrainPlacementMode visually
         elif self.gui.mode == Mode.TRAIN:
             if station := self.grid.get_station(x, y):
-                match self.train_placement_mode:
-                    case TrainPlacementMode.FIRST_STATION:
-                        self.train_placement_station_list.append(station)
-                        self.train_placement_mode = TrainPlacementMode.SECOND_STATION
-                        self.drawer.highlight([Vec2(station.x, station.y)])
-                    case _:  # second station
-                        self.train_placement_mode = TrainPlacementMode.FIRST_STATION
-                        self.train_placement_station_list.append(station)
-                        if self.grid.connect_stations(
-                            *self.train_placement_station_list
-                        ):
-                            self._create_train(
-                                self.train_placement_station_list[0],
-                                self.train_placement_station_list[1],
-                            )
+                if not self._train_placer.session:
+                    self._train_placer.start_session(station)
+                else:
+                    if self.grid.connect_stations(
+                        self._train_placer.session.station, station
+                    ):
+                        self._create_train(self._train_placer.session.station, station)
+                    self._train_placer.stop_session()
         elif self.gui.mode == Mode.SELECT:
             for train in self.trains:
                 if train.is_at(x, y):
@@ -208,8 +216,6 @@ class MyGame:
         train.add_observer(self, DestroyEvent)
         self.drawer.create_train(train)
         self.gui.mode = Mode.SELECT
-        self.train_placement_station_list.clear()
-        self.drawer.highlight([])
         train.selected = True
 
     def on_notify(self, object: Any, event: Event):
@@ -229,14 +235,11 @@ class MyGame:
                 x, y, self.mouse1_pressed_x, self.mouse1_pressed_y, self.gui.mode
             )
 
-        elif (
-            self.gui.mode == Mode.TRAIN
-            and self.train_placement_mode == TrainPlacementMode.SECOND_STATION
-        ):
+        elif self.gui.mode == Mode.TRAIN and self._train_placer.session:
             x, y = self.camera.to_world_coordinates(x, y)
             if station := self.grid.get_station(x, y):
                 if rails := self.grid.connect_stations(
-                    self.train_placement_station_list[0], station
+                    self._train_placer.session.station, station
                 ):
                     positions = {
                         position for rail in rails for position in rail.positions
@@ -246,8 +249,8 @@ class MyGame:
                 self.drawer.highlight(
                     [
                         Vec2(
-                            self.train_placement_station_list[0].x,
-                            self.train_placement_station_list[0].y,
+                            self._train_placer.session.station.x,
+                            self._train_placer.session.station.y,
                         )
                     ]
                 )
