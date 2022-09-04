@@ -164,7 +164,9 @@ class Grid(Subject):
             self.rails_from_vec2[Vec2(rail.x1, rail.y1)].append(rail)
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
         return find_route(
-            self.possible_next_rails, Vec2(station1.x, station1.y), station2
+            self.possible_next_rails_ignore_red_lights,
+            Vec2(station1.x, station1.y),
+            station2,
         )
 
     def rails_at_position(self, x, y):
@@ -175,6 +177,11 @@ class Grid(Subject):
             return signal.signal_color_coming_from(coming_from_rail) == SignalColor.RED
         return False
 
+    def possible_next_rails_ignore_red_lights(
+        self, position: Vec2, previous_rail: Rail | None
+    ):
+        return self.rails_at_position(*position) - {previous_rail}
+
     def possible_next_rails(self, position: Vec2, previous_rail: Rail | None):
         """Given a position and where the train came from, return a list of possible rails
         it can continue on.
@@ -184,12 +191,11 @@ class Grid(Subject):
         2. The train cannot go into a red light
         Possible future rules:
         3. The train cannot turn more than X degrees"""
-        return [
+        return {
             rail
             for rail in self.rails_at_position(*position)
-            if rail is not previous_rail
-            and not self._is_red_signal(rail.other_end(*position), rail)
-        ]
+            if not self._is_red_signal(rail.other_end(*position), rail)
+        } - {previous_rail}
 
     def _rail_is_in_occupied_position(self, rail: Rail):
         return (
