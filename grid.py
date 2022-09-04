@@ -181,13 +181,12 @@ class Grid(Subject):
         2. The train cannot go into a red light
         Possible future rules:
         3. The train cannot turn more than X degrees"""
-        rails = self.rails_at_position(*position) - {previous_rail}
-        rails = [
+        return [
             rail
-            for rail in rails
-            if not self._is_red_signal(rail.other_end(*position), rail)
+            for rail in self.rails_at_position(*position)
+            if rail is not previous_rail
+            and not self._is_red_signal(rail.other_end(*position), rail)
         ]
-        return rails
 
     def _rail_is_in_occupied_position(self, rail: Rail):
         return (
