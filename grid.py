@@ -151,9 +151,12 @@ class Grid(Subject):
     def snap_to_y(self, y) -> int:
         return math.floor(y / GRID_BOX_SIZE) * GRID_BOX_SIZE
 
-    def connect_stations(
+    def find_route_between_stations(
         self, station1: Station, station2: Station
     ) -> list[Rail] | None:
+        """Finds the shortest route between two stations.
+
+        Returns None if there is no route or if `station1 == station2`."""
         if station1 == station2:
             return None
         self.rails_from_vec2 = defaultdict(list)

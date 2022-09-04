@@ -188,7 +188,7 @@ class MyGame:
                 if not self._train_placer.session:
                     self._train_placer.start_session(station)
                 else:
-                    if self.grid.connect_stations(
+                    if self.grid.find_route_between_stations(
                         self._train_placer.session.station, station
                     ):
                         self._create_train(self._train_placer.session.station, station)
@@ -238,7 +238,7 @@ class MyGame:
         elif self.gui.mode == Mode.TRAIN and self._train_placer.session:
             x, y = self.camera.to_world_coordinates(x, y)
             if station := self.grid.get_station(x, y):
-                if rails := self.grid.connect_stations(
+                if rails := self.grid.find_route_between_stations(
                     self._train_placer.session.station, station
                 ):
                     positions = {
