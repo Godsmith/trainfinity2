@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from heapq import heappop, heappush
 import math
 import random
 from collections import defaultdict
 from itertools import pairwise
-from typing import Any, Iterable, Optional, Type
+from typing import Any, Iterable, Type
+from route_finder import find_route
+
 
 from pyglet.math import Vec2
 
@@ -159,60 +160,24 @@ class Grid(Subject):
         for rail in self.rails:
             self.rails_from_vec2[Vec2(rail.x1, rail.y1)].append(rail)
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
-        return self._find_route(Vec2(station1.x, station1.y), station2)
+        return find_route(
+            self.possible_next_rails, Vec2(station1.x, station1.y), station2
+        )
 
     def rails_at_position(self, x, y):
         return {rail for rail in self.rails if rail.is_at_position(x, y)}
-
-    def _find_route(
-        self,
-        initial_position: Vec2,
-        target_station: Station,
-        previous_rail: Rail | None = None,  # Assures the train can not just reverse
-    ) -> Optional[list[Rail]]:
-        """Finds a route (list of Rail) to a station from a specific station.
-
-        It is not guaranteed to be the shortest route; just the first route that is found."""
-        distance_at_position = defaultdict(lambda: 999999999)
-        distance_at_position[initial_position] = 0
-        rail_in_shortest_route_from_position: dict[Vec2, Rail] = {}
-        visited_positions = set()
-        unvisited_position_distances_and_positions = [(0, initial_position)]
-
-        while unvisited_position_distances_and_positions:
-            _, current_position = heappop(unvisited_position_distances_and_positions)
-            visited_positions.add(current_position)
-            if current_position == Vec2(target_station.x, target_station.y):
-                route: list[Rail] = []
-                while current_position != initial_position:
-                    rail = rail_in_shortest_route_from_position[current_position]
-                    route.append(rail)
-                    current_position = rail.other_end(*current_position)
-                return route[::-1]
-
-            for rail in self._possible_next_rails(current_position, previous_rail):
-                adjacent_position = rail.other_end(*current_position)
-                if adjacent_position not in visited_positions:
-                    adjacent_distance = distance_at_position[current_position] + 1
-                    if distance_at_position[adjacent_position] > adjacent_distance:
-                        distance_at_position[adjacent_position] = adjacent_distance
-                        heappush(
-                            unvisited_position_distances_and_positions,
-                            (adjacent_distance, adjacent_position),
-                        )
-                        rail_in_shortest_route_from_position[adjacent_position] = rail
-        return None
 
     def _is_red_signal(self, signal_position: Vec2, coming_from_rail: Rail):
         if signal := self.signals.get(signal_position):
             return signal.signal_color_coming_from(coming_from_rail) == SignalColor.RED
         return False
 
-    def _possible_next_rails(self, position: Vec2, previous_rail: Rail | None):
+    def possible_next_rails(self, position: Vec2, previous_rail: Rail | None):
         """Given a position and where the train came from, return a list of possible rails
         it can continue on.
         Current rules:
-        1. The train cannot reverse (if previous_rail = None, the train is at a standstill, e.g. at a station)
+        1. The train cannot reverse, i.e. the output cannot contain `previous_rail`.
+           (if previous_rail = None, the train is at a standstill, e.g. at a station)
         2. The train cannot go into a red light
         Possible future rules:
         3. The train cannot turn more than X degrees"""
@@ -301,7 +266,7 @@ class Grid(Subject):
         self.rails_being_built.clear()
         self.notify(RailsBeingBuiltEvent(self.rails_being_built))
 
-    def get_station(self, x, y) -> Optional[Station]:
+    def get_station(self, x, y) -> Station | None:
         x, y = self.snap_to(x, y)
         return self.stations.get(Vec2(x, y))
 

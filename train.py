@@ -8,6 +8,7 @@ from grid import Grid
 from model import Mine, Player, Rail, Station
 from observer import DestroyEvent, Subject
 from signal_controller import SignalController
+from route_finder import find_route
 
 
 def _is_close(pos1, pos2):
@@ -97,7 +98,8 @@ class Train(Subject):
 
         current_position = Vec2(self.target_x, self.target_y)
 
-        self._rails_on_route = self.grid._find_route(
+        self._rails_on_route = find_route(
+            self.grid.possible_next_rails,
             current_position,
             self._target_station,
             previous_rail=self.current_rail,
@@ -119,12 +121,12 @@ class Train(Subject):
         if self._rails_on_route:
             return self._rails_on_route[0]
         else:
-            possible_next_rails = self.grid._possible_next_rails(
+            possible_next_rails = self.grid.possible_next_rails(
                 Vec2(x, y), previous_rail=self.current_rail
             )
             if not possible_next_rails:
                 # At end of line; reverse
-                possible_next_rails = self.grid._possible_next_rails(
+                possible_next_rails = self.grid.possible_next_rails(
                     Vec2(x, y), previous_rail=None
                 )
                 if not possible_next_rails:
