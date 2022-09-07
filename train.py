@@ -32,6 +32,7 @@ class Train(Subject):
     current_rail: Rail | None = None
     iron: int = 0
     selected = False
+    wait_timer: float = 0.0
 
     TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
 
@@ -49,8 +50,11 @@ class Train(Subject):
         return self._rails_on_route
 
     def move(self, delta_time):
-        train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
+        if self.wait_timer > 0:
+            self.wait_timer -= delta_time
+            return
 
+        train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
         if self.x > self.target_x + train_displacement:
             self.x -= train_displacement
         elif self.x < self.target_x - train_displacement:
@@ -105,33 +109,27 @@ class Train(Subject):
             previous_rail=self.current_rail,
         )
 
-        if next_rail := self._get_next_rail(self.target_x, self.target_y):
+        if not self._rails_on_route:
+            self._rails_on_route = find_route(
+                self.grid.possible_next_rails_ignore_red_lights,
+                current_position,
+                self._target_station,
+                previous_rail=self.current_rail,
+            )
+
+        if not self._rails_on_route:
+            self.destroy()
+            return
+
+        next_rail = self._rails_on_route[0]
+        next_position = next_rail.other_end(self.target_x, self.target_y)
+        if self.signal_controller.is_unreserved(next_position):
             self._set_current_rail(next_rail, self.target_x, self.target_y)
             self.signal_controller.change_block_reservation(
                 Vec2(self.target_x, self.target_y), current_position
             )
         else:
-            self.destroy()
-
-    def _get_next_rail(self, x, y) -> Rail | None:
-        """1. If there is a route to the target, choose the first rail on that route.
-        2. If not, choose a random rail.
-        3. If there is no rail to choose, reverse, then choose a random rail (possible change: return None?)
-        4. If there is still no rail to choose, return None."""
-        if self._rails_on_route:
-            return self._rails_on_route[0]
-        else:
-            possible_next_rails = self.grid.possible_next_rails(
-                Vec2(x, y), previous_rail=self.current_rail
-            )
-            if not possible_next_rails:
-                # At end of line; reverse
-                possible_next_rails = self.grid.possible_next_rails(
-                    Vec2(x, y), previous_rail=None
-                )
-                if not possible_next_rails:
-                    return None
-            return random.choice(list(possible_next_rails))
+            self.wait_timer = 1
 
     def _set_current_rail(self, next_rail: Rail, x, y):
         self.current_rail = next_rail

@@ -27,6 +27,7 @@ class SignalController:
             list
         )
         self._signals: list[Signal] = []
+        self._positions_with_trains = set()
 
     def create_signal_blocks(
         self, rail_collection: RailCollection, signal_from_position: dict[Vec2, Signal]
@@ -43,6 +44,7 @@ class SignalController:
         rails = set(rail_collection.rails)
         self._signals = list(signal_from_position.values())
         position_sets: list[set[Vec2]] = []
+        self._positions_with_trains = set()
         self._signal_blocks_from_position = defaultdict(list)
         while rails:
             position_sets.append(set())
@@ -65,20 +67,29 @@ class SignalController:
             for position in signal_block.positions:
                 self._signal_blocks_from_position[position].append(signal_block)
 
-        self._update_signals()
+        self._update_signal_block_reservations()
+
+    def is_unreserved(self, position: Vec2) -> bool:
+        signal_blocks_at_position = self._signal_blocks_from_position[position]
+        if len(signal_blocks_at_position) == 1:
+            return True
+        return not all(
+            signal_block.reserved for signal_block in signal_blocks_at_position
+        )
 
     def change_block_reservation(self, new_position: Vec2, left_position: Vec2):
         """Called by trains when they enter a new position. The correct blocks
         are then reserved and unreserved."""
-        signal_update_needed = False
-        for signal_block in self._signal_blocks_from_position[left_position]:
-            signal_block.reserved = False
-            signal_update_needed = True
-        for signal_block in self._signal_blocks_from_position[new_position]:
-            signal_block.reserved = True
-            signal_update_needed = True
-        if signal_update_needed:
-            self._update_signals()
+        self._positions_with_trains.discard(left_position)
+        self._positions_with_trains.add(new_position)
+        self._update_signal_block_reservations()
+
+    def _update_signal_block_reservations(self):
+        for signal_block in self._signal_blocks:
+            signal_block.reserved = bool(
+                signal_block.positions.intersection(self._positions_with_trains)
+            )
+        self._update_signals()
 
     def _update_signals(self):
         for signal in self._signals:
