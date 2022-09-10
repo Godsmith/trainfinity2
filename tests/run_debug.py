@@ -14,7 +14,7 @@ window = MyWindow(game)
 game.setup(Terrain(water=[Vec2(0, 0)]))
 game.grid._create_mine(30, 30)
 game.grid._create_factory(180, 30)
-game.grid._create_rail(
+game.grid.create_rail(
     [
         Rail(0, 60, 30, 60),
         Rail(30, 60, 60, 60),

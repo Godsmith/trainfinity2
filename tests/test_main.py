@@ -8,93 +8,29 @@ from pytest import approx
 from trainfinity2.constants import SECONDS_BETWEEN_IRON_CREATION
 from trainfinity2.__main__ import Mode, MyGame
 from trainfinity2.model import Rail, SignalColor, Station, Water
-from trainfinity2.terrain import Terrain
-
-
-class MockArcade:
-    def __init__(self):
-        self.viewport = (0, 800, 0, 600)
-
-    class Sprite:
-        pass
-
-    class SpriteList(list):
-        def draw(self):
-            pass
-
-        def move(self, dx, dy):
-            pass
-
-    class ShapeElementList(list):
-        def draw(self):
-            pass
-
-        def move(self, dx, dy):
-            pass
-
-    def get_viewport(self):
-        return self.viewport
-
-    def set_viewport(self, left, right, bottom, top):
-        self.viewport = (left, right, bottom, top)
-
-    def create_text_sprite(self, *args, **kwargs):
-        pass
-
-    def create_rectangle_filled(self, *args, **kwargs):
-        pass
-
-    def create_rectangle_outline(self, *args, **kwargs):
-        pass
-
-    def create_ellipse_filled(self, *args, **kwargs):
-        pass
-
-    def create_line(self, *args, **kwargs):
-        pass
-
-    def draw_circle_filled(self, *args, **kwargs):
-        pass
-
-    def draw_rectangle_filled(self, *args, **kwargs):
-        pass
-
-    def draw_rectangle_outline(self, *args, **kwargs):
-        pass
-
-    def draw_circle_outline(self, *args, **kwargs):
-        pass
+from tests.util import create_objects
 
 
 @pytest.fixture
-def game(monkeypatch: pytest.MonkeyPatch) -> MyGame:
-    monkeypatch.setattr(trainfinity2.camera, "arcade", MockArcade())
-    monkeypatch.setattr(trainfinity2.gui, "arcade", MockArcade())
-    monkeypatch.setattr(trainfinity2.drawer, "arcade", MockArcade())
-    # Add a single water tile for code coverage
-    game = MyGame()
-    game.setup(terrain=Terrain(water=[Vec2(210, 210)]))
-    game.grid.mines = {}
-    game.grid.factories = {}
+def game_with_factory_and_mine(game):
+    map_ = """
+  M   F
+
+ -S- -S-"""
+    create_objects(game, map_)
+
     return game
 
 
 @pytest.fixture
 def game_with_train(game: MyGame) -> MyGame:
-    """
-     M F
-    =S=S=
-    """
-    game.grid.rails = [
-        Rail(0, 0, 30, 0),
-        Rail(30, 0, 60, 0),
-        Rail(60, 0, 90, 0),
-        Rail(90, 0, 120, 0),
-    ]
-    game.grid._create_mine(30, 30)
-    game.grid._create_factory(90, 30)
-    station1 = game.grid._create_station(30, 0)
-    station2 = game.grid._create_station(90, 0)
+    map_ = """
+  M   F
+
+ -S- -S-"""
+    create_objects(game, map_)
+    station1 = game.grid.stations[Vec2(30, 0)]
+    station2 = game.grid.stations[Vec2(90, 0)]
     game._create_train(station1, station2)
     return game
 
@@ -247,28 +183,6 @@ class TestGrid:
         game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
         assert game.grid.stations == {Vec2(0, 30): Station(0, 30, factory)}
-
-
-@pytest.fixture
-def game_with_factory_and_mine(game):
-    """
-     M F
-    =S=S=
-    """
-    game.grid._create_mine(30, 30)
-    game.grid._create_factory(90, 30)
-    game.grid._create_rail(
-        [
-            Rail(0, 0, 30, 0),
-            Rail(30, 0, 60, 0),
-            Rail(60, 0, 90, 0),
-            Rail(90, 0, 120, 0),
-        ]
-    )
-    for x, y in ((30, 0), (90, 0)):
-        game.grid._create_station(x, y)
-
-    return game
 
 
 class TestGui:
@@ -631,17 +545,13 @@ class TestSignals:
         assert signal.connections[1].signal_color == SignalColor.GREEN
 
     @pytest.fixture
-    def game_with_train_and_signal(self, game_with_factory_and_mine: MyGame):
-        """
-         M F
-        =S=Ss==
-         ^
-         T
-        """
-        game = game_with_factory_and_mine
-        game.grid._create_rail([Rail(120, 0, 150, 0), Rail(150, 0, 180, 0)])
+    def game_with_train_and_signal(self, game: MyGame):
+        map_ = """
+  M   F
+
+ -S- -S-s- -"""
+        create_objects(game, map_)
         stations = game.grid.stations.values()
-        game._create_signal(120, 0)
         game._create_train(*stations)
         return game
 
@@ -658,24 +568,16 @@ class TestSignals:
 
     @pytest.fixture
     def game_with_rail_loop(self, game: MyGame):
-        r"""
-         _
-        / \
-        | |
-        \_/
-        """
-        game.grid._create_rail(
-            [
-                Rail(0, 30, 30, 0),
-                Rail(30, 0, 60, 0),
-                Rail(60, 0, 90, 30),
-                Rail(90, 30, 90, 60),
-                Rail(90, 60, 60, 90),
-                Rail(60, 90, 30, 90),
-                Rail(30, 90, 0, 60),
-                Rail(0, 60, 0, 30),
-            ]
-        )
+        map_ = r"""
+   - 
+ /   \
+       
+|     |
+       
+ \   /
+   - 
+"""
+        create_objects(game, map_)
 
         return game
 
@@ -723,6 +625,6 @@ class TestSignals:
 
         assert len(game.signal_controller._signal_blocks) == 3
 
-        game.grid._create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
+        game.grid.create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
 
         assert len(game.signal_controller._signal_blocks) == 2

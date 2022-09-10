@@ -260,7 +260,7 @@ class Grid(Subject):
         for observer in self._observers[type(event)]:
             observer.on_notify(other_object, event)
 
-    def _create_rail(self, rails: Iterable[Rail]):
+    def create_rail(self, rails: Iterable[Rail]):
         self.rails.extend(rails)
         for rail in rails:
             self._notify_about_other_object(rail, CreateEvent())
@@ -268,7 +268,7 @@ class Grid(Subject):
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
-            self._create_rail(self.rails_being_built)
+            self.create_rail(self.rails_being_built)
             self._create_stations()
 
         self.rails_being_built.clear()
