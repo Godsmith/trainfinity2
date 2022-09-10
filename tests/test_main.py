@@ -1,82 +1,10 @@
 import arcade
-import camera
-import drawer
-import gui
 import pytest
 from constants import SECONDS_BETWEEN_IRON_CREATION
 from main import Mode, MyGame
 from model import Rail, SignalColor, Station, Water
 from pyglet.math import Vec2
 from pytest import approx
-from terrain import Terrain
-
-
-class MockArcade:
-    def __init__(self):
-        self.viewport = (0, 800, 0, 600)
-
-    class Sprite:
-        pass
-
-    class SpriteList(list):
-        def draw(self):
-            pass
-
-        def move(self, dx, dy):
-            pass
-
-    class ShapeElementList(list):
-        def draw(self):
-            pass
-
-        def move(self, dx, dy):
-            pass
-
-    def get_viewport(self):
-        return self.viewport
-
-    def set_viewport(self, left, right, bottom, top):
-        self.viewport = (left, right, bottom, top)
-
-    def create_text_sprite(self, *args, **kwargs):
-        pass
-
-    def create_rectangle_filled(self, *args, **kwargs):
-        pass
-
-    def create_rectangle_outline(self, *args, **kwargs):
-        pass
-
-    def create_ellipse_filled(self, *args, **kwargs):
-        pass
-
-    def create_line(self, *args, **kwargs):
-        pass
-
-    def draw_circle_filled(self, *args, **kwargs):
-        pass
-
-    def draw_rectangle_filled(self, *args, **kwargs):
-        pass
-
-    def draw_rectangle_outline(self, *args, **kwargs):
-        pass
-
-    def draw_circle_outline(self, *args, **kwargs):
-        pass
-
-
-@pytest.fixture
-def game(monkeypatch: pytest.MonkeyPatch) -> MyGame:
-    monkeypatch.setattr(camera, "arcade", MockArcade())
-    monkeypatch.setattr(gui, "arcade", MockArcade())
-    monkeypatch.setattr(drawer, "arcade", MockArcade())
-    # Add a single water tile for code coverage
-    game = MyGame()
-    game.setup(terrain=Terrain(water=[Vec2(210, 210)]))
-    game.grid.mines = {}
-    game.grid.factories = {}
-    return game
 
 
 @pytest.fixture
@@ -639,7 +567,7 @@ class TestSignals:
          T
         """
         game = game_with_factory_and_mine
-        game.grid._create_rail([Rail(120, 0, 150, 0), Rail(150, 0, 180, 0)])
+        game.grid.create_rail([Rail(120, 0, 150, 0), Rail(150, 0, 180, 0)])
         stations = game.grid.stations.values()
         game._create_signal(120, 0)
         game._create_train(*stations)
@@ -664,7 +592,7 @@ class TestSignals:
         | |
         \_/
         """
-        game.grid._create_rail(
+        game.grid.create_rail(
             [
                 Rail(0, 30, 30, 0),
                 Rail(30, 0, 60, 0),
@@ -723,6 +651,6 @@ class TestSignals:
 
         assert len(game.signal_controller._signal_blocks) == 3
 
-        game.grid._create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
+        game.grid.create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
 
         assert len(game.signal_controller._signal_blocks) == 2
