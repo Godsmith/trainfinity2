@@ -1,14 +1,14 @@
 import arcade
-import camera
-import drawer
-import gui
 import pytest
-from constants import SECONDS_BETWEEN_IRON_CREATION
-from main import Mode, MyGame
-from model import Rail, SignalColor, Station, Water
+import trainfinity2.camera
+import trainfinity2.drawer
+import trainfinity2.gui
 from pyglet.math import Vec2
 from pytest import approx
-from terrain import Terrain
+from trainfinity2.constants import SECONDS_BETWEEN_IRON_CREATION
+from trainfinity2.__main__ import Mode, MyGame
+from trainfinity2.model import Rail, SignalColor, Station, Water
+from trainfinity2.terrain import Terrain
 
 
 class MockArcade:
@@ -68,9 +68,9 @@ class MockArcade:
 
 @pytest.fixture
 def game(monkeypatch: pytest.MonkeyPatch) -> MyGame:
-    monkeypatch.setattr(camera, "arcade", MockArcade())
-    monkeypatch.setattr(gui, "arcade", MockArcade())
-    monkeypatch.setattr(drawer, "arcade", MockArcade())
+    monkeypatch.setattr(trainfinity2.camera, "arcade", MockArcade())
+    monkeypatch.setattr(trainfinity2.gui, "arcade", MockArcade())
+    monkeypatch.setattr(trainfinity2.drawer, "arcade", MockArcade())
     # Add a single water tile for code coverage
     game = MyGame()
     game.setup(terrain=Terrain(water=[Vec2(210, 210)]))

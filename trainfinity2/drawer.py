@@ -6,7 +6,7 @@ import arcade
 from arcade import color
 from pyglet.math import Vec2
 
-from constants import (
+from .constants import (
     BUILDING_ILLEGAL_RAIL_COLOR,
     BUILDING_RAIL_COLOR,
     FINISHED_RAIL_COLOR,
@@ -18,8 +18,8 @@ from constants import (
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
 )
-from grid import Grid, RailsBeingBuiltEvent
-from model import (
+from .grid import Grid, RailsBeingBuiltEvent
+from .model import (
     Building,
     Factory,
     IronAddedEvent,
@@ -30,8 +30,8 @@ from model import (
     SignalColor,
     Station,
 )
-from observer import ChangeEvent, CreateEvent, DestroyEvent, Event
-from train import Train
+from .observer import ChangeEvent, CreateEvent, DestroyEvent, Event
+from .train import Train
 
 
 class Drawer:

@@ -1,10 +1,10 @@
 import pytest
-from grid import Grid
-from model import Mine, Player, Rail, Station
-from signal_controller import SignalController
-from train import Train
 from pyglet.math import Vec2
-from terrain import Terrain
+from trainfinity2.grid import Grid
+from trainfinity2.model import Mine, Player, Rail, Station
+from trainfinity2.signal_controller import SignalController
+from trainfinity2.terrain import Terrain
+from trainfinity2.train import Train
 
 
 @pytest.fixture

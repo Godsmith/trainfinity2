@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 from pyglet.math import Vec2
 
-from model import Signal, SignalColor
-from protocols import RailCollection
+from .model import Signal, SignalColor
+from .protocols import RailCollection
 
 
 @dataclass

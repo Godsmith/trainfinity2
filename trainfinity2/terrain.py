@@ -1,7 +1,9 @@
 from itertools import product
+
 from perlin_noise import PerlinNoise
-from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
 from pyglet.math import Vec2
+
+from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
 
 
 class Terrain:

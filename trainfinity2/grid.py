@@ -1,29 +1,29 @@
-from dataclasses import dataclass
 import math
 import random
 from collections import defaultdict
+from dataclasses import dataclass
 from itertools import pairwise
 from typing import Any, Iterable, Type
-from route_finder import find_route
-
 
 from pyglet.math import Vec2
 
-from constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
-from model import (
+from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
+from .gui import Mode
+from .model import (
     Factory,
     Mine,
     Rail,
     Signal,
+    SignalColor,
     SignalConnection,
     Station,
     Water,
-    SignalColor,
 )
-from gui import Mode
-from observer import CreateEvent, DestroyEvent, Event, Subject
-from terrain import Terrain
-from signal_controller import SignalController
+from .observer import CreateEvent, DestroyEvent, Event, Subject
+from .signal_controller import SignalController
+from .terrain import Terrain
+
+from .route_finder import find_route
 
 
 @dataclass

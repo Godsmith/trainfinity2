@@ -8,20 +8,20 @@ from arcade import color
 from pyglet.math import Vec2
 
 
-from constants import (
+from .constants import (
     GRID_HEIGHT,
     GRID_WIDTH,
     SECONDS_BETWEEN_IRON_CREATION,
 )
-from drawer import Drawer
-from gui import Gui, Mode
-from model import Player, Signal, Station
-from train import Train
-from grid import Grid, RailsBeingBuiltEvent
-from camera import Camera
-from observer import ChangeEvent, CreateEvent, DestroyEvent, Event
-from terrain import Terrain
-from signal_controller import SignalController
+from .drawer import Drawer
+from .gui import Gui, Mode
+from .model import Player, Signal, Station
+from .train import Train
+from .grid import Grid, RailsBeingBuiltEvent
+from .camera import Camera
+from .observer import ChangeEvent, CreateEvent, DestroyEvent, Event
+from .terrain import Terrain
+from .signal_controller import SignalController
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600

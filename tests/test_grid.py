@@ -1,7 +1,6 @@
 from pyglet.math import Vec2
-from constants import GRID_BOX_SIZE
-
-from grid import positions_between
+from trainfinity2.constants import GRID_BOX_SIZE
+from trainfinity2.grid import positions_between
 
 i = GRID_BOX_SIZE
 

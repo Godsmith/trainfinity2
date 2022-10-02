@@ -4,9 +4,9 @@ from enum import Enum, auto
 
 from pyglet.math import Vec2
 
-from gui import Gui
-from protocols import GridEnlarger
-from observer import ChangeEvent, Event, Subject
+from .gui import Gui
+from .observer import ChangeEvent, Event, Subject
+from .protocols import GridEnlarger
 
 Factory = namedtuple("Factory", "x y")
 Water = namedtuple("Water", "x y")

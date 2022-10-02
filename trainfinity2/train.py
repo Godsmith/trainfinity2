@@ -1,14 +1,13 @@
 from dataclasses import dataclass, field
-import random
 
 from pyglet.math import Vec2
 
-from constants import GRID_BOX_SIZE
-from grid import Grid
-from model import Mine, Player, Rail, Station
-from observer import DestroyEvent, Subject
-from signal_controller import SignalController
-from route_finder import find_route
+from .constants import GRID_BOX_SIZE
+from .grid import Grid
+from .model import Mine, Player, Rail, Station
+from .observer import DestroyEvent, Subject
+from .route_finder import find_route
+from .signal_controller import SignalController
 
 
 def _is_close(pos1, pos2):

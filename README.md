@@ -1,23 +1,18 @@
-# TRAINFINITY
+# TRAINFINITY2
 
-## Installation
+# Prerequisites
 
-Create and activate the virtual environment. For example, in Git Bash on Windows:
-
-```
-python -m venv .venv
-source .venv/Scripts/activate
-python -m pip install --upgrade pip
-```
-
-Install required python packages
-
-```
-pip install -r requirements.txt
-```
+- Python 3.10
+- hatch
 
 ## Running
 
 ```
-python main.py
+hatch run start
+```
+
+## Testing
+
+```
+hatch run cov
 ```

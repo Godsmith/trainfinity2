@@ -4,7 +4,7 @@ from typing import Callable, Iterable
 
 from pyglet.math import Vec2
 
-from model import Rail, Station
+from .model import Rail, Station
 
 
 def find_route(
