@@ -1,7 +1,7 @@
 import pytest
 from pyglet.math import Vec2
 from trainfinity2.model import Factory, Mine, Rail, Signal, Station
-from trainfinity2.__main__ import MyGame
+from trainfinity2.__main__ import Game
 
 from tests.util import create_objects
 
@@ -11,7 +11,7 @@ def grid(game):
     return game.grid
 
 
-def test_create_horizontal_rail(game: MyGame):
+def test_create_horizontal_rail(game: Game):
     map_ = """
  -
 """
@@ -20,7 +20,7 @@ def test_create_horizontal_rail(game: MyGame):
     assert set(game.grid.rails) == {Rail(0, 0, 30, 0)}
 
 
-def test_create_vertical_rail(game: MyGame):
+def test_create_vertical_rail(game: Game):
     map_ = r"""
 
 |
@@ -31,7 +31,7 @@ def test_create_vertical_rail(game: MyGame):
     assert set(game.grid.rails) == {Rail(0, 0, 0, 30)}
 
 
-def test_create_diagonal_rail_1(game: MyGame):
+def test_create_diagonal_rail_1(game: Game):
     map_ = r"""
 
  /
@@ -42,7 +42,7 @@ def test_create_diagonal_rail_1(game: MyGame):
     assert set(game.grid.rails) == {Rail(0, 0, 30, 30)}
 
 
-def test_create_diagonal_rail_2(game: MyGame):
+def test_create_diagonal_rail_2(game: Game):
     map_ = r"""
 
  \
@@ -53,7 +53,7 @@ def test_create_diagonal_rail_2(game: MyGame):
     assert set(game.grid.rails) == {Rail(30, 0, 0, 30)}
 
 
-def test_create_multiple_rail(game: MyGame):
+def test_create_multiple_rail(game: Game):
     map_ = r"""
    - 
  /   \
@@ -77,7 +77,7 @@ def test_create_multiple_rail(game: MyGame):
     }
 
 
-def test_create_stations_mine_and_factory(game: MyGame):
+def test_create_stations_mine_and_factory(game: Game):
     map_ = r"""
   M   F  
 

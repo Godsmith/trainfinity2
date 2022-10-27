@@ -2,7 +2,7 @@ from typing import Any, Callable
 from trainfinity2.grid import Grid
 from trainfinity2.constants import GRID_BOX_SIZE
 from trainfinity2.model import Rail
-from trainfinity2.__main__ import MyGame
+from trainfinity2.__main__ import Game
 
 
 def _coordinates(row_number: int, column_number: int):
@@ -45,7 +45,7 @@ def _create_rails(grid: Grid, lines: list[str]):
                 grid.create_rail([Rail(x1, y1, x2, y2)])
 
 
-def create_objects(game: MyGame, map_: str):
+def create_objects(game: Game, map_: str):
     lines = map_.splitlines()
     lines.reverse()  # Reverse to get row indices to match with coordinates
     _create_buildings(lines, "M", game.grid._create_mine)
