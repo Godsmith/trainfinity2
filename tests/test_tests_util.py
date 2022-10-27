@@ -12,56 +12,60 @@ def grid(game):
 
 
 def test_create_horizontal_rail(game: Game):
-    map_ = """
- -
-"""
-    create_objects(game, map_)
+    create_objects(
+        game,
+        """
+        .-.""",
+    )
 
     assert set(game.grid.rails) == {Rail(0, 0, 30, 0)}
 
 
 def test_create_vertical_rail(game: Game):
-    map_ = r"""
-
-|
- 
-"""
-    create_objects(game, map_)
+    create_objects(
+        game,
+        r"""
+         .
+         |
+         .""",
+    )
 
     assert set(game.grid.rails) == {Rail(0, 0, 0, 30)}
 
 
 def test_create_diagonal_rail_1(game: Game):
-    map_ = r"""
-
- /
- 
-"""
-    create_objects(game, map_)
+    create_objects(
+        game,
+        r"""
+         . .
+         ./.
+         . . """,
+    )
 
     assert set(game.grid.rails) == {Rail(0, 0, 30, 30)}
 
 
 def test_create_diagonal_rail_2(game: Game):
-    map_ = r"""
-
- \
- 
-"""
-    create_objects(game, map_)
+    create_objects(
+        game,
+        r"""
+         . .
+          \
+         . . """,
+    )
 
     assert set(game.grid.rails) == {Rail(30, 0, 0, 30)}
 
 
 def test_create_multiple_rail(game: Game):
     map_ = r"""
-   - 
- /   \
-       
+. .-. .
+ /   \ 
+. . . .
 |     |
-       
+. . . .
  \   /
-   - 
+. .-. .
 """
     create_objects(game, map_)
 
@@ -78,12 +82,13 @@ def test_create_multiple_rail(game: Game):
 
 
 def test_create_stations_mine_and_factory(game: Game):
-    map_ = r"""
-  M   F  
-
- -S- -S-s-
-"""
-    create_objects(game, map_)
+    create_objects(
+        game,
+        """
+    . M . F . .
+     
+    .-S-.-S-s-.""",
+    )
 
     assert game.grid.mines == {Vec2(30, 30): Mine(30, 30)}
     assert game.grid.factories == {Vec2(90, 30): Factory(90, 30)}
@@ -94,3 +99,26 @@ def test_create_stations_mine_and_factory(game: Game):
     assert game.grid.signals[Vec2(120, 0)].x == 120
     assert game.grid.signals[Vec2(120, 0)].y == 0
     assert len(game.grid.signals) == 1
+
+
+def test_create_with_offset(game: Game):
+    create_objects(
+        game,
+        """
+        . M
+
+        . .""",
+    )
+    assert game.grid.mines == {Vec2(30, 30): Mine(30, 30)}
+
+
+def test_create_with_offset_and_last_line(game: Game):
+    create_objects(
+        game,
+        """
+        . M
+
+        . .
+        """,
+    )
+    assert game.grid.mines == {Vec2(30, 30): Mine(30, 30)}

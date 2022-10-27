@@ -14,10 +14,10 @@ from tests.util import create_objects
 @pytest.fixture
 def game_with_factory_and_mine(game):
     map_ = """
-. M . F .
-. . . . .
-.-S-.-S-.
-"""
+    . M . F .
+    . . . . .
+    .-S-.-S-.
+    """
     create_objects(game, map_)
 
     return game
@@ -26,10 +26,10 @@ def game_with_factory_and_mine(game):
 @pytest.fixture
 def game_with_train(game: Game) -> Game:
     map_ = """
-. M . F .
-. . . . .
-.-S-.-S-.
-"""
+    . M . F .
+    . . . . .
+    .-S-.-S-.
+    """
     create_objects(game, map_)
     game._create_train(*game.grid.stations.values())
     return game
@@ -103,7 +103,7 @@ class TestCamera:
         assert game.camera.scale == approx(1.1)
 
 
-class TestGrid:
+class TestBuildingRail:
     def test_horizontal_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=90, dx=30, dy=0)
@@ -194,7 +194,7 @@ class TestGui:
         assert game.gui.mode == Mode.SELECT
 
 
-class TestTrain:
+class TestCreateTrain:
     def test_clicking_nothing_in_train_mode_does_nothing(
         self, game_with_factory_and_mine: Game
     ):
@@ -206,9 +206,16 @@ class TestTrain:
         # game.on_left_click(100, 100)
 
     def test_clicking_station_in_train_mode_starts_a_train_placement_session(
-        self, game_with_factory_and_mine: Game
+        self, game: Game
     ):
-        game = game_with_factory_and_mine
+        create_objects(
+            game,
+            """
+. M . F .
+
+.-S-.-S-.
+""",
+        )
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
 
@@ -547,9 +554,9 @@ class TestSignals:
     @pytest.fixture
     def game_with_train_and_signal(self, game: Game):
         map_ = """
-  M   F
+        . M . F . .
 
- -S- -S-s- -"""
+        .-S-.-S-s-.-"""
         create_objects(game, map_)
         stations = game.grid.stations.values()
         game._create_train(*stations)
@@ -569,14 +576,14 @@ class TestSignals:
     @pytest.fixture
     def game_with_rail_loop(self, game: Game):
         map_ = r"""
-   - 
- /   \
-       
-|     |
-       
- \   /
-   - 
-"""
+           - 
+         /   \
+             
+        |     |
+             
+         \   /
+           - 
+         """
         create_objects(game, map_)
 
         return game

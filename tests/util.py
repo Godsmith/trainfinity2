@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from trainfinity2.grid import Grid
 from trainfinity2.constants import GRID_BOX_SIZE
 from trainfinity2.model import Rail
@@ -45,9 +45,19 @@ def _create_rails(grid: Grid, lines: list[str]):
                 grid.create_rail([Rail(x1, y1, x2, y2)])
 
 
+def _remove_offset(lines: Iterable[str]):
+    non_empty_lines = [line for line in lines if line.strip()]
+    number_of_beginning_spaces = min(
+        len(line) - len(line.lstrip()) for line in non_empty_lines
+    )
+    return [line[number_of_beginning_spaces:] for line in lines]
+
+
 def create_objects(game: Game, map_: str):
-    lines = map_.splitlines()
+    map_without_empty_lines_at_the_end = map_.rstrip(" \n")
+    lines = map_without_empty_lines_at_the_end.splitlines()
     lines.reverse()  # Reverse to get row indices to match with coordinates
+    lines = _remove_offset(lines)
     _create_buildings(lines, "M", game.grid._create_mine)
     _create_buildings(lines, "F", game.grid._create_factory)
     _create_buildings(lines, "S", game.grid._create_station)
