@@ -674,24 +674,22 @@ class TestSignals:
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.RED
 
-    @pytest.fixture
-    def game_with_rail_loop(self, game: Game):
-        map_ = r"""
-        . .-. .
-         /   \
-        . . . .
-        |     |
-        . . . .
-         \   /
-        . .-. .
-         """
-        create_objects(game, map_)
+    def test_signal_is_green_when_rail_loop(self, game: Game):
+        create_objects(
+            game,
+            r"""
+            . .-. .
+             /   \
+            . . . .
+            |     |
+            . . . .
+             \   /
+            . .-. .
+            """,
+        )
 
-        return game
-
-    def test_signal_is_green_when_rail_loop(self, game_with_rail_loop: Game):
-        signal = game_with_rail_loop._create_signal(0, 30)
-        game_with_rail_loop.signal_controller._update_signals()
+        signal = game._create_signal(0, 30)
+        game.signal_controller._update_signals()
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
