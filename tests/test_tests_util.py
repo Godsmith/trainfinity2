@@ -6,11 +6,6 @@ from trainfinity2.__main__ import Game
 from tests.util import create_objects
 
 
-@pytest.fixture
-def grid(game):
-    return game.grid
-
-
 def test_create_horizontal_rail(game: Game):
     create_objects(
         game,

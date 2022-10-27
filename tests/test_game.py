@@ -594,7 +594,7 @@ class TestSelect:
 
 
 class TestSignals:
-    def test_create_signal_blocks(self, game: Game):
+    def test_creating_signal_creates_two_signal_blocks(self, game: Game):
         create_objects(
             game,
             """
@@ -654,23 +654,21 @@ class TestSignals:
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
 
-    @pytest.fixture
-    def game_and_signal(self, game: Game):
-        map_ = """
-        . M . F . .
-
-        .-S-.-S-s-.-"""
-        create_objects(game, map_)
-        stations = game.grid.stations.values()
-        game._create_train(*stations)
-        return game
-
     def test_signal_color_towards_block_with_train_is_red_and_towards_block_without_train_is_green(
-        self, game_and_signal: Game
+        self, game: Game
     ):
-        signal = game_and_signal.grid.signals[Vec2(120, 0)]
+        create_objects(
+            game,
+            """
+            . M . F . .
 
-        game_and_signal.on_update(1 / 60)
+            .-S-.-S-s-.-
+            """,
+        )
+        game._create_train(*game.grid.stations.values())
+        signal = game.grid.signals[Vec2(120, 0)]
+
+        game.on_update(1 / 60)
 
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
@@ -722,9 +720,17 @@ class TestSignals:
 
     def test_destroying_rail_resets_signal_blocks(
         self,
-        game_and_signal: Game,
+        game: Game,
     ):
-        game = game_and_signal
+        create_objects(
+            game,
+            """
+            . M . F . .
+
+            .-S-.-S-s-.-
+            """,
+        )
+        game._create_train(*game.grid.stations.values())
 
         assert len(game.signal_controller._signal_blocks) == 2
 
@@ -734,10 +740,17 @@ class TestSignals:
 
     def test_adding_rail_resets_signal_blocks(
         self,
-        game_and_signal: Game,
+        game: Game,
     ):
-        game = game_and_signal
+        create_objects(
+            game,
+            """
+            . M . F . .
 
+            .-S-.-S-s-.-
+            """,
+        )
+        game._create_train(*game.grid.stations.values())
         game.grid.remove_rail(60, 0)
 
         assert len(game.signal_controller._signal_blocks) == 3
