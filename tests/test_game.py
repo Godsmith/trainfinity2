@@ -12,18 +12,6 @@ from tests.util import create_objects
 
 
 @pytest.fixture
-def game_with_factory_and_mine(game):
-    map_ = """
-    . M . F .
-    . . . . .
-    .-S-.-S-.
-    """
-    create_objects(game, map_)
-
-    return game
-
-
-@pytest.fixture
 def game_with_train(game: Game) -> Game:
     map_ = """
     . M . F .
@@ -195,15 +183,15 @@ class TestGui:
 
 
 class TestCreateTrain:
-    def test_clicking_nothing_in_train_mode_does_nothing(
-        self, game_with_factory_and_mine: Game
-    ):
-        """Mainly for code coverage"""
-        # game = game_with_factory_and_mine
-        # game.gui.mode = Mode.TRAIN
-        # game.gui.disable()
+    # def test_clicking_nothing_in_train_mode_does_nothing(
+    #     self, game_with_factory_and_mine: Game
+    # ):
+    #     """Mainly for code coverage"""
+    #     # game = game_with_factory_and_mine
+    #     # game.gui.mode = Mode.TRAIN
+    #     # game.gui.disable()
 
-        # game.on_left_click(100, 100)
+    #     # game.on_left_click(100, 100)
 
     def test_clicking_station_in_train_mode_starts_a_train_placement_session(
         self, game: Game
@@ -211,10 +199,10 @@ class TestCreateTrain:
         create_objects(
             game,
             """
-. M . F .
+            . M . F .
 
-.-S-.-S-.
-""",
+            .-S-.-S-.
+            """,
         )
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
@@ -227,10 +215,15 @@ class TestCreateTrain:
 
         assert game._train_placer.session
 
-    def test_clicking_station_in_train_mode_highlights_station(
-        self, game_with_factory_and_mine: Game
-    ):
-        game = game_with_factory_and_mine
+    def test_clicking_station_in_train_mode_highlights_station(self, game: Game):
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
 
@@ -242,9 +235,16 @@ class TestCreateTrain:
         assert len(game.drawer.highlight_shape_element_list) == 1
 
     def test_clicking_gui_stops_train_placing_session_and_removes_station_highlight(
-        self, game_with_factory_and_mine: Game
+        self, game: Game
     ):
-        game = game_with_factory_and_mine
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
         game.on_left_click(30, 0)
@@ -257,8 +257,15 @@ class TestCreateTrain:
         assert len(game.drawer.highlight_shape_element_list) == 0
 
     @pytest.fixture
-    def hover_over_connected_station(self, game_with_factory_and_mine: Game):
-        game = game_with_factory_and_mine
+    def hover_over_connected_station(self, game: Game):
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
         game.gui.disable()
 
@@ -283,18 +290,15 @@ class TestCreateTrain:
 
         assert len(game.drawer.highlight_shape_element_list) == 1
 
-    def test_clicking_two_connected_stations_creates_train(
-        self, game_with_factory_and_mine: Game
-    ):
-        """
-        The grid is lain out as follows:
-
-         M F
-        =S=S=
-
-        When clicking the two stations, a train shall be created.
-        """
-        game = game_with_factory_and_mine
+    def test_clicking_two_connected_stations_creates_train(self, game: Game):
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
 
         # TODO: it would be nice for readability if I could just say station.click() here.
@@ -305,10 +309,15 @@ class TestCreateTrain:
 
         assert len(game.trains) == 1
 
-    def test_clicking_two_connected_stations_removes_highlight(
-        self, game_with_factory_and_mine: Game
-    ):
-        game = game_with_factory_and_mine
+    def test_clicking_two_connected_stations_removes_highlight(self, game: Game):
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
 
         # TODO: it would be nice for readability if I could just say station.click() here.
@@ -319,17 +328,15 @@ class TestCreateTrain:
 
         assert len(game.drawer.highlight_shape_element_list) == 0
 
-    def test_clicking_two_unconnected_stations_does_not_create_train(
-        self, game_with_factory_and_mine: Game
-    ):
-        """
-        Create a new station on top, like this:
-
-        =S=
-         M F
-        =S=S=
-        """
-        game = game_with_factory_and_mine
+    def test_clicking_two_unconnected_stations_does_not_create_train(self, game: Game):
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
 
         game.grid.rails.extend(
@@ -351,16 +358,15 @@ class TestCreateTrain:
         assert len(game.trains) == 0
 
     @pytest.fixture
-    def two_trains(self, game_with_factory_and_mine):
-        """
-        The grid is lain out as follows:
-
-         M F
-        =S=S=
-
-        When clicking the two stations, a train shall be created.
-        """
-        game = game_with_factory_and_mine
+    def two_trains(self, game):
+        create_objects(
+            game,
+            """
+            . M . F .
+            . . . . .
+            .-S-.-S-.
+            """,
+        )
         game.gui.mode = Mode.TRAIN
 
         # Click first station
@@ -402,9 +408,16 @@ class TestCreateTrain:
 
 
 def test_clicking_position_in_destroy_mode_destroys_station_and_rail(
-    game_with_factory_and_mine,
+    game,
 ):
-    game = game_with_factory_and_mine
+    create_objects(
+        game,
+        """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+    )
     game.gui.mode = Mode.DESTROY
 
     assert len(game.grid.stations) == 2
@@ -417,8 +430,15 @@ def test_clicking_position_in_destroy_mode_destroys_station_and_rail(
     assert len(game.grid.rails) == 2
 
 
-def test_iron_is_regularly_added_to_mines(game_with_factory_and_mine):
-    game = game_with_factory_and_mine
+def test_iron_is_regularly_added_to_mines(game):
+    create_objects(
+        game,
+        """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+    )
     # Start just before creating a new iron
     game.iron_counter = SECONDS_BETWEEN_IRON_CREATION - 0.00001
 
@@ -517,36 +537,62 @@ class TestSelect:
 
 
 class TestSignals:
-    def test_create_signal_blocks(self, game_with_factory_and_mine: Game):
-        game_with_factory_and_mine._create_signal(60, 0)
-        blocks = game_with_factory_and_mine.signal_controller._signal_blocks
+    def test_create_signal_blocks(self, game: Game):
+        create_objects(
+            game,
+            """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+        )
+        game._create_signal(60, 0)
+        blocks = game.signal_controller._signal_blocks
         assert len(blocks) == 2
         assert blocks[0].positions == frozenset({Vec2(0, 0), Vec2(30, 0), Vec2(60, 0)})
         assert blocks[1].positions == frozenset(
             {Vec2(60, 0), Vec2(90, 0), Vec2(120, 0)}
         )
 
-    def test_clicking_grid_in_signal_mode_creates_signal(
-        self, game_with_factory_and_mine: Game
-    ):
-        assert len(game_with_factory_and_mine.grid.signals) == 0
-        game_with_factory_and_mine.gui.disable()
-        game_with_factory_and_mine.gui.mode = Mode.SIGNAL
-        game_with_factory_and_mine.on_left_click(61, 1)
-        assert len(game_with_factory_and_mine.grid.signals) == 1
+    def test_clicking_grid_in_signal_mode_creates_signal(self, game: Game):
+        create_objects(
+            game,
+            """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+        )
+        assert len(game.grid.signals) == 0
+        game.gui.disable()
+        game.gui.mode = Mode.SIGNAL
+        game.on_left_click(61, 1)
+        assert len(game.grid.signals) == 1
 
-    def test_signal_connections_contain_adjacent_rail(
-        self, game_with_factory_and_mine: Game
-    ):
-        signal = game_with_factory_and_mine.grid.create_signal(60, 0)
+    def test_signal_connections_contain_adjacent_rail(self, game: Game):
+        create_objects(
+            game,
+            """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+        )
+        signal = game.grid.create_signal(60, 0)
         assert signal
         assert signal.connections[0].rail == Rail(30, 0, 60, 0)
         assert signal.connections[1].rail == Rail(60, 0, 90, 0)
 
-    def test_signal_color_without_trains_is_green(
-        self, game_with_factory_and_mine: Game
-    ):
-        signal = game_with_factory_and_mine._create_signal(60, 0)
+    def test_signal_color_without_trains_is_green(self, game: Game):
+        create_objects(
+            game,
+            """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+        )
+        signal = game._create_signal(60, 0)
         assert signal
         assert signal.connections[0].signal_color == SignalColor.GREEN
         assert signal.connections[1].signal_color == SignalColor.GREEN
@@ -597,11 +643,18 @@ class TestSignals:
 
     def test_clicking_signal_in_destroy_mode_destroys_signal(
         self,
-        game_with_factory_and_mine,
+        game,
     ):
-        game = game_with_factory_and_mine
+        create_objects(
+            game,
+            """
+        . M . F .
+        . . . . .
+        .-S-.-S-.
+        """,
+        )
         game.gui.mode = Mode.DESTROY
-        game_with_factory_and_mine._create_signal(90, 0)
+        game._create_signal(90, 0)
 
         assert len(game.grid.signals) == 1
 
