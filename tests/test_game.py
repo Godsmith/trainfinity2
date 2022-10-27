@@ -14,9 +14,10 @@ from tests.util import create_objects
 @pytest.fixture
 def game_with_factory_and_mine(game):
     map_ = """
-  M   F
-
- -S- -S-"""
+. M . F .
+. . . . .
+.-S-.-S-.
+"""
     create_objects(game, map_)
 
     return game
@@ -25,13 +26,12 @@ def game_with_factory_and_mine(game):
 @pytest.fixture
 def game_with_train(game: Game) -> Game:
     map_ = """
-  M   F
-
- -S- -S-"""
+. M . F .
+. . . . .
+.-S-.-S-.
+"""
     create_objects(game, map_)
-    station1 = game.grid.stations[Vec2(30, 0)]
-    station2 = game.grid.stations[Vec2(90, 0)]
-    game._create_train(station1, station2)
+    game._create_train(*game.grid.stations.values())
     return game
 
 
