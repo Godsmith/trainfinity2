@@ -4,13 +4,13 @@
 
 to start a game with some objects already created for easier testing."""
 import arcade
-from trainfinity2.__main__ import Game, MyWindow
+from trainfinity2.__main__ import Game, Window
 from pyglet.math import Vec2
 from trainfinity2.model import Rail
 from trainfinity2.terrain import Terrain
 
 game = Game()
-window = MyWindow(game)
+window = Window(game)
 game.setup(Terrain(water=[Vec2(0, 0)]))
 game.grid._create_mine(30, 30)
 game.grid._create_factory(180, 30)
