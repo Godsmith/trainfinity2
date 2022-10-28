@@ -8,6 +8,7 @@ from .model import Station
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
+
 class Window(arcade.Window):
     def __init__(self, game: Game):
         super().__init__(
@@ -47,4 +48,3 @@ class Window(arcade.Window):
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         super().on_mouse_scroll(x, y, scroll_x, scroll_y)
         self._game.on_mouse_scroll(x, y, scroll_x, scroll_y)
-
