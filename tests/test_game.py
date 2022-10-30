@@ -206,8 +206,6 @@ class TestCreateTrain:
 
         assert not game._train_placer.session
 
-        # TODO: it would be nice for readability if I could just say station.click() here.
-        # Click first station
         game.on_left_click(30, 0)
 
         assert game._train_placer.session
@@ -298,7 +296,6 @@ class TestCreateTrain:
         )
         game.gui.mode = Mode.TRAIN
 
-        # TODO: it would be nice for readability if I could just say station.click() here.
         # Click first station
         game.on_left_click(30, 0)
         # Click next station
@@ -317,7 +314,6 @@ class TestCreateTrain:
         )
         game.gui.mode = Mode.TRAIN
 
-        # TODO: it would be nice for readability if I could just say station.click() here.
         # Click first station
         game.on_left_click(30, 0)
         # Click next station
@@ -331,28 +327,36 @@ class TestCreateTrain:
             """
             . M . F .
     
-            .-S-.-S-.
+            .-S .-S-.
             """,
         )
         game.gui.mode = Mode.TRAIN
 
-        game.grid.rails.extend(
-            [
-                Rail(0, 90, 30, 90),
-                Rail(30, 90, 60, 90),
-            ]
-        )
-        game.grid.stations[Vec2(30, 90)] = Station(
-            30, 90, game.grid.mines[Vec2(30, 30)]
-        )
-
-        # TODO: it would be nice for readability if I could just say station.click() here.
         # Click first station
         game.on_left_click(30, 0)
         # Click next station
         game.on_left_click(30, 90)
 
         assert len(game.trains) == 0
+
+    def test_clicking_the_same_station_twice_removes_highlight_and_does_not_create_train(
+        self, game: Game
+    ):
+        create_objects(
+            game,
+            """
+            . M . F .
+    
+            .-S-.-S-.
+            """,
+        )
+        game.gui.mode = Mode.TRAIN
+
+        game.on_left_click(30, 0)
+        game.on_left_click(30, 0)
+
+        assert len(game.trains) == 0
+        assert len(game.drawer.highlight_shape_element_list) == 0
 
     @pytest.fixture
     def two_trains(self, game):
