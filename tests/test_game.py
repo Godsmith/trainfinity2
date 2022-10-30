@@ -763,7 +763,6 @@ class TestSignals:
 
 
 class TestTrainMovingAroundSignals:
-    @pytest.mark.xfail(reason="Train should choose the north route but does not.")
     def test_train_chooses_green_route(self, game: Game):
         """This test case is currently unrealistic since there cannot be two exits
         at an angle from a station."""
@@ -782,13 +781,14 @@ class TestTrainMovingAroundSignals:
         game._create_train(stations[1], stations[2])
 
         game.on_update(1 / 60)
-        game.on_update(1 / 60)
-        game.on_update(1 / 60)
 
-        # TODO: the train should choose the north route but does not.
-        # Revisit after improving code coverage and repr methods.
+        # Train chooses north route
         assert train.y > 30
 
     @pytest.mark.xfail(reason="TODO")
     def test_train_waiting_at_signal_if_no_route(self, game: Game):
+        assert False
+
+    @pytest.mark.xfail(reason="TODO")
+    def test_if_a_train_is_destroyed_the_signals_become_green(self, game: Game):
         assert False

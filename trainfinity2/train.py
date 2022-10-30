@@ -43,6 +43,7 @@ class Train(Subject):
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route = []
+        self.signal_controller.reserve(id(self), Vec2(self.x, self.y))
 
     @property
     def rails_on_route(self):
@@ -124,8 +125,10 @@ class Train(Subject):
         next_position = next_rail.other_end(self.target_x, self.target_y)
         if self.signal_controller.is_unreserved(next_position):
             self._set_current_rail(next_rail, self.target_x, self.target_y)
-            self.signal_controller.change_block_reservation(
-                Vec2(self.target_x, self.target_y), current_position
+            self.signal_controller.reserve(
+                id(self),
+                # TODO: should it be next_position here?
+                Vec2(self.target_x, self.target_y),
             )
         else:
             self.wait_timer = 1

@@ -27,7 +27,14 @@ class SignalController:
             list
         )
         self._signals: list[Signal] = []
-        self._positions_with_trains = set()
+        self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
+
+    def __repr__(self) -> str:
+        s = "SignalController("
+        for signal in self._signals:
+            for connection in signal.connections:
+                s += f"({signal.x},{signal.y})->({connection.towards_position.x, connection.towards_position.y}): {connection.signal_color.name}, "
+        return s
 
     def create_signal_blocks(
         self, rail_collection: RailCollection, signal_from_position: dict[Vec2, Signal]
@@ -44,7 +51,7 @@ class SignalController:
         rails = set(rail_collection.rails)
         self._signals = list(signal_from_position.values())
         position_sets: list[set[Vec2]] = []
-        self._positions_with_trains = set()
+        self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
         self._signal_blocks_from_position = defaultdict(list)
         while rails:
             position_sets.append(set())
@@ -77,18 +84,18 @@ class SignalController:
             signal_block.reserved for signal_block in signal_blocks_at_position
         )
 
-    def change_block_reservation(self, new_position: Vec2, left_position: Vec2):
+    def reserve(self, reserver_id: int, new_position: Vec2):
         """Called by trains when they enter a new position. The correct blocks
         are then reserved and unreserved."""
-        # TODO: change to store a train ID that can be shown in repr()
-        self._positions_with_trains.discard(left_position)
-        self._positions_with_trains.add(new_position)
+        self._reserved_position_from_reserver_id[reserver_id] = new_position
         self._update_signal_block_reservations()
 
     def _update_signal_block_reservations(self):
         for signal_block in self._signal_blocks:
             signal_block.reserved = bool(
-                signal_block.positions.intersection(self._positions_with_trains)
+                signal_block.positions.intersection(
+                    self._reserved_position_from_reserver_id.values()
+                )
             )
         self._update_signals()
 
