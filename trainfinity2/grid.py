@@ -342,12 +342,8 @@ class Grid(Subject):
                 x,
                 y,
                 (
-                    SignalConnection(
-                        rails[0], rails[0].other_end(x, y), SignalColor.GREEN
-                    ),
-                    SignalConnection(
-                        rails[1], rails[1].other_end(x, y), SignalColor.GREEN
-                    ),
+                    SignalConnection(rails[0], rails[0].other_end(x, y)),
+                    SignalConnection(rails[1], rails[1].other_end(x, y)),
                 ),
             )
             self.signals[Vec2(x, y)] = signal

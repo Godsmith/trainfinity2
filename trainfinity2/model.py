@@ -140,7 +140,7 @@ class SignalColor(Enum):
 class SignalConnection:
     rail: Rail
     towards_position: Vec2
-    signal_color: SignalColor
+    signal_color: SignalColor = SignalColor.GREEN
 
 
 @dataclass(unsafe_hash=True)
@@ -152,13 +152,13 @@ class Signal(Subject):
     def __post_init__(self):
         super().__init__()
 
-    @property
-    def position(self):
-        return Vec2(self.x, self.y)
+    # @property
+    # def position(self):
+    #     return Vec2(self.x, self.y)
 
-    @property
-    def rails(self):
-        return {connection.rail for connection in self.connections}
+    # @property
+    # def rails(self):
+    #     return {connection.rail for connection in self.connections}
 
     def _connection_from_rail(self, rail: Rail):
         return [

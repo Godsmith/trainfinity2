@@ -1,7 +1,7 @@
 import pytest
 from pyglet.math import Vec2
 from trainfinity2.grid import Grid
-from trainfinity2.model import Mine, Player, Rail, Station
+from trainfinity2.model import Mine, Player, Rail, Signal, SignalConnection, Station
 from trainfinity2.signal_controller import SignalController
 from trainfinity2.terrain import Terrain
 from trainfinity2.train import Train
@@ -88,3 +88,21 @@ class TestTrain:
         train.move(1 / 60)
 
         assert train.y == pytest.approx(-2)
+
+
+class TestSignal:
+    def test_calling_other_rail_with_nonadjacent_rail_throws_error(self):
+        rail1 = Rail(0, 0, 30, 0)
+        rail2 = Rail(30, 0, 60, 0)
+        signal_connection1 = SignalConnection(
+            rail1,
+            Vec2(0, 0),
+        )
+        signal_connection2 = SignalConnection(
+            rail2,
+            Vec2(90, 0),
+        )
+        signal = Signal(30, 0, (signal_connection1, signal_connection2))
+
+        with pytest.raises(ValueError):
+            signal.other_rail(Rail(30, 30, 30, 30))
