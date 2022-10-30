@@ -761,6 +761,19 @@ class TestSignals:
 
         assert len(game.signal_controller._signal_blocks) == 2
 
+    def test_adding_adjacent_signals_does_not_hang_application(
+        self,
+        game: Game,
+    ):
+        create_objects(
+            game,
+            """
+            . M . . F .
+
+            .-S-s-s-S-.-
+            """,
+        )
+
 
 class TestTrainMovingAroundSignals:
     def test_train_chooses_green_route(self, game: Game):
@@ -780,14 +793,13 @@ class TestTrainMovingAroundSignals:
         train = game._create_train(stations[0], stations[3])
         game._create_train(stations[1], stations[2])
 
+        # Needs two updates because in the first update the train reaches the first
+        # station, and in the second update it begins to move.
+        game.on_update(1 / 60)
         game.on_update(1 / 60)
 
         # Train chooses north route
         assert train.y > 30
-
-    @pytest.mark.xfail(reason="TODO")
-    def test_train_waiting_at_signal_if_no_route(self, game: Game):
-        assert False
 
     @pytest.mark.xfail(reason="TODO")
     def test_if_a_train_is_destroyed_the_signals_become_green(self, game: Game):

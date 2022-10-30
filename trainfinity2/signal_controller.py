@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from pyglet.math import Vec2
 
-from .model import Signal, SignalColor
+from .model import Signal, SignalColor, Rail
 from .protocols import RailCollection
 
 
@@ -36,6 +36,32 @@ class SignalController:
                 s += f"({signal.x},{signal.y})->({connection.towards_position.x, connection.towards_position.y}): {connection.signal_color.name}, "
         return s
 
+    def _create_signal_block(
+        self,
+        available_rails: set[Rail],
+        rail_collection: RailCollection,
+        signal_from_position: dict[Vec2, Signal],
+    ) -> tuple[SignalBlock, set[Rail]]:
+        rails = set(available_rails)
+        signal_block_positions = set()
+        rail = rails.pop()
+        handled_rails = {rail}
+        edge_positions = set(rail.positions)
+        while edge_positions:
+            position = edge_positions.pop()
+            signal_block_positions.add(position)
+            if position not in signal_from_position:
+                new_rails = rail_collection.rails_at_position(*position).difference(
+                    handled_rails
+                )
+                for new_rail in new_rails:
+                    rails.pop()
+                    handled_rails.add(new_rail)
+                    for new_position in new_rail.positions:
+                        if new_position not in signal_block_positions:
+                            edge_positions.add(new_position)
+        return SignalBlock(frozenset(signal_block_positions)), handled_rails
+
     def create_signal_blocks(
         self, rail_collection: RailCollection, signal_from_position: dict[Vec2, Signal]
     ):
@@ -48,28 +74,20 @@ class SignalController:
         OPTIMIZATION OPPORTUNITY: Currently all signal blocks are recreated each time. It would be
         enough if the signal blocks that are affected are recreated, such as the once in proximity
         to the rail being deleted, for example."""
-        rails = set(rail_collection.rails)
         self._signals = list(signal_from_position.values())
-        position_sets: list[set[Vec2]] = []
-        self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
-        self._signal_blocks_from_position = defaultdict(list)
+        # TODO: did the following line make all blocks unreserved when recreating
+        # signal blocks? Try to comment it out, it might improve stability.
+        # self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
+        rails = set(rail_collection.rails)
+        self._signal_blocks = []
         while rails:
-            position_sets.append(set())
-            rail = list(rails)[0]
-            positions = rail.positions
-            while positions:
-                position = positions.pop()
-                position_sets[-1].add(position)
-                if position not in signal_from_position:
-                    new_rails = rail_collection.rails_at_position(*position)
-                    for rail in new_rails:
-                        if rail in rails:
-                            rails.remove(rail)
-                            for position in rail.positions:
-                                positions.add(position)
-        self._signal_blocks = [
-            SignalBlock(frozenset(position_set)) for position_set in position_sets
-        ]
+            signal_block, used_rails = self._create_signal_block(
+                rails, rail_collection, signal_from_position
+            )
+            self._signal_blocks.append(signal_block)
+            rails.difference_update(used_rails)
+        # TODO: create a new class SignalBlockCollection or similar to avoid two vars
+        self._signal_blocks_from_position = defaultdict(list)
         for signal_block in self._signal_blocks:
             for position in signal_block.positions:
                 self._signal_blocks_from_position[position].append(signal_block)
