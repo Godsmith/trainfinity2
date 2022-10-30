@@ -788,3 +788,7 @@ class TestTrainMovingAroundSignals:
         # TODO: the train should choose the north route but does not.
         # Revisit after improving code coverage and repr methods.
         assert train.y > 30
+
+    @pytest.mark.xfail(reason="TODO")
+    def test_train_waiting_at_signal_if_no_route(self, game: Game):
+        assert False

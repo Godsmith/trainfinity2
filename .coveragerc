@@ -2,6 +2,10 @@
 # Enable this if bored some time, seems to be low bang for the buck
 branch = False
 
+omit = 
+    # This file cannot be tested in github actions since it requires an X server
+    trainfinity2/window.py
+
 [report]
 
 exclude_lines =

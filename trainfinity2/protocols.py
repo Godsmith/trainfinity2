@@ -2,7 +2,7 @@ from typing import Protocol
 import typing
 
 if typing.TYPE_CHECKING:
-    from model import Rail
+    from model import Rail  # pragma: no cover
 
 
 class GridEnlarger(Protocol):

@@ -32,8 +32,8 @@ class Subject:
     def add_observer(self, observer: Observer, event_type: Type[Event]):
         self._observers[event_type].append(observer)
 
-    def remove_observer(self, observer: Observer, event_type: Type[Event]):
-        self._observers[event_type].remove(observer)
+    # def remove_observer(self, observer: Observer, event_type: Type[Event]):
+    #     self._observers[event_type].remove(observer)
 
     def notify(self, event: Event):
         for observer in self._observers[type(event)]:

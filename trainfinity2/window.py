@@ -1,3 +1,5 @@
+# pragma: no cover
+# Cannot be tested in github actions since it requires an X server
 import arcade
 from arcade import color
 
