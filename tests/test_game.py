@@ -760,3 +760,31 @@ class TestSignals:
         game.grid.create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
 
         assert len(game.signal_controller._signal_blocks) == 2
+
+
+class TestTrainMovingAroundSignals:
+    @pytest.mark.xfail(reason="Train should choose the north route but does not.")
+    def test_train_chooses_green_route(self, game: Game):
+        """This test case is currently unrealistic since there cannot be two exits
+        at an angle from a station."""
+        create_objects(
+            game,
+            r"""
+            M s-.-.-. F 
+             /       \
+            S-s-S-S-s-S
+
+            . . M F . .
+            """,
+        )
+        stations = list(game.grid.stations.values())
+        train = game._create_train(stations[0], stations[3])
+        game._create_train(stations[1], stations[2])
+
+        game.on_update(1 / 60)
+        game.on_update(1 / 60)
+        game.on_update(1 / 60)
+
+        # TODO: the train should choose the north route but does not.
+        # Revisit after improving code coverage and repr methods.
+        assert train.y > 30

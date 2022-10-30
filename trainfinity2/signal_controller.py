@@ -80,6 +80,7 @@ class SignalController:
     def change_block_reservation(self, new_position: Vec2, left_position: Vec2):
         """Called by trains when they enter a new position. The correct blocks
         are then reserved and unreserved."""
+        # TODO: change to store a train ID that can be shown in repr()
         self._positions_with_trains.discard(left_position)
         self._positions_with_trains.add(new_position)
         self._update_signal_block_reservations()

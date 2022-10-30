@@ -206,6 +206,7 @@ class Game:
         self.drawer.create_train(train)
         self.gui.mode = Mode.SELECT
         train.selected = True
+        return train
 
     def on_notify(self, object: Any, event: Event):
         match object, event:
