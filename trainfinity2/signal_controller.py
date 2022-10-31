@@ -56,11 +56,7 @@ class SignalController:
             ).intersection(available_rails)
             for new_rail in available_rails_at_position:
                 available_rails.discard(new_rail)
-                edge_positions.update(
-                    new_position
-                    for new_position in new_rail.positions
-                    if new_position not in signal_block_positions
-                )
+                edge_positions.update(new_rail.positions)
         return SignalBlock(
             frozenset(signal_block_positions)
         ), original_available_rails.difference(available_rails)
