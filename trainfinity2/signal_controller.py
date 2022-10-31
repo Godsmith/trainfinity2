@@ -42,21 +42,35 @@ class SignalController:
         rail_collection: RailCollection,
         signal_from_position: dict[Vec2, Signal],
     ) -> tuple[SignalBlock, set[Rail]]:
+        """
+        1. Choose a random starting rail segment.
+        2. Get the positions at the border of the signal block that is currently being
+           constructed (first time just the positions adjacent of the starting rail)
+        3. Add the border positions to the current signal block
+        4. Get all rails adjacent to the border positions that are not part of other
+           signal blocks, except for those positions that have signals, because the
+           signal blocks stops at signals
+        5. Set the new border positions to the new positions adjacent to those new rails
+        6. Mark the used rails
+        7. Go to 2."""
         available_rails = set(original_available_rails)
         signal_block_positions = set()
         rail = available_rails.pop()
         edge_positions = set(rail.positions)
         while edge_positions:
-            position = edge_positions.pop()
-            signal_block_positions.add(position)
-            if position in signal_from_position:
-                continue
-            available_rails_at_position = rail_collection.rails_at_position(
-                *position
-            ).intersection(available_rails)
-            for new_rail in available_rails_at_position:
-                available_rails.discard(new_rail)
-                edge_positions.update(new_rail.positions)
+            signal_block_positions |= edge_positions
+            edge_positions -= signal_from_position.keys()
+            new_rails = {
+                rail
+                for position in edge_positions
+                for rail in rail_collection.rails_at_position(*position)
+            }.intersection(available_rails)
+            edge_positions = {
+                new_position
+                for new_rail in new_rails
+                for new_position in new_rail.positions
+            }
+            available_rails -= new_rails
         return SignalBlock(
             frozenset(signal_block_positions)
         ), original_available_rails.difference(available_rails)
