@@ -38,29 +38,32 @@ class SignalController:
 
     def _create_signal_block(
         self,
-        available_rails: set[Rail],
+        original_available_rails: set[Rail],
         rail_collection: RailCollection,
         signal_from_position: dict[Vec2, Signal],
     ) -> tuple[SignalBlock, set[Rail]]:
-        rails = set(available_rails)
+        available_rails = set(original_available_rails)
         signal_block_positions = set()
-        rail = rails.pop()
-        handled_rails = {rail}
+        rail = available_rails.pop()
         edge_positions = set(rail.positions)
         while edge_positions:
             position = edge_positions.pop()
             signal_block_positions.add(position)
-            if position not in signal_from_position:
-                new_rails = rail_collection.rails_at_position(*position).difference(
-                    handled_rails
+            if position in signal_from_position:
+                continue
+            available_rails_at_position = rail_collection.rails_at_position(
+                *position
+            ).intersection(available_rails)
+            for new_rail in available_rails_at_position:
+                available_rails.discard(new_rail)
+                edge_positions.update(
+                    new_position
+                    for new_position in new_rail.positions
+                    if new_position not in signal_block_positions
                 )
-                for new_rail in new_rails:
-                    rails.pop()
-                    handled_rails.add(new_rail)
-                    for new_position in new_rail.positions:
-                        if new_position not in signal_block_positions:
-                            edge_positions.add(new_position)
-        return SignalBlock(frozenset(signal_block_positions)), handled_rails
+        return SignalBlock(
+            frozenset(signal_block_positions)
+        ), original_available_rails.difference(available_rails)
 
     def create_signal_blocks(
         self, rail_collection: RailCollection, signal_from_position: dict[Vec2, Signal]
