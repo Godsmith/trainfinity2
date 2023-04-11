@@ -39,7 +39,9 @@ def find_route(
             possible_next_rails = starting_rails
             first_iteration = False
         else:
-            possible_next_rails = possible_next_rails_method(current_position, previous_rail)
+            possible_next_rails = possible_next_rails_method(
+                current_position, previous_rail
+            )
         for rail in possible_next_rails:
             adjacent_position = rail.other_end(*current_position)
             if adjacent_position not in visited_positions:
