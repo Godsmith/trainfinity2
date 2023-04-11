@@ -386,7 +386,6 @@ class TestCreateTrain:
     def test_create_two_trains(self, two_trains: Game):
         assert len(two_trains.trains) == 2
 
-    @pytest.mark.xfail(reason="Fix after making trains wait for signals")
     def test_two_trains_colliding_are_destroyed(self, two_trains: Game):
         two_trains.on_update(1 / 60)
         assert len(two_trains.trains) == 0
