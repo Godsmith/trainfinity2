@@ -43,7 +43,7 @@ class Train(Subject):
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route = []
-        self.signal_controller.reserve(id(self), Vec2(self.x, self.y))
+        # self.signal_controller.reserve(id(self), Vec2(self.x, self.y))
 
     @property
     def rails_on_route(self):
@@ -75,13 +75,19 @@ class Train(Subject):
         )
 
     def destroy(self):
+        self.signal_controller.unreserve(id(self))
         self.notify(DestroyEvent())
 
     def is_colliding_with(self, train):
         return (
-            abs(self.x - train.x) < GRID_BOX_SIZE / 2
-            and abs(self.y - train.y) < GRID_BOX_SIZE / 2
+            abs(self.x - train.x) < GRID_BOX_SIZE / 4
+            and abs(self.y - train.y) < GRID_BOX_SIZE / 4
         )
+
+    def _can_reserve_position(self, position: Vec2) -> bool:
+        return not self.signal_controller.reserver(
+            position
+        ) or self.signal_controller.reserver(position) == id(self)
 
     def _on_reached_target(self):
         if _is_close(self, self._target_station):
@@ -102,36 +108,42 @@ class Train(Subject):
 
         current_position = Vec2(self.target_x, self.target_y)
 
+        starting_rails = []
+        adjacent_reserved_positions = []
+        for rail in self.grid.possible_next_rails_ignore_red_lights(
+            position=current_position, previous_rail=self.current_rail
+        ):
+            position = rail.other_end(*current_position)
+            if self._can_reserve_position(position):
+                starting_rails.append(rail)
+            else:
+                adjacent_reserved_positions.append(position)
+
+        if not starting_rails:
+            # If the train has nowhere to go from the current position,
+            # destroy the train. TODO: is this needed?
+            if not adjacent_reserved_positions:
+                self.destroy()
+                return
+            self.wait_timer = 1
+            return
+
         self._rails_on_route = find_route(
-            self.grid.possible_next_rails,
+            self.grid.possible_next_rails_ignore_red_lights,
+            starting_rails,
             current_position,
             self._target_station,
             previous_rail=self.current_rail,
         )
 
-        if not self._rails_on_route:
-            self._rails_on_route = find_route(
-                self.grid.possible_next_rails_ignore_red_lights,
-                current_position,
-                self._target_station,
-                previous_rail=self.current_rail,
-            )
-
+        # If there is no path to the target, destroy the train
         if not self._rails_on_route:
             self.destroy()
             return
-
         next_rail = self._rails_on_route[0]
-        next_position = next_rail.other_end(self.target_x, self.target_y)
-        if self.signal_controller.is_unreserved(next_position):
-            self._set_current_rail(next_rail, self.target_x, self.target_y)
-            self.signal_controller.reserve(
-                id(self),
-                # TODO: should it be next_position here?
-                Vec2(self.target_x, self.target_y),
-            )
-        else:
-            self.wait_timer = 1
+        next_position = next_rail.other_end(*current_position)
+        self._set_current_rail(next_rail, self.target_x, self.target_y)
+        self.signal_controller.reserve(id(self), next_position)
 
     def _set_current_rail(self, next_rail: Rail, x, y):
         self.current_rail = next_rail

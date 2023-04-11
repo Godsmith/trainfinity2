@@ -124,7 +124,7 @@ class Rail:
             return Vec2(self.x2, self.y2)
         if self.x2 == x and self.y2 == y:
             return Vec2(self.x1, self.y1)
-        raise ValueError("The provided coordinates was not at either end of the rail.")
+        raise ValueError(f"The provided coordinates was not at either end of the rail.")
 
     @property
     def positions(self) -> set[Vec2]:
@@ -145,38 +145,23 @@ class SignalConnection:
 
 @dataclass(unsafe_hash=True)
 class Signal(Subject):
-    x: int
-    y: int
-    connections: tuple[SignalConnection, SignalConnection]
+    from_position: Vec2
+    rail: Rail
+    _signal_color: SignalColor = SignalColor.GREEN
+
+    def __repr__(self):
+        return f"Signal(from position {self.from_position} on {self.rail}: {self.signal_color})"
 
     def __post_init__(self):
         super().__init__()
+        assert self.from_position in self.rail.positions  # For debug
+        self._signal_color = SignalColor.GREEN
 
-    # @property
-    # def position(self):
-    #     return Vec2(self.x, self.y)
+    @property
+    def signal_color(self) -> SignalColor:
+        return self._signal_color
 
-    # @property
-    # def rails(self):
-    #     return {connection.rail for connection in self.connections}
-
-    def _connection_from_rail(self, rail: Rail):
-        return [
-            connection for connection in self.connections if connection.rail == rail
-        ][0]
-
-    def set_signal_color(self, rail: Rail, color: SignalColor):
-        # if connection.signal_color != color:
-        self._connection_from_rail(rail).signal_color = color
+    @signal_color.setter
+    def signal_color(self, value: SignalColor):
+        self._signal_color = value
         self.notify(ChangeEvent())
-
-    def other_rail(self, rail: Rail):
-        if rail == self.connections[0].rail:
-            return self.connections[1].rail
-        elif rail == self.connections[1].rail:
-            return self.connections[0].rail
-        else:
-            raise ValueError(f"Signal {self} is not next to rail {rail}")
-
-    def signal_color_coming_from(self, rail: Rail):
-        return self._connection_from_rail(rail).signal_color

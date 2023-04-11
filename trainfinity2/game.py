@@ -177,6 +177,9 @@ class Game:
                 if not self._train_placer.session:
                     self._train_placer.start_session(station)
                 else:
+                    # If block is reserved, do not create train
+                    if self.signal_controller.reserver(Vec2(station.x, station.y)):
+                        return
                     if self.grid.find_route_between_stations(
                         self._train_placer.session.station, station
                     ):
@@ -190,12 +193,19 @@ class Game:
                 else:
                     train.selected = False
         elif self.gui.mode == Mode.SIGNAL:
-            self._create_signal(x, y)
+            self.create_signals_at_click_position(x, y)
 
-    def _create_signal(self, x, y) -> Signal | None:
-        if signal := self.grid.create_signal(x, y):
+    def create_signals_at_click_position(self, x, y) -> list[Signal]:
+        signals = self.grid.create_signals_at_click_position(x, y)
+        for signal in signals:
             signal.add_observer(self.drawer, ChangeEvent)
-        return signal
+        return signals
+
+    def create_signals_at_grid_position(self, x, y) -> list[Signal]:
+        signals = self.grid.create_signals_at_grid_position(x, y)
+        for signal in signals:
+            signal.add_observer(self.drawer, ChangeEvent)
+        return signals
 
     def _create_train(self, station1: Station, station2: Station):
         train = Train(

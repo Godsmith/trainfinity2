@@ -8,7 +8,8 @@ from .model import Rail, Station
 
 
 def find_route(
-    possible_next_rails: Callable[[Vec2, Rail | None], Iterable[Rail]],
+    possible_next_rails_method: Callable[[Vec2, Rail | None], Iterable[Rail]],
+    starting_rails: Iterable[Rail],
     initial_position: Vec2,
     target_station: Station,
     previous_rail: Rail | None = None,  # Assures the train can not just reverse
@@ -21,6 +22,7 @@ def find_route(
     rail_in_shortest_route_from_position: dict[Vec2, Rail] = {}
     visited_positions = set()
     unvisited_position_distances_and_positions = [(0, initial_position)]
+    first_iteration = True
 
     while unvisited_position_distances_and_positions:
         _, current_position = heappop(unvisited_position_distances_and_positions)
@@ -33,7 +35,12 @@ def find_route(
                 current_position = rail.other_end(*current_position)
             return route[::-1]
 
-        for rail in possible_next_rails(current_position, previous_rail):
+        if first_iteration:
+            possible_next_rails = starting_rails
+            first_iteration = False
+        else:
+            possible_next_rails = possible_next_rails_method(current_position, previous_rail)
+        for rail in possible_next_rails:
             adjacent_position = rail.other_end(*current_position)
             if adjacent_position not in visited_positions:
                 adjacent_distance = distance_at_position[current_position] + 1

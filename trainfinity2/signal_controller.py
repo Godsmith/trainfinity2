@@ -1,5 +1,6 @@
-from collections import defaultdict
+from collections import Counter
 from dataclasses import dataclass
+from collections.abc import Set
 
 from pyglet.math import Vec2
 
@@ -9,12 +10,43 @@ from .protocols import RailCollection
 
 @dataclass
 class SignalBlock:
+    """
+    A block of rails reserved by a train.
+
+    I have tried a lot of different approaches:
+
+      1. Signals on squares and trains reserve positions
+         Did not work because a position needed to belong to multiple signal blocks
+         and that made reserving the next position hard
+      2. Signals on rails and trains reserve rails
+         Did not work because two different trains can reserve the same
+         square, leading to collisions
+
+    Current approach: train reserves positions, but signals on rails. That should at
+    least solve the previous problems.
+    """
+
     positions: frozenset[Vec2]
-    reserved: bool = False
+    signals: frozenset[Signal]
+    reserved_by: int | None = False
+
+    # def __post_init__(self):
+    #     count_from_rail_position = Counter(
+    #         position for rail in self.rails for position in rail.positions
+    #     )
+    #     self.edge_positions = {
+    #         position
+    #         for position, count in count_from_rail_position.items()
+    #         if count == 1
+    #     }
 
     @property
-    def color(self):
-        return SignalColor.RED if self.reserved else SignalColor.GREEN
+    def _color(self):
+        return SignalColor.RED if self.reserved_by else SignalColor.GREEN
+
+    def update_signals(self):
+        for signal in self.signals:
+            signal.signal_color = self._color
 
 
 class SignalController:
@@ -22,61 +54,65 @@ class SignalController:
         self,
     ):
         super().__init__()
-        self._signal_blocks: list[SignalBlock] = []
-        self._signal_blocks_from_position: dict[Vec2, list[SignalBlock]] = defaultdict(
-            list
-        )
+        # self._signal_blocks: list[SignalBlock] = []
+        self._signal_block_from_position: dict[Vec2, SignalBlock] = {}
         self._signals: list[Signal] = []
         self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
 
     def __repr__(self) -> str:
-        s = "SignalController("
-        for signal in self._signals:
-            for connection in signal.connections:
-                s += f"({signal.x},{signal.y})->({connection.towards_position.x, connection.towards_position.y}): {connection.signal_color.name}, "
-        return s
+        return (
+            f"SignalController({', '.join(repr(signal) for signal in self._signals)})"
+        )
 
     def _create_signal_block(
         self,
-        original_available_rails: set[Rail],
+        available_positions: set[Vec2],
+        # TODO: consider just taking a dict here instead of a RailCollection,
+        # perhaps less confusing
         rail_collection: RailCollection,
-        signal_from_position: dict[Vec2, Signal],
-    ) -> tuple[SignalBlock, set[Rail]]:
+        signals: list[Signal],
+    ) -> SignalBlock:
         """
-        1. Choose a random starting rail segment.
-        2. Get the positions at the border of the signal block that is currently being
-           constructed (first time just the positions adjacent of the starting rail)
-        3. Add the border positions to the current signal block
-        4. Get all rails adjacent to the border positions that are not part of other
-           signal blocks, except for those positions that have signals, because the
-           signal blocks stops at signals
-        5. Set the new border positions to the new positions adjacent to those new rails
-        6. Mark the used rails
-        7. Go to 2."""
-        available_rails = set(original_available_rails)
-        signal_block_positions = set()
-        rail = available_rails.pop()
-        edge_positions = set(rail.positions)
-        while edge_positions:
-            signal_block_positions |= edge_positions
-            edge_positions -= signal_from_position.keys()
-            new_rails = {
-                rail
-                for position in edge_positions
-                for rail in rail_collection.rails_at_position(*position)
-            }.intersection(available_rails)
-            edge_positions = {
-                new_position
-                for new_rail in new_rails
-                for new_position in new_rail.positions
+        1. Add a random available position P1 to the signal block
+        2. If there is no position in the signal block that has not been handled, finish
+        3. Get a random position in the signal block that has not been handled
+        4. For each of the neighboring rails
+          4.1. Skip if the rail already has been traversed or if it has signal
+          3.2. Else, add the position P2 to the signal block
+        4. Add P1 to the list of handled positions
+        5. Go to 2.
+        """
+        rails_with_signals = {signal.rail for signal in signals}
+        signal_block_positions: set[Vec2] = {list(available_positions)[0]}
+        traversed_positions: set[Vec2] = set()
+        # Remove this if turns out not needed
+        # traversed_rails: set[Rail] = set()
+        block_signals = set()
+        while signal_block_positions - traversed_positions:
+            position = list(signal_block_positions - traversed_positions)[0]
+            new_rails = rail_collection.rails_at_position(position.x, position.y)
+
+            block_signals |= {
+                signal
+                for signal in signals
+                if signal.rail in new_rails and signal.from_position != position
             }
-            available_rails -= new_rails
-        return SignalBlock(
-            frozenset(signal_block_positions)
-        ), original_available_rails.difference(available_rails)
+
+            signal_block_positions.update(
+                {
+                    neighboring_position
+                    for new_rail in new_rails
+                    for neighboring_position in new_rail.positions
+                    if not new_rail in rails_with_signals
+                }
+            )
+            traversed_positions.add(position)
+        return SignalBlock(frozenset(signal_block_positions), frozenset(block_signals))
 
     def create_signal_blocks(
-        self, rail_collection: RailCollection, signal_from_position: dict[Vec2, Signal]
+        self,
+        rail_collection: RailCollection,
+        signals: list[Signal],
     ):
         """Recreate all the signal blocks. Needed if something has been updated that can affect them,
         such as rail having been created or deleted.
@@ -87,57 +123,52 @@ class SignalController:
         OPTIMIZATION OPPORTUNITY: Currently all signal blocks are recreated each time. It would be
         enough if the signal blocks that are affected are recreated, such as the once in proximity
         to the rail being deleted, for example."""
-        self._signals = list(signal_from_position.values())
-        # TODO: did the following line make all blocks unreserved when recreating
-        # signal blocks? Try to comment it out, it might improve stability.
-        # self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
-        rails = set(rail_collection.rails)
-        self._signal_blocks = []
-        while rails:
-            signal_block, used_rails = self._create_signal_block(
-                rails, rail_collection, signal_from_position
+        # This line is not used in this method, should it be in the constructor instead?
+        self._signals = list(signals)
+
+        self._signal_blocks: list[SignalBlock] = []
+        available_positions = set().union(
+            *[rail.positions for rail in rail_collection.rails]
+        )
+        while available_positions:
+            signal_block = self._create_signal_block(
+                available_positions=available_positions,
+                rail_collection=rail_collection,
+                signals=signals,
             )
             self._signal_blocks.append(signal_block)
-            rails.difference_update(used_rails)
-        # TODO: create a new class SignalBlockCollection or similar to avoid two vars
-        self._signal_blocks_from_position = defaultdict(list)
-        for signal_block in self._signal_blocks:
-            for position in signal_block.positions:
-                self._signal_blocks_from_position[position].append(signal_block)
+            available_positions -= signal_block.positions
+        self._signal_block_from_position = {
+            position: signal_block
+            for signal_block in self._signal_blocks
+            for position in signal_block.positions
+        }
 
         self._update_signal_block_reservations()
 
-    def is_unreserved(self, position: Vec2) -> bool:
-        signal_blocks_at_position = self._signal_blocks_from_position[position]
-        if len(signal_blocks_at_position) == 1:
-            return True
-        return not all(
-            signal_block.reserved for signal_block in signal_blocks_at_position
-        )
+    def reserver(self, position: Vec2) -> int | None:
+        return self._signal_block_from_position[position].reserved_by
 
-    def reserve(self, reserver_id: int, new_position: Vec2):
-        """Called by trains when they enter a new position. The correct blocks
+    def reserve(self, reserver_id: int, position: Vec2):
+        """Called by trains when they enter a new rail. The correct blocks
         are then reserved and unreserved."""
-        self._reserved_position_from_reserver_id[reserver_id] = new_position
+        self._reserved_position_from_reserver_id[reserver_id] = position
+        self._update_signal_block_reservations()
+
+    def unreserve(self, reserver_id: int):
+        """Called by a train when it is destroyed."""
+        if reserver_id in self._reserved_position_from_reserver_id:
+            del self._reserved_position_from_reserver_id[reserver_id]
         self._update_signal_block_reservations()
 
     def _update_signal_block_reservations(self):
         for signal_block in self._signal_blocks:
-            signal_block.reserved = bool(
-                signal_block.positions.intersection(
-                    self._reserved_position_from_reserver_id.values()
-                )
-            )
+            signal_block.reserved_by = None
+            for id_, position in self._reserved_position_from_reserver_id.items():
+                if position in signal_block.positions:
+                    signal_block.reserved_by = id_
         self._update_signals()
 
     def _update_signals(self):
-        for signal in self._signals:
-            for connection in signal.connections:
-                signal_block = self._signal_blocks_from_position[
-                    connection.towards_position
-                ][
-                    0
-                ]  # Should always just be one signal block here
-                signal.set_signal_color(
-                    signal.other_rail(connection.rail), signal_block.color
-                )
+        for signal_block in self._signal_blocks:
+            signal_block.update_signals()

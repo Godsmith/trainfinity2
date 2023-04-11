@@ -1,3 +1,4 @@
+from pyglet.math import Vec2
 from typing import Protocol
 import typing
 

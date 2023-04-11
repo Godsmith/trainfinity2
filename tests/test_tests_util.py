@@ -1,6 +1,6 @@
 import pytest
 from pyglet.math import Vec2
-from trainfinity2.model import Factory, Mine, Rail, Signal, Station
+from trainfinity2.model import Factory, Mine, Rail, Signal, SignalColor, Station
 from trainfinity2.__main__ import Game
 
 from tests.util import create_objects
@@ -76,13 +76,13 @@ def test_create_multiple_rail(game: Game):
     }
 
 
-def test_create_stations_mine_and_factory(game: Game):
+def test_create_objects(game: Game):
     create_objects(
         game,
         """
-    . M . F . .
+    . M . F .
      
-    .-S-.-S-s-.""",
+    .-S-.hS-.""",
     )
 
     assert game.grid.mines == {Vec2(30, 30): Mine(30, 30)}
@@ -91,9 +91,11 @@ def test_create_stations_mine_and_factory(game: Game):
         Vec2(90, 0): Station(90, 0, Factory(x=90, y=30)),
         Vec2(30, 0): Station(30, 0, Mine(30, 30)),
     }
-    assert game.grid.signals[Vec2(120, 0)].x == 120
-    assert game.grid.signals[Vec2(120, 0)].y == 0
-    assert len(game.grid.signals) == 1
+    signal_facing_west = game.grid.signals[(Vec2(60, 0), Rail(60, 0, 90, 0))]
+    signal_facing_east = game.grid.signals[(Vec2(90, 0), Rail(60, 0, 90, 0))]
+    assert signal_facing_west.signal_color == SignalColor.GREEN
+    assert signal_facing_east.signal_color == SignalColor.GREEN
+    assert len(game.grid.signals) == 2
 
 
 def test_create_with_offset(game: Game):

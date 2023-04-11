@@ -67,8 +67,8 @@ class Grid(Subject):
         self.mines: dict[Vec2, Mine] = {}
         self.factories: dict[Vec2, Factory] = {}
         self.stations: dict[Vec2, Station] = {}
-        self.signals: dict[Vec2, Signal] = {}
-        self.rails_being_built = []
+        self.signals: dict[tuple[Vec2, Rail], Signal] = {}
+        self.rails_being_built: list[Rail] = []
         self.rails: list[Rail] = []
 
         self.left = 0
@@ -92,12 +92,11 @@ class Grid(Subject):
             | self.mines.keys()
             | self.factories.keys()
             | self.stations.keys()
-            | self.signals.keys()
         )
 
     def _get_unoccupied_positions(self, count: int) -> set[Vec2]:
         """Gets <count> positions without water, mines, factories or stations. Ignores rails."""
-        unoccupied_positions = set()
+        unoccupied_positions: set[Vec2] = set()
         while len(unoccupied_positions) < count:
             position = get_random_position()
             if position not in self.occupied_positions:
@@ -165,17 +164,13 @@ class Grid(Subject):
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
         return find_route(
             self.possible_next_rails_ignore_red_lights,
+            self.rails_at_position(station1.x, station1.y),
             Vec2(station1.x, station1.y),
             station2,
         )
 
-    def rails_at_position(self, x, y):
+    def rails_at_position(self, x, y) -> set[Rail]:
         return {rail for rail in self.rails if rail.is_at_position(x, y)}
-
-    def _is_red_signal(self, signal_position: Vec2, coming_from_rail: Rail):
-        if signal := self.signals.get(signal_position):
-            return signal.signal_color_coming_from(coming_from_rail) == SignalColor.RED
-        return False
 
     def possible_next_rails_ignore_red_lights(
         self, position: Vec2, previous_rail: Rail | None
@@ -191,11 +186,12 @@ class Grid(Subject):
         2. The train cannot go into a red light
         Possible future rules:
         3. The train cannot turn more than X degrees"""
-        return {
-            rail
-            for rail in self.rails_at_position(*position)
-            if not self._is_red_signal(rail.other_end(*position), rail)
-        } - {previous_rail}
+        next_rails = set(self.rails_at_position(*position)) - {previous_rail}
+        next_rails_with_signals = next_rails.intersection(self.signals)
+        for rail in next_rails_with_signals:
+            if self.signals[(position, rail)].signal_color == SignalColor.RED:
+                next_rails.remove(rail)
+        return next_rails
 
     def _rail_is_in_occupied_position(self, rail: Rail):
         return (
@@ -240,6 +236,12 @@ class Grid(Subject):
         for rail in self.rails:
             if rail.is_at_position(x, y):
                 self._notify_about_other_object(rail, DestroyEvent())
+                keys = [
+                    key for key, signal in self.signals.items() if signal.rail == rail
+                ]
+                for key in keys:
+                    self._notify_about_other_object(self.signals[key], DestroyEvent())
+                    del self.signals[key]
             else:
                 new_rails.append(rail)
         self.rails = new_rails
@@ -249,12 +251,7 @@ class Grid(Subject):
             self._notify_about_other_object(station, DestroyEvent())
             del self.stations[Vec2(x, y)]
 
-        if Vec2(x, y) in self.signals:
-            signal = self.signals[Vec2(x, y)]
-            self._notify_about_other_object(signal, DestroyEvent())
-            del self.signals[Vec2(x, y)]
-
-        self._signal_controller.create_signal_blocks(self, self.signals)
+        self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
 
     def _notify_about_other_object(self, other_object: Any, event: Event):
         for observer in self._observers[type(event)]:
@@ -264,7 +261,9 @@ class Grid(Subject):
         self.rails.extend(rails)
         for rail in rails:
             self._notify_about_other_object(rail, CreateEvent())
-        self._signal_controller.create_signal_blocks(self, self.signals)
+        # TODO: encase in if statement
+        # if rails:
+        self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
 
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
@@ -294,6 +293,7 @@ class Grid(Subject):
         for factory in self.factories.values():
             if self._is_adjacent(position, Vec2(factory.x, factory.y)):
                 return factory
+        return None
 
     def _create_station(self, x, y):
         """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError."""
@@ -335,18 +335,36 @@ class Grid(Subject):
         rails = self.rails_at_position(x, y)
         return tuple(rails) if len(rails) == 2 else None
 
-    def create_signal(self, x, y):
-        x, y = self.snap_to(x, y)
-        if rails := self._two_rails_at_position(x, y):
-            signal = Signal(
-                x,
-                y,
-                (
-                    SignalConnection(rails[0], rails[0].other_end(x, y)),
-                    SignalConnection(rails[1], rails[1].other_end(x, y)),
-                ),
-            )
-            self.signals[Vec2(x, y)] = signal
-            self._notify_about_other_object(signal, CreateEvent())
-            self._signal_controller.create_signal_blocks(self, self.signals)
-            return signal
+    def _closest_rail(self, x, y) -> Rail | None:
+        """Return None if
+        1. manhattan distance larger than a grid box size
+        2. there is no rail"""
+        if not self.rails:
+            return None
+
+        def distance_to_rail(rail: Rail, x: float, y: float):
+            return abs((rail.x1 + rail.x2) / 2 - x) + abs((rail.y1 + rail.y2) / 2 - y)
+
+        rails_and_distances = [
+            (rail, distance_to_rail(rail, x, y)) for rail in self.rails
+        ]
+        closest_rail, distance = sorted(rails_and_distances, key=lambda x: x[1])[0]
+        return closest_rail if distance < GRID_BOX_SIZE else None
+
+    def create_signals_at_click_position(self, click_x, click_y):
+        # Transpose half a box since rail coordinates are in the bottom left
+        # of each grid cell while they are visible in the middle
+        x = click_x - GRID_BOX_SIZE / 2
+        y = click_y - GRID_BOX_SIZE / 2
+        return self.create_signals_at_grid_position(x, y)
+
+    def create_signals_at_grid_position(self, x, y) -> list[Signal]:
+        signals = []
+        if rail := self._closest_rail(x, y):
+            for position in rail.positions:
+                signal = Signal(position, rail)
+                self.signals[(position, rail)] = signal
+                self._notify_about_other_object(signal, CreateEvent())
+                signals.append(signal)
+        self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
+        return signals

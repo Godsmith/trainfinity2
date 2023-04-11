@@ -1,6 +1,6 @@
 import typing
 from collections import defaultdict
-from typing import Any, Collection, Iterable
+from typing import Any, Collection, Iterable, Iterator
 
 import arcade
 from arcade import color
@@ -15,6 +15,7 @@ from .constants import (
     GRID_LINE_WIDTH,
     HIGHLIGHT_COLOR,
     IRON_SIZE,
+    TRAIN_RADIUS,
     PIXEL_OFFSET_PER_IRON,
     RAIL_LINE_WIDTH,
 )
@@ -63,7 +64,7 @@ class Drawer:
         match object:
             case Grid():
                 self._create_grid(object)
-            case Factory() | Mine() | Station():
+            case Mine() | Factory() | Station():
                 self._create_building(object)
             case Rail():
                 self.create_rail(object)
@@ -116,33 +117,18 @@ class Drawer:
 
     def _update_signal(self, signal: Signal):
         self.remove(signal)
-        for connection in signal.connections:
-            position = connection.rail.other_end(signal.x, signal.y)
-            x, y = self._get_signal_sprite_position(signal, position)
-            shape = arcade.create_ellipse_filled(
-                x,
-                y,
-                GRID_BOX_SIZE / 6,
-                GRID_BOX_SIZE / 6,
-                color.RED
-                if connection.signal_color == SignalColor.RED
-                else color.GREEN,
-            )
-            self._add_shape(shape, signal)
-
-    @staticmethod
-    def _get_signal_sprite_position(signal: Signal, position: Vec2) -> Vec2:
-        x = signal.x + GRID_BOX_SIZE / 2
-        y = signal.y + GRID_BOX_SIZE / 2
-        if position.x < signal.x:
-            x -= GRID_BOX_SIZE / 6
-        elif position.x > signal.x:
-            x += GRID_BOX_SIZE / 6
-        if position.y < signal.y:
-            y -= GRID_BOX_SIZE / 6
-        elif position.y > signal.y:
-            y += GRID_BOX_SIZE / 6
-        return Vec2(x, y)
+        positions = list(signal.rail.positions)
+        middle_of_rail = positions[0].lerp(positions[1], 0.5)
+        position = middle_of_rail.lerp(signal.from_position, 0.5)
+        position = Vec2(position.x + GRID_BOX_SIZE / 2, position.y + GRID_BOX_SIZE / 2)
+        shape = arcade.create_ellipse_filled(
+            position.x,
+            position.y,
+            GRID_BOX_SIZE / 6,
+            GRID_BOX_SIZE / 6,
+            color.RED if signal.signal_color == SignalColor.RED else color.GREEN,
+        )
+        self._add_shape(shape, signal)
 
     def _add_sprite(self, sprite: arcade.Sprite, object: Any):
         self._sprite_list.append(sprite)
@@ -222,7 +208,9 @@ class Drawer:
 
     def add_iron(self, position: tuple[int, int]):
         x, y = position
-        x += len(self.iron_shapes_from_position[position]) * PIXEL_OFFSET_PER_IRON / 2
+        x += len(self.iron_shapes_from_position[position]) * int(
+            PIXEL_OFFSET_PER_IRON / 2
+        )
         filled_rectangle = arcade.create_rectangle_filled(
             x,
             y,
@@ -273,8 +261,8 @@ class Drawer:
             arcade.draw_circle_filled(
                 x,
                 y,
-                GRID_BOX_SIZE / 2,
-                color=color.RED,
+                TRAIN_RADIUS,
+                color=color.BLACK,
             )
             if train.iron:
                 arcade.draw_rectangle_filled(
@@ -293,7 +281,7 @@ class Drawer:
                 )
             if train.selected:
                 arcade.draw_circle_outline(
-                    x, y, GRID_BOX_SIZE / 2, color=HIGHLIGHT_COLOR, border_width=5
+                    x, y, TRAIN_RADIUS, color=HIGHLIGHT_COLOR, border_width=5
                 )
                 if train.rails_on_route:
                     positions = {
