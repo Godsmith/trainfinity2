@@ -8,29 +8,31 @@ from .gui import Gui
 from .observer import ChangeEvent, Event, Subject
 from .protocols import GridEnlarger
 
-Factory = namedtuple("Factory", "x y")
-Water = namedtuple("Water", "x y")
+@dataclass
+class Factory():
+    position: Vec2
+
+@dataclass
+class Water():
+    position: Vec2
 
 MAX_IRON_AT_MINE = 8
 
 
 @dataclass(frozen=True)
 class IronAddedEvent(Event):
-    x: int
-    y: int
+    position: Vec2
 
 
 @dataclass(frozen=True)
 class IronRemovedEvent(Event):
-    x: int
-    y: int
+    position: Vec2
     amount: int
 
 
 @dataclass
 class Mine(Subject):
-    x: int
-    y: int
+    position: Vec2
     iron: int = 0
 
     def __post_init__(self):
@@ -39,24 +41,19 @@ class Mine(Subject):
     def add_iron(self):
         if self.iron < MAX_IRON_AT_MINE:
             self.iron += 1
-            self.notify(IronAddedEvent(self.x, self.y))
+            self.notify(IronAddedEvent(self.position))
 
     def remove_iron(self, amount) -> int:
         amount_taken = amount if amount <= self.iron else self.iron
         self.iron -= amount_taken
-        self.notify(IronRemovedEvent(self.x, self.y, amount_taken))
+        self.notify(IronRemovedEvent(self.position, amount_taken))
         return amount_taken
 
 
 @dataclass
 class Station:
-    x: int
-    y: int
+    position: Vec2
     mine_or_factory: Mine | Factory
-
-    @property
-    def position(self):
-        return Vec2(self.x, self.y)
 
 
 Building = Mine | Factory | Station
@@ -120,7 +117,8 @@ class Rail:
     def to_illegal(self):
         return replace(self, legal=False)
 
-    def is_at_position(self, x, y):
+    def is_at_position(self, position: Vec2):
+        x, y = position
         return (self.x1 == x and self.y1 == y) or (self.x2 == x and self.y2 == y)
 
     def other_end(self, x, y) -> Vec2:

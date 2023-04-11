@@ -83,7 +83,7 @@ class Grid(Subject):
 
     def _create_terrain(self, terrain: Terrain):
         for position in terrain.water:
-            self.water[position] = Water(*position)
+            self.water[position] = Water(position)
 
     @property
     def occupied_positions(self) -> set[Vec2]:
@@ -106,28 +106,26 @@ class Grid(Subject):
     def _get_unoccupied_position(self) -> Vec2:
         return self._get_unoccupied_positions(1).pop()
 
-    def _create_mine(self, x, y):
-        mine = Mine(x, y)
-        self.mines[Vec2(x, y)] = mine
+    def _create_mine(self, position: Vec2):
+        mine = Mine(position)
+        self.mines[position] = mine
         self._notify_about_other_object(mine, CreateEvent())
         return mine
 
     def _create_mine_in_random_unoccupied_location(self):
-        x, y = self._get_unoccupied_position()
-        self._create_mine(x, y)
+        self._create_mine(self._get_unoccupied_position())
 
     def _create_mines(self):
         self._create_mine_in_random_unoccupied_location()
 
-    def _create_factory(self, x, y):
-        factory = Factory(x, y)
-        self.factories[Vec2(x, y)] = factory
+    def _create_factory(self, position: Vec2):
+        factory = Factory(position)
+        self.factories[position] = factory
         self._notify_about_other_object(factory, CreateEvent())
         return factory
 
     def _create_factory_in_random_unoccupied_location(self):
-        x, y = self._get_unoccupied_position()
-        self._create_factory(x, y)
+        self._create_factory(self._get_unoccupied_position())
 
     def _create_in_random_unoccupied_location(
         self, building: Type[Factory] | Type[Mine]
@@ -164,18 +162,18 @@ class Grid(Subject):
             self.rails_from_vec2[Vec2(rail.x2, rail.y2)].append(rail)
         return find_route(
             self.possible_next_rails_ignore_red_lights,
-            self.rails_at_position(station1.x, station1.y),
-            Vec2(station1.x, station1.y),
+            self.rails_at_position(station1.position),
+            station1.position,
             station2,
         )
 
-    def rails_at_position(self, x, y) -> set[Rail]:
-        return {rail for rail in self.rails if rail.is_at_position(x, y)}
+    def rails_at_position(self, position: Vec2) -> set[Rail]:
+        return {rail for rail in self.rails if rail.is_at_position(position)}
 
     def possible_next_rails_ignore_red_lights(
         self, position: Vec2, previous_rail: Rail | None
     ):
-        return self.rails_at_position(*position) - {previous_rail}
+        return self.rails_at_position(position) - {previous_rail}
 
     def possible_next_rails(self, position: Vec2, previous_rail: Rail | None):
         """Given a position and where the train came from, return a list of possible rails
@@ -186,7 +184,7 @@ class Grid(Subject):
         2. The train cannot go into a red light
         Possible future rules:
         3. The train cannot turn more than X degrees"""
-        next_rails = set(self.rails_at_position(*position)) - {previous_rail}
+        next_rails = set(self.rails_at_position(position)) - {previous_rail}
         next_rails_with_signals = next_rails.intersection(self.signals)
         for rail in next_rails_with_signals:
             if self.signals[(position, rail)].signal_color == SignalColor.RED:
@@ -229,12 +227,12 @@ class Grid(Subject):
             self.rails_being_built = self._mark_illegal_rail(rails_being_built)
             self.notify(RailsBeingBuiltEvent(self.rails_being_built))
         elif mode == Mode.DESTROY:
-            self.remove_rail(x, y)
+            self.remove_rail(Vec2(x, y))
 
-    def remove_rail(self, x, y):
+    def remove_rail(self, position: Vec2):
         new_rails = []
         for rail in self.rails:
-            if rail.is_at_position(x, y):
+            if rail.is_at_position(position):
                 self._notify_about_other_object(rail, DestroyEvent())
                 keys = [
                     key for key, signal in self.signals.items() if signal.rail == rail
@@ -246,10 +244,10 @@ class Grid(Subject):
                 new_rails.append(rail)
         self.rails = new_rails
 
-        if Vec2(x, y) in self.stations:
-            station = self.stations[Vec2(x, y)]
+        if position in self.stations:
+            station = self.stations[position]
             self._notify_about_other_object(station, DestroyEvent())
-            del self.stations[Vec2(x, y)]
+            del self.stations[position]
 
         self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
 
@@ -277,7 +275,7 @@ class Grid(Subject):
         x, y = self.snap_to(x, y)
         return self.stations.get(Vec2(x, y))
 
-    def _is_adjacent(self, position1, position2):
+    def _is_adjacent(self, position1: Vec2, position2: Vec2):
         return (
             abs(position1.x - position2.x) == GRID_BOX_SIZE
             and position1.y == position2.y
@@ -288,19 +286,19 @@ class Grid(Subject):
 
     def _adjacent_mine_or_factory(self, position: Vec2) -> Mine | Factory | None:
         for mine in self.mines.values():
-            if self._is_adjacent(position, Vec2(mine.x, mine.y)):
+            if self._is_adjacent(position, mine.position):
                 return mine
         for factory in self.factories.values():
-            if self._is_adjacent(position, Vec2(factory.x, factory.y)):
+            if self._is_adjacent(position, factory.position):
                 return factory
         return None
 
-    def _create_station(self, x, y):
+    def _create_station(self, position: Vec2):
         """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError."""
-        mine_or_factory = self._adjacent_mine_or_factory(Vec2(x, y))
+        mine_or_factory = self._adjacent_mine_or_factory(position)
         assert mine_or_factory
-        station = Station(x, y, mine_or_factory)
-        self.stations[Vec2(x, y)] = station
+        station = Station(position, mine_or_factory)
+        self.stations[position] = station
         self._notify_about_other_object(station, CreateEvent())
 
         return station
@@ -308,19 +306,19 @@ class Grid(Subject):
     def _create_stations(self):
         rails_from_position = defaultdict(list)
         for rail in self.rails:
-            rails_from_position[rail.x1, rail.y1].append(rail)
-            rails_from_position[rail.x2, rail.y2].append(rail)
-        for (x, y), rails in rails_from_position.items():
+            for position in rail.positions:
+                rails_from_position[position].append(rail)
+        for position, rails in rails_from_position.items():
             if (
                 len(rails) == 2
                 and (
                     all(rail.is_horizontal() for rail in rails)
                     or all(rail.is_vertical() for rail in rails)
                 )
-                and self._adjacent_mine_or_factory(Vec2(x, y))
-                and Vec2(x, y) not in self.stations
+                and self._adjacent_mine_or_factory(position)
+                and position not in self.stations
             ):
-                self._create_station(x, y)
+                self._create_station(position)
 
     def enlarge_grid(self):
         self.left -= GRID_BOX_SIZE
@@ -331,8 +329,8 @@ class Grid(Subject):
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)
 
-    def _two_rails_at_position(self, x, y) -> tuple[Rail, Rail] | None:
-        rails = self.rails_at_position(x, y)
+    def _two_rails_at_position(self, position: Vec2) -> tuple[Rail, Rail] | None:
+        rails = self.rails_at_position(position)
         return tuple(rails) if len(rails) == 2 else None
 
     def _closest_rail(self, x, y) -> Rail | None:

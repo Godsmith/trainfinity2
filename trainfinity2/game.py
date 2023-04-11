@@ -40,7 +40,7 @@ class _TrainPlacer:
 
     def start_session(self, station: Station):
         self._session = _TrainPlacerSession(station)
-        self.drawer.highlight([Vec2(station.x, station.y)])
+        self.drawer.highlight([station.position])
 
     def stop_session(self):
         self._session = None
@@ -245,14 +245,7 @@ class Game:
                     }
                     self.drawer.highlight(positions)
             else:
-                self.drawer.highlight(
-                    [
-                        Vec2(
-                            self._train_placer.session.station.x,
-                            self._train_placer.session.station.y,
-                        )
-                    ]
-                )
+                self.drawer.highlight([self._train_placer.session.station.position])
 
     def _on_mouse_move_when_mouse_2_pressed(self, x, y):
         delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)

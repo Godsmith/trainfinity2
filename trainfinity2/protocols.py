@@ -14,5 +14,5 @@ class GridEnlarger(Protocol):
 class RailCollection(Protocol):
     rails: list["Rail"]
 
-    def rails_at_position(self, x, y) -> set["Rail"]:
+    def rails_at_position(self, position: Vec2) -> set["Rail"]:
         raise NotImplementedError

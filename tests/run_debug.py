@@ -12,8 +12,8 @@ from trainfinity2.terrain import Terrain
 game = Game()
 window = Window(game)
 game.setup(Terrain(water=[Vec2(0, 0)]))
-game.grid._create_mine(30, 30)
-game.grid._create_factory(180, 30)
+game.grid._create_mine(Vec2(30, 30))
+game.grid._create_factory(Vec2(180, 30))
 game.grid.create_rail(
     [
         Rail(0, 60, 30, 60),
@@ -27,8 +27,8 @@ game.grid.create_rail(
         Rail(120, 90, 150, 60),
     ]
 )
-station1 = game.grid._create_station(30, 60)
-station2 = game.grid._create_station(180, 60)
+station1 = game.grid._create_station(Vec2(30, 60))
+station2 = game.grid._create_station(Vec2(180, 60))
 # game._create_signal(90, 60)
 # game._create_signal(90, 90)
 # game._create_signal(120, 60)

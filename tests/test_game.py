@@ -127,7 +127,7 @@ class TestBuildingRail:
         assert len(game.grid.rails) == 1
 
     def test_cannot_build_rail_in_illegal_position(self, game: Game):
-        game.grid.water = {Vec2(90, 90): Water(90, 90)}
+        game.grid.water = {Vec2(90, 90): Water(Vec2(90, 90))}
 
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=130, y=100, dx=30, dy=0)
@@ -154,20 +154,20 @@ class TestBuildingRail:
         assert len(game.grid.rails) == 1
 
     def test_building_horizontal_station(self, game: Game):
-        mine = game.grid._create_mine(30, 30)
+        mine = game.grid._create_mine(Vec2(30, 30))
         game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=75, y=15, dx=60, dy=0)
         game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(30, 0): Station(30, 0, mine)}
+        assert game.grid.stations == {Vec2(30, 0): Station(Vec2(30, 0), mine)}
 
     def test_building_vertical_station(self, game: Game):
-        factory = game.grid._create_factory(30, 30)
+        factory = game.grid._create_factory(Vec2(30, 30))
         game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=15, y=75, dx=0, dy=60)
         game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 30): Station(0, 30, factory)}
+        assert game.grid.stations == {Vec2(0, 30): Station(Vec2(0, 30), factory)}
 
 
 class TestGui:
@@ -402,7 +402,7 @@ class TestCreateTrain:
         game._create_train(*game.grid.stations.values())
         train = game.trains[0]
         train.target_x = 30
-        game.grid.remove_rail(30, 0)
+        game.grid.remove_rail(Vec2(30, 0))
         game.on_update(1 / 60)
         assert not game.trains
 
@@ -418,7 +418,7 @@ class TestCreateTrain:
         game._create_train(*game.grid.stations.values())
         train = game.trains[0]
         train.target_x = 30
-        game.grid.remove_rail(60, 0)
+        game.grid.remove_rail(Vec2(60, 0))
         game.on_update(1 / 60)
 
     def test_cannot_create_train_in_reserved_signal_block(self, game: Game):
@@ -747,7 +747,7 @@ class TestSignals:
         )
         assert len(game.signal_controller._signal_blocks) == 2
 
-        game.grid.remove_rail(60, 0)
+        game.grid.remove_rail(Vec2(60, 0))
 
         assert len(game.signal_controller._signal_blocks) == 3
 
@@ -763,7 +763,7 @@ class TestSignals:
             .-S-.-S-.h.-
             """,
         )
-        game.grid.remove_rail(60, 0)
+        game.grid.remove_rail(Vec2(60, 0))
 
         assert len(game.signal_controller._signal_blocks) == 3
 

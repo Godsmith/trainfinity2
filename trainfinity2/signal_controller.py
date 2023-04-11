@@ -90,7 +90,7 @@ class SignalController:
         block_signals = set()
         while signal_block_positions - traversed_positions:
             position = list(signal_block_positions - traversed_positions)[0]
-            new_rails = rail_collection.rails_at_position(position.x, position.y)
+            new_rails = rail_collection.rails_at_position(position)
 
             block_signals |= {
                 signal

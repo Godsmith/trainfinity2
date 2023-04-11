@@ -1,6 +1,6 @@
 import typing
 from collections import defaultdict
-from typing import Any, Collection, Iterable, Iterator
+from typing import Any, Collection, Iterable
 
 import arcade
 from arcade import color
@@ -111,7 +111,11 @@ class Drawer:
             case Station():
                 character = "S"
         sprite = arcade.create_text_sprite(
-            character, building.x, building.y, color=color.WHITE, font_size=24
+            character,
+            building.position.x,
+            building.position.y,
+            color=color.WHITE,
+            font_size=24,
         )
         self._add_sprite(sprite, building)
 
@@ -169,10 +173,10 @@ class Drawer:
         match (object, event):
             case Mine(), IronAddedEvent():
                 event = typing.cast(IronAddedEvent, event)
-                self.add_iron((event.x, event.y))
+                self.add_iron(event.position)
             case Mine(), IronRemovedEvent():
                 event = typing.cast(IronRemovedEvent, event)
-                self.remove_iron((event.x, event.y), event.amount)
+                self.remove_iron(event.position, event.amount)
             case Mine(), CreateEvent():
                 self.upsert(object)
                 object.add_observer(self, IronAddedEvent)
@@ -206,7 +210,7 @@ class Drawer:
         shape = arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
         self._add_shape(shape, rail)
 
-    def add_iron(self, position: tuple[int, int]):
+    def add_iron(self, position: Vec2):
         x, y = position
         x += len(self.iron_shapes_from_position[position]) * int(
             PIXEL_OFFSET_PER_IRON / 2

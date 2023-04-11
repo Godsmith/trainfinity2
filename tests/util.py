@@ -1,8 +1,8 @@
 from typing import Any, Callable, Iterable
-from trainfinity2.grid import Grid
 from trainfinity2.constants import GRID_BOX_SIZE
 from trainfinity2.model import Rail
 from trainfinity2.__main__ import Game
+from pyglet.math import Vec2
 
 
 def _coordinates(row_number: int, column_number: int):
@@ -14,14 +14,14 @@ def _coordinates(row_number: int, column_number: int):
 def _create_buildings(
     lines: list[str],
     building_character: str,
-    create_method: Callable[[int, int], Any],
+    create_method: Callable[[Vec2], Any],
 ):
     for row_number, row in enumerate(lines):
         for column_number, character in enumerate(row):
             if column_number % 2 == 0 and row_number % 2 == 0:
                 x, y = _coordinates(row_number, column_number)
                 if character == building_character:
-                    create_method(x, y)
+                    create_method(Vec2(x, y))
 
 
 def _create_rails(game: Game, lines: list[str]):

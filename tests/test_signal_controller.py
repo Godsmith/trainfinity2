@@ -7,8 +7,8 @@ class Rails:
     def __init__(self, rails: list[Rail]) -> None:
         self.rails = rails
 
-    def rails_at_position(self, x, y) -> set[Rail]:
-        return {rail for rail in self.rails if rail.is_at_position(x, y)}
+    def rails_at_position(self, position: Vec2) -> set[Rail]:
+        return {rail for rail in self.rails if rail.is_at_position(position)}
 
 
 class TestCreateSignalBlocks:

@@ -10,7 +10,7 @@ from .route_finder import find_route
 from .signal_controller import SignalController
 
 
-def _is_close(pos1, pos2):
+def _is_close(pos1: Vec2, pos2: Vec2):
     return (
         abs(pos1.x - pos2.x) < GRID_BOX_SIZE / 2
         and abs(pos1.y - pos2.y) < GRID_BOX_SIZE / 2
@@ -37,8 +37,8 @@ class Train(Subject):
 
     def __post_init__(self):
         super().__init__()
-        self.x = self.first_station.x
-        self.y = self.first_station.y
+        self.x = self.first_station.position.x
+        self.y = self.first_station.position.y
         self.target_x = self.x
         self.target_y = self.y
         self._target_station = self.first_station
@@ -90,7 +90,7 @@ class Train(Subject):
         ) or self.signal_controller.reserver(position) == id(self)
 
     def _on_reached_target(self):
-        if _is_close(self, self._target_station):
+        if _is_close(Vec2(self.x, self.y), self._target_station.position):
             if isinstance(self._target_station.mine_or_factory, Mine):
                 self.iron += self._target_station.mine_or_factory.remove_iron(1)
             else:

@@ -27,7 +27,7 @@ def find_route(
     while unvisited_position_distances_and_positions:
         _, current_position = heappop(unvisited_position_distances_and_positions)
         visited_positions.add(current_position)
-        if current_position == Vec2(target_station.x, target_station.y):
+        if current_position == target_station.position:
             route: list[Rail] = []
             while current_position != initial_position:
                 rail = rail_in_shortest_route_from_position[current_position]
