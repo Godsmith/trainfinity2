@@ -177,12 +177,11 @@ class Game:
                 if not self._train_placer.session:
                     self._train_placer.start_session(station)
                 else:
-                    # If block is reserved, do not create train
-                    if self.signal_controller.reserver(Vec2(station.x, station.y)):
+                    first_station = self._train_placer.session.station
+                    # If signal block for first station is reserved, do not create train
+                    if self.signal_controller.reserver(first_station.position):
                         return
-                    if self.grid.find_route_between_stations(
-                        self._train_placer.session.station, station
-                    ):
+                    if self.grid.find_route_between_stations(first_station, station):
                         self._create_train(self._train_placer.session.station, station)
                     self._train_placer.stop_session()
         elif self.gui.mode == Mode.SELECT:

@@ -54,6 +54,10 @@ class Station:
     y: int
     mine_or_factory: Mine | Factory
 
+    @property
+    def position(self):
+        return Vec2(self.x, self.y)
+
 
 Building = Mine | Factory | Station
 
