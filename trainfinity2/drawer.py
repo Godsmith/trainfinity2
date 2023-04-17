@@ -1,6 +1,8 @@
+import math
 import typing
 from collections import defaultdict
 from typing import Any, Collection, Iterable
+from more_itertools import numeric_range
 
 import arcade
 from arcade import Shape, color
@@ -239,7 +241,8 @@ class Drawer:
             self.iron_shape_element_list = arcade.ShapeElementList()
 
     def _create_rail(self, rail: Rail):
-        self._add_shape(self._get_rail_shape(rail, FINISHED_RAIL_COLOR), rail)
+        for rail_shape in self._get_rail_shapes(rail, FINISHED_RAIL_COLOR):
+            self._add_shape(rail_shape, rail)
 
     def _show_rails_being_built(self, rails: set[Rail]):
         if rails != self._rails_being_built:
@@ -248,16 +251,93 @@ class Drawer:
                 color = (
                     BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
                 )
-                shape = self._get_rail_shape(rail, color)
-                self.rails_being_built_shape_element_list.append(shape)
+                rail_shapes = self._get_rail_shapes(rail, color)
+                for rail_shape in rail_shapes:
+                    self.rails_being_built_shape_element_list.append(rail_shape)
             self._rails_being_built = rails
 
-    def _get_rail_shape(self, rail: Rail, color: list[int]) -> Shape:
+    def _get_rail_shapes(self, rail: Rail, color: list[int]) -> list[Shape]:
+        return self._get_sleepers(rail, color) + self._get_metal_rail_shapes(
+            rail, color
+        )
+
+    def _get_sleepers(self, rail: Rail, color: list[int]) -> list[Shape]:
         x1, y1, x2, y2 = [
             coordinate + GRID_BOX_SIZE / 2
             for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
         ]
-        return arcade.create_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
+
+        x = x1
+        y = y1
+        sleeper_count = 10
+        sleeper_width = GRID_BOX_SIZE / 3
+        sleeper_shapes = []
+        if x2 == x1:
+            xs = [x1] * sleeper_count
+        else:
+            xs = numeric_range(x1, x2, (x2 - x1) / sleeper_count)
+        if y2 == y1:
+            ys = [y1] * sleeper_count
+        else:
+            ys = numeric_range(y1, y2, (y2 - y1) / sleeper_count)
+        for x, y in zip(xs, ys):
+            x += (x2 - x1) / sleeper_count
+            y += (y2 - y1) / sleeper_count
+            offset = self._offset_multiplier(x1, x2, y1, y2).scale(sleeper_width / 2)
+            sleeper_x1, sleeper_y1 = Vec2(x, y) - offset
+            sleeper_x2, sleeper_y2 = Vec2(x, y) + offset
+            shape = arcade.create_line(
+                sleeper_x1,
+                sleeper_y1,
+                sleeper_x2,
+                sleeper_y2,
+                color,
+                RAIL_LINE_WIDTH,
+            )
+
+            sleeper_shapes.append(shape)
+        return sleeper_shapes
+
+    def _get_metal_rail_shapes(self, rail: Rail, color: list[int]) -> list[Shape]:
+        x1, y1, x2, y2 = [
+            coordinate + GRID_BOX_SIZE / 2
+            for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
+        ]
+        train_track_width = GRID_BOX_SIZE / 6
+        offset = self._offset_multiplier(x1, x2, y1, y2).scale(train_track_width / 2)
+        return [
+            arcade.create_line(
+                x1 - offset.x,
+                y1 - offset.y,
+                x2 - offset.x,
+                y2 - offset.y,
+                color,
+                RAIL_LINE_WIDTH,
+            ),
+            arcade.create_line(
+                x1 + offset.x,
+                y1 + offset.y,
+                x2 + offset.x,
+                y2 + offset.y,
+                color,
+                RAIL_LINE_WIDTH,
+            ),
+        ]
+
+    @staticmethod
+    def _offset_multiplier(x1: float, x2: float, y1: float, y2: float) -> Vec2:
+        if x1 == x2:  # vertical
+            x_offset = 1
+            y_offset = 0
+        elif y1 == y2:  # horizontal
+            x_offset = 0
+            y_offset = 1
+        elif (x2 > x1 and y2 > y1) or (x2 < x1 and y2 < y1):  # NE or SW
+            x_offset = 1 / math.sqrt(2)
+            y_offset = -1 / math.sqrt(2)
+        else:  # NW or SE
+            x_offset = y_offset = 1 / math.sqrt(2)
+        return Vec2(x_offset, y_offset)
 
     def _draw_trains(self):
         # TODO: Create a shapelist per train that we can move instead

@@ -36,6 +36,7 @@ dependencies = [
 "pytest==7.1.2",
 "pytest-cov==3.0.0",
 "perlin_noise==1.12",
+"more-itertools==9.1.0",
 ]
 [tool.hatch.envs.default.scripts]
 start = "python -m trainfinity2"
