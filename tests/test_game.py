@@ -93,28 +93,28 @@ class TestBuildingRail:
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=90, dx=30, dy=0)
 
-        assert game.grid.rails_being_built == [Rail(90, 90, 120, 90)]
+        assert game.grid.rails_being_built == {Rail(90, 90, 120, 90)}
 
     def test_vertical_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=90, y=120, dx=0, dy=30)
 
-        assert game.grid.rails_being_built == [Rail(90, 90, 90, 120)]
+        assert game.grid.rails_being_built == {Rail(90, 90, 90, 120)}
 
     def test_diagonal_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=120, dx=30, dy=30)
 
-        assert game.grid.rails_being_built == [Rail(90, 90, 120, 120)]
+        assert game.grid.rails_being_built == {Rail(90, 90, 120, 120)}
 
     def test_non_straight_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=150, dx=30, dy=60)
 
-        assert game.grid.rails_being_built == [
+        assert game.grid.rails_being_built == {
             Rail(x1=90, y1=90, x2=90, y2=120),
             Rail(x1=90, y1=120, x2=120, y2=150),
-        ]
+        }
 
     def test_built_rail(self, game: Game):
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)

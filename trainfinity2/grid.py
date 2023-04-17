@@ -28,7 +28,7 @@ from .route_finder import find_route
 
 @dataclass
 class RailsBeingBuiltEvent(Event):
-    rails: Iterable[Rail]
+    rails: set[Rail]
 
 
 def positions_between(start: Vec2, end: Vec2):
@@ -68,7 +68,7 @@ class Grid(Subject):
         self.factories: dict[Vec2, Factory] = {}
         self.stations: dict[Vec2, Station] = {}
         self.signals: dict[tuple[Vec2, Rail], Signal] = {}
-        self.rails_being_built: list[Rail] = []
+        self.rails_being_built: set[Rail] = set()
         self.rails: list[Rail] = []
 
         self.left = 0
@@ -202,8 +202,8 @@ class Grid(Subject):
             self._is_inside(x, y) for x, y in ((rail.x1, rail.y1), (rail.x2, rail.y2))
         )
 
-    def _mark_illegal_rail(self, rails: Iterable[Rail]) -> list[Rail]:
-        return [
+    def _mark_illegal_rail(self, rails: Iterable[Rail]) -> set[Rail]:
+        return {
             (
                 rail.to_illegal()
                 if self._rail_is_in_occupied_position(rail)
@@ -211,7 +211,7 @@ class Grid(Subject):
                 else rail
             )
             for rail in rails
-        ]
+        }
 
     def _is_inside(self, x, y):
         return self.left <= x < self.right and self.bottom <= y < self.top

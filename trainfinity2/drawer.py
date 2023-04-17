@@ -48,6 +48,7 @@ class Drawer:
         self._sprites_from_object_id = defaultdict(list)
         self._shapes_from_object_id = defaultdict(list)
 
+        self._rails_being_built: set[Rail] = set()
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.iron_shape_element_list = arcade.ShapeElementList()
 
@@ -240,12 +241,16 @@ class Drawer:
     def _create_rail(self, rail: Rail):
         self._add_shape(self._get_rail_shape(rail, FINISHED_RAIL_COLOR), rail)
 
-    def _show_rails_being_built(self, rails: Iterable[Rail]):
-        self.rails_being_built_shape_element_list = arcade.ShapeElementList()
-        for rail in rails:
-            color = BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
-            shape = self._get_rail_shape(rail, color)
-            self.rails_being_built_shape_element_list.append(shape)
+    def _show_rails_being_built(self, rails: set[Rail]):
+        if rails != self._rails_being_built:
+            self.rails_being_built_shape_element_list = arcade.ShapeElementList()
+            for rail in rails:
+                color = (
+                    BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
+                )
+                shape = self._get_rail_shape(rail, color)
+                self.rails_being_built_shape_element_list.append(shape)
+            self._rails_being_built = rails
 
     def _get_rail_shape(self, rail: Rail, color: list[int]) -> Shape:
         x1, y1, x2, y2 = [
