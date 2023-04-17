@@ -1,7 +1,7 @@
 import arcade
 import pytest
 import trainfinity2.camera
-import trainfinity2.drawer
+import trainfinity2.graphics.drawer
 import trainfinity2.gui
 from pyglet.math import Vec2
 from pytest import approx

@@ -8,7 +8,7 @@ from pyglet.math import Vec2
 
 from .camera import Camera
 from .constants import GRID_HEIGHT, GRID_WIDTH, SECONDS_BETWEEN_IRON_CREATION
-from .drawer import Drawer
+from .graphics.drawer import Drawer
 from .grid import Grid, RailsBeingBuiltEvent
 from .gui import Gui, Mode
 from .model import Player, Signal, Station

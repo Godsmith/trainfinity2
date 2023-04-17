@@ -3,7 +3,7 @@
 import arcade
 from arcade import color
 
-from .drawer import Drawer
+from .graphics.drawer import Drawer
 from .game import Game
 from .model import Station
 

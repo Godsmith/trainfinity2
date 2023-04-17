@@ -1,6 +1,7 @@
 import pytest
 import trainfinity2.camera
-import trainfinity2.drawer
+import trainfinity2.graphics.drawer
+import trainfinity2.graphics.rail_shapes
 import trainfinity2.gui
 from pyglet.math import Vec2
 from trainfinity2.__main__ import Game
@@ -66,7 +67,8 @@ class MockArcade:
 def game(monkeypatch: pytest.MonkeyPatch) -> Game:
     monkeypatch.setattr(trainfinity2.camera, "arcade", MockArcade())
     monkeypatch.setattr(trainfinity2.gui, "arcade", MockArcade())
-    monkeypatch.setattr(trainfinity2.drawer, "arcade", MockArcade())
+    monkeypatch.setattr(trainfinity2.graphics.drawer, "arcade", MockArcade())
+    monkeypatch.setattr(trainfinity2.graphics.rail_shapes, "arcade", MockArcade())
     # Add a single water tile for code coverage
     game = Game()
     game.setup(terrain=Terrain(water=[Vec2(210, 210)]))
