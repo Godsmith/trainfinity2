@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Collection, Iterable
 
 import arcade
-from arcade import color
+from arcade import Shape, color
 from pyglet.math import Vec2
 
 from .constants import (
@@ -202,14 +202,6 @@ class Drawer:
                     f"Received unexpected combination {object} and {event}"
                 )
 
-    def _create_rail(self, rail: Rail):
-        x1, y1, x2, y2 = [
-            coordinate + GRID_BOX_SIZE / 2
-            for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
-        ]
-        shape = arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
-        self._add_shape(shape, rail)
-
     def _add_iron(self, position: Vec2):
         x, y = position
         x += len(self.iron_shapes_from_position[position]) * int(
@@ -245,17 +237,22 @@ class Drawer:
         if not self.iron_shape_element_list:
             self.iron_shape_element_list = arcade.ShapeElementList()
 
+    def _create_rail(self, rail: Rail):
+        self._add_shape(self._get_rail_shape(rail, FINISHED_RAIL_COLOR), rail)
+
     def _show_rails_being_built(self, rails: Iterable[Rail]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         for rail in rails:
             color = BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
-            x1, y1, x2, y2 = [
-                coordinate + GRID_BOX_SIZE / 2
-                for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
-            ]
-            self.rails_being_built_shape_element_list.append(
-                arcade.create_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
-            )
+            shape = self._get_rail_shape(rail, color)
+            self.rails_being_built_shape_element_list.append(shape)
+
+    def _get_rail_shape(self, rail: Rail, color: list[int]) -> Shape:
+        x1, y1, x2, y2 = [
+            coordinate + GRID_BOX_SIZE / 2
+            for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
+        ]
+        return arcade.create_line(x1, y1, x2, y2, color, RAIL_LINE_WIDTH)
 
     def _draw_trains(self):
         # TODO: Create a shapelist per train that we can move instead
