@@ -67,13 +67,13 @@ class Drawer:
             case Mine() | Factory() | Station():
                 self._create_building(object)
             case Rail():
-                self.create_rail(object)
+                self._create_rail(object)
             case Signal():
                 self._update_signal(object)
             case _:
                 raise ValueError(f"Received unknown object {object}")
 
-    def remove(self, object: Any):
+    def _remove(self, object: Any):
         for sprite in self._sprites_from_object_id[id(object)]:
             self._sprite_list.remove(sprite)
         del self._sprites_from_object_id[id(object)]
@@ -120,7 +120,7 @@ class Drawer:
         self._add_sprite(sprite, building)
 
     def _update_signal(self, signal: Signal):
-        self.remove(signal)
+        self._remove(signal)
         positions = list(signal.rail.positions)
         middle_of_rail = positions[0].lerp(positions[1], 0.5)
         position = middle_of_rail.lerp(signal.from_position, 0.5)
@@ -173,10 +173,10 @@ class Drawer:
         match (object, event):
             case Mine(), IronAddedEvent():
                 event = typing.cast(IronAddedEvent, event)
-                self.add_iron(event.position)
+                self._add_iron(event.position)
             case Mine(), IronRemovedEvent():
                 event = typing.cast(IronRemovedEvent, event)
-                self.remove_iron(event.position, event.amount)
+                self._remove_iron(event.position, event.amount)
             case Mine(), CreateEvent():
                 self.upsert(object)
                 object.add_observer(self, IronAddedEvent)
@@ -185,14 +185,14 @@ class Drawer:
                 self._trains.remove(object)
             case Rail(), DestroyEvent():
                 # TODO: change remove_rail to take rail object instead
-                self.remove(object)
+                self._remove(object)
             case Mine() | Station() | Factory() | Signal(), DestroyEvent():
-                self.remove(object)
+                self._remove(object)
             case Rail(), CreateEvent():
                 self.upsert(object)
             case Grid(), RailsBeingBuiltEvent():
                 event = typing.cast(RailsBeingBuiltEvent, event)
-                self.show_rails_being_built(event.rails)
+                self._show_rails_being_built(event.rails)
             case Factory() | Station(), CreateEvent():
                 self.upsert(object)
             case Signal(), CreateEvent() | ChangeEvent():
@@ -202,7 +202,7 @@ class Drawer:
                     f"Received unexpected combination {object} and {event}"
                 )
 
-    def create_rail(self, rail: Rail):
+    def _create_rail(self, rail: Rail):
         x1, y1, x2, y2 = [
             coordinate + GRID_BOX_SIZE / 2
             for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
@@ -210,7 +210,7 @@ class Drawer:
         shape = arcade.create_line(x1, y1, x2, y2, FINISHED_RAIL_COLOR, RAIL_LINE_WIDTH)
         self._add_shape(shape, rail)
 
-    def add_iron(self, position: Vec2):
+    def _add_iron(self, position: Vec2):
         x, y = position
         x += len(self.iron_shapes_from_position[position]) * int(
             PIXEL_OFFSET_PER_IRON / 2
@@ -234,7 +234,7 @@ class Drawer:
         self.iron_shape_element_list.append(filled_rectangle)
         self.iron_shape_element_list.append(rectangle_outline)
 
-    def remove_iron(self, position: tuple[int, int], amount: int):
+    def _remove_iron(self, position: tuple[int, int], amount: int):
         for _ in range(amount):
             filled_rectangle = self.iron_shapes_from_position[position].pop()
             rectangle_outline = self.iron_shapes_from_position[position].pop()
@@ -245,7 +245,7 @@ class Drawer:
         if not self.iron_shape_element_list:
             self.iron_shape_element_list = arcade.ShapeElementList()
 
-    def show_rails_being_built(self, rails: Iterable[Rail]):
+    def _show_rails_being_built(self, rails: Iterable[Rail]):
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         for rail in rails:
             color = BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
