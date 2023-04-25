@@ -8,13 +8,16 @@ from .gui import Gui
 from .observer import ChangeEvent, Event, Subject
 from .protocols import GridEnlarger
 
-@dataclass
-class Factory():
-    position: Vec2
 
 @dataclass
-class Water():
+class Factory:
     position: Vec2
+
+
+@dataclass
+class Water:
+    position: Vec2
+
 
 MAX_IRON_AT_MINE = 8
 
@@ -54,6 +57,7 @@ class Mine(Subject):
 class Station:
     position: Vec2
     mine_or_factory: Mine | Factory
+    east_west: bool = True
 
 
 Building = Mine | Factory | Station

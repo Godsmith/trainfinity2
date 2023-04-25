@@ -73,5 +73,7 @@ def create_objects(game: Game, map_: str):
     lines = _remove_offset(lines)
     _create_buildings(lines, "M", game.grid._create_mine)
     _create_buildings(lines, "F", game.grid._create_factory)
-    _create_buildings(lines, "S", game.grid._create_station)
+    _create_buildings(
+        lines, "S", lambda position: game.grid._create_station(position, True)
+    )
     _create_rails(game, lines)

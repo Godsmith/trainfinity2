@@ -167,7 +167,7 @@ class TestBuildingRail:
         game.on_mouse_motion(x=15, y=75, dx=0, dy=60)
         game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 30): Station(Vec2(0, 30), factory)}
+        assert game.grid.stations == {Vec2(0, 30): Station(Vec2(0, 30), factory, False)}
 
 
 class TestGui:

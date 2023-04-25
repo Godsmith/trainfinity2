@@ -51,7 +51,9 @@ class Drawer:
 
         self._sprites_from_object_id = defaultdict(list)
         self._shapes_from_object_id = defaultdict(list)
+        self._rail_shapes_from_object_id = defaultdict(list)
 
+        self._rail_shape_list = arcade.ShapeElementList()
         self._rails_being_built: set[Rail] = set()
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.iron_shape_element_list = arcade.ShapeElementList()
@@ -85,6 +87,9 @@ class Drawer:
         for shape in self._shapes_from_object_id[id(object)]:
             self._shape_list.remove(shape)
         del self._shapes_from_object_id[id(object)]
+        for rail_shape in self._rail_shapes_from_object_id[id(object)]:
+            self._rail_shape_list.remove(rail_shape)
+        del self._rail_shapes_from_object_id[id(object)]
 
     def _create_grid(self, grid: Grid):
         self._grid_shape_list = arcade.ShapeElementList()
@@ -110,19 +115,50 @@ class Drawer:
     def _create_building(self, building: Building):
         match building:
             case Factory():
-                character = "F"
+                sprite = arcade.Sprite(
+                    "images/factory.png",
+                    0.75,
+                    center_x=building.position.x + GRID_BOX_SIZE / 2,
+                    center_y=building.position.y + GRID_BOX_SIZE / 2,
+                )
+                self._add_sprite(sprite, building)
             case Mine():
-                character = "M"
+                sprite = arcade.Sprite(
+                    "images/mine.png",
+                    0.75,
+                    center_x=building.position.x + GRID_BOX_SIZE / 2,
+                    center_y=building.position.y + GRID_BOX_SIZE / 2,
+                )
+                self._add_sprite(sprite, building)
             case Station():
-                character = "S"
-        sprite = arcade.create_text_sprite(
-            character,
-            building.position.x,
-            building.position.y,
-            color=color.WHITE,
-            font_size=24,
+                self._create_station(building)
+
+    def _create_station(self, station: Station):
+        ground_shape = arcade.create_rectangle_filled(
+            station.position.x + GRID_BOX_SIZE / 2,
+            station.position.y + GRID_BOX_SIZE / 2,
+            GRID_BOX_SIZE,
+            GRID_BOX_SIZE,
+            color.ASH_GREY,
         )
-        self._add_sprite(sprite, building)
+        self._add_shape(ground_shape, station)
+        x = station.position.x + GRID_BOX_SIZE / 2
+        y = station.position.y + GRID_BOX_SIZE / 7
+        width = GRID_BOX_SIZE * 3 / 4
+        height = GRID_BOX_SIZE / 4
+        if not station.east_west:
+            x = station.position.x + GRID_BOX_SIZE / 7
+            y = station.position.y + GRID_BOX_SIZE / 2
+            width, height = height, width
+
+        house_shape = arcade.create_rectangle_filled(
+            x,
+            y,
+            width,
+            height,
+            color.DARK_BROWN,
+        )
+        self._add_shape(house_shape, station)
 
     def _update_signal(self, signal: Signal):
         self._remove(signal)
@@ -146,6 +182,10 @@ class Drawer:
     def _add_shape(self, shape: arcade.Shape, object: Any):
         self._shape_list.append(shape)
         self._shapes_from_object_id[id(object)].append(shape)
+
+    def _add_rail_shape(self, shape: arcade.Shape, object: Any):
+        self._rail_shape_list.append(shape)
+        self._rail_shapes_from_object_id[id(object)].append(shape)
 
     def create_terrain(
         self,
@@ -189,7 +229,6 @@ class Drawer:
             case Train(), DestroyEvent():
                 self._trains.remove(object)
             case Rail(), DestroyEvent():
-                # TODO: change remove_rail to take rail object instead
                 self._remove(object)
             case Mine() | Station() | Factory() | Signal(), DestroyEvent():
                 self._remove(object)
@@ -256,7 +295,7 @@ class Drawer:
 
     def _create_rail(self, rail: Rail):
         for rail_shape in get_rail_shapes(rail, FINISHED_RAIL_COLOR):
-            self._add_shape(rail_shape, rail)
+            self._add_rail_shape(rail_shape, rail)
 
     def _draw_trains(self):
         # TODO: Create a shapelist per train that we can move instead
@@ -319,6 +358,7 @@ class Drawer:
         self._grid_shape_list.draw()
         self._shape_list.draw()
         self._sprite_list.draw()
+        self._rail_shape_list.draw()
 
         self.rails_being_built_shape_element_list.draw()
         self.iron_shape_element_list.draw()

@@ -293,11 +293,13 @@ class Grid(Subject):
                 return factory
         return None
 
-    def _create_station(self, position: Vec2):
-        """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError."""
+    def _create_station(self, position: Vec2, east_west: bool):
+        """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError.
+
+        East-west if east_west == True, otherwise north-south."""
         mine_or_factory = self._adjacent_mine_or_factory(position)
         assert mine_or_factory
-        station = Station(position, mine_or_factory)
+        station = Station(position, mine_or_factory, east_west)
         self.stations[position] = station
         self._notify_about_other_object(station, CreateEvent())
 
@@ -308,17 +310,20 @@ class Grid(Subject):
         for rail in self.rails:
             for position in rail.positions:
                 rails_from_position[position].append(rail)
-        for position, rails in rails_from_position.items():
+        for position, rails_at_position in rails_from_position.items():
             if (
-                len(rails) == 2
+                len(rails_at_position) == 2
                 and (
-                    all(rail.is_horizontal() for rail in rails)
-                    or all(rail.is_vertical() for rail in rails)
+                    all(rail.is_horizontal() for rail in rails_at_position)
+                    or all(rail.is_vertical() for rail in rails_at_position)
                 )
                 and self._adjacent_mine_or_factory(position)
                 and position not in self.stations
             ):
-                self._create_station(position)
+                self._create_station(
+                    position,
+                    east_west=all(rail.is_horizontal() for rail in rails_at_position),
+                )
 
     def enlarge_grid(self):
         self.left -= GRID_BOX_SIZE

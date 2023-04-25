@@ -13,7 +13,18 @@ class MockArcade:
         self.viewport = (0, 800, 0, 600)
 
     class Sprite:
-        pass
+        def __init__(
+            self,
+            filename: str = "",
+            scale: float = 1,
+            image_x: float = 0,
+            image_y: float = 0,
+            image_width: float = 0,
+            image_height: float = 0,
+            center_x: float = 0,
+            center_y: float = 0,
+        ):
+            pass
 
     class SpriteList(list):
         def draw(self):
