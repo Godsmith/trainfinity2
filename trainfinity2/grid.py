@@ -266,7 +266,7 @@ class Grid(Subject):
     def release_mouse_button(self):
         if all(rail.legal for rail in self.rails_being_built):
             self.create_rail(self.rails_being_built)
-            self._create_stations()
+            self._try_create_stations()
 
         self.rails_being_built.clear()
         self.notify(RailsBeingBuiltEvent(self.rails_being_built))
@@ -303,7 +303,7 @@ class Grid(Subject):
 
         return station
 
-    def _create_stations(self):
+    def _try_create_stations(self):
         rails_from_position = defaultdict(list)
         for rail in self.rails:
             for position in rail.positions:
