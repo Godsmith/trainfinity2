@@ -1,14 +1,13 @@
-import math
 import typing
 from collections import defaultdict
 from typing import Any, Collection, Iterable
-from more_itertools import numeric_range
 
 import arcade
-from arcade import Shape, color
+from arcade import color
 from pyglet.math import Vec2
 
 from trainfinity2.graphics.rail_shapes import get_rail_shapes
+from trainfinity2.graphics.train_drawer import TrainDrawer
 
 from ..constants import (
     BUILDING_ILLEGAL_RAIL_COLOR,
@@ -19,9 +18,7 @@ from ..constants import (
     GRID_LINE_WIDTH,
     HIGHLIGHT_COLOR,
     IRON_SIZE,
-    TRAIN_RADIUS,
     PIXEL_OFFSET_PER_IRON,
-    RAIL_LINE_WIDTH,
 )
 from ..grid import Grid, RailsBeingBuiltEvent
 from ..model import (
@@ -60,7 +57,7 @@ class Drawer:
 
         self.highlight_shape_element_list = arcade.ShapeElementList()
 
-        self._trains: list[Train] = []
+        self._train_drawer = TrainDrawer()
 
         self._fps_sprite = arcade.Sprite()
         self._score_sprite = arcade.Sprite()
@@ -211,7 +208,7 @@ class Drawer:
         self._shape_list.append(shape)
 
     def create_train(self, train: Train):
-        self._trains.append(train)
+        self._train_drawer.add(train)
         train.add_observer(self, DestroyEvent)
 
     def on_notify(self, object: Any, event: Event):
@@ -227,7 +224,7 @@ class Drawer:
                 object.add_observer(self, IronAddedEvent)
                 object.add_observer(self, IronRemovedEvent)
             case Train(), DestroyEvent():
-                self._trains.remove(object)
+                self._train_drawer.remove(object)
             case Rail(), DestroyEvent():
                 self._remove(object)
             case Mine() | Station() | Factory() | Signal(), DestroyEvent():
@@ -297,51 +294,6 @@ class Drawer:
         for rail_shape in get_rail_shapes(rail, FINISHED_RAIL_COLOR):
             self._add_rail_shape(rail_shape, rail)
 
-    def _draw_trains(self):
-        # TODO: Create a shapelist per train that we can move instead
-        for train in self._trains:
-            x = train.x + GRID_BOX_SIZE / 2
-            y = train.y + GRID_BOX_SIZE / 2
-            arcade.draw_circle_filled(
-                x,
-                y,
-                TRAIN_RADIUS,
-                color=color.BLACK,
-            )
-            if train.iron:
-                arcade.draw_rectangle_filled(
-                    x,
-                    y,
-                    IRON_SIZE,
-                    IRON_SIZE,
-                    color=color.TROLLEY_GREY,
-                )
-                arcade.draw_rectangle_outline(
-                    x,
-                    y,
-                    IRON_SIZE,
-                    IRON_SIZE,
-                    color=color.BLACK,
-                )
-            if train.selected:
-                arcade.draw_circle_outline(
-                    x, y, TRAIN_RADIUS, color=HIGHLIGHT_COLOR, border_width=5
-                )
-                if train.rails_on_route:
-                    positions = {
-                        position
-                        for rail in train.rails_on_route[1:]
-                        for position in rail.positions
-                    }
-                    for position in positions:
-                        arcade.draw_rectangle_filled(
-                            position.x + GRID_BOX_SIZE / 2,
-                            position.y + GRID_BOX_SIZE / 2,
-                            GRID_BOX_SIZE,
-                            GRID_BOX_SIZE,
-                            color=HIGHLIGHT_COLOR,
-                        )
-
     def highlight(self, positions: Iterable[Vec2]):
         self.highlight_shape_element_list = arcade.ShapeElementList()
         for position in positions:
@@ -365,4 +317,4 @@ class Drawer:
 
         self.highlight_shape_element_list.draw()
 
-        self._draw_trains()
+        self._train_drawer.draw()
