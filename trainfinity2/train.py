@@ -1,3 +1,4 @@
+from collections import deque
 from dataclasses import dataclass, field
 
 from pyglet.math import Vec2
@@ -5,6 +6,7 @@ from pyglet.math import Vec2
 from .constants import GRID_BOX_SIZE
 from .grid import Grid
 from .model import Mine, Player, Rail, Station
+from .wagon import Wagon
 from .observer import DestroyEvent, Subject
 from .route_finder import find_route
 from .signal_controller import SignalController
@@ -30,6 +32,7 @@ class Train(Subject):
     target_y: int = field(init=False)
     current_rail: Rail | None = None
     iron: int = 0
+    wagons: list[Wagon] = field(init=False)
     selected = False
     wait_timer: float = 0.0
 
@@ -43,6 +46,14 @@ class Train(Subject):
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route = []
+        self._target_x_history = deque(maxlen=3)
+        self._target_y_history = deque(maxlen=3)
+        self._previous_targets_y = []
+        # TODO: wagons are now created on top of train
+        self.wagons = []
+        self.wagons.append(Wagon(self.x, self.y))
+        self.wagons.append(Wagon(self.x, self.y))
+        self.wagons.append(Wagon(self.x, self.y))
         # self.signal_controller.reserve(id(self), Vec2(self.x, self.y))
 
     @property
@@ -63,6 +74,10 @@ class Train(Subject):
             self.y -= train_displacement
         elif self.y < self.target_y - train_displacement:
             self.y += train_displacement
+
+        for wagon in self.wagons:
+            wagon.move(delta_time, self.TRAIN_SPEED_PIXELS_PER_SECOND)
+
         if (
             abs(self.x - self.target_x) < train_displacement
             and abs(self.y - self.target_y) < train_displacement
@@ -142,10 +157,17 @@ class Train(Subject):
             return
         next_rail = self._rails_on_route[0]
         next_position = next_rail.other_end(*current_position)
-        self._set_current_rail(next_rail, self.target_x, self.target_y)
+        self._target_x_history.append(self.target_x)
+        self._target_y_history.append(self.target_y)
+        for target_x, target_y, wagon in zip(
+            self._target_x_history, self._target_y_history, self.wagons
+        ):
+            wagon.target_x = target_x
+            wagon.target_y = target_y
+        self._update_current_rail_and_target_xy(next_rail, self.target_x, self.target_y)
         self.signal_controller.reserve(id(self), next_position)
 
-    def _set_current_rail(self, next_rail: Rail, x, y):
+    def _update_current_rail_and_target_xy(self, next_rail: Rail, x, y):
         self.current_rail = next_rail
         if self.current_rail.x1 == x and self.current_rail.y1 == y:
             self.target_x = self.current_rail.x2
