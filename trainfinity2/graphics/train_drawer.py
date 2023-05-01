@@ -1,32 +1,77 @@
-from arcade import color
+from dataclasses import dataclass
+
 import arcade
+from arcade import Emitter, color
+from pyglet.math import Vec2
+
 from trainfinity2.constants import (
     GRID_BOX_SIZE,
     HIGHLIGHT_COLOR,
     IRON_SIZE,
     TRAIN_RADIUS,
 )
-
 from trainfinity2.train import Train
 from trainfinity2.wagon import Wagon
+
+ROCKET_SMOKE_TEXTURE = arcade.make_soft_circle_texture(
+    GRID_BOX_SIZE * 3 // 4, color.WHITE
+)
+
+
+def _make_smoke_emitter():
+    """Returns an emitter that emits its particles at a constant rate for a given amount of time"""
+    particle_factory = arcade.FadeParticle
+    return arcade.Emitter(
+        center_xy=Vec2(0, 0),
+        emit_controller=arcade.EmitterIntervalWithTime(
+            emit_interval=0.2, lifetime=1000000.0
+        ),
+        particle_factory=lambda emitter: particle_factory(
+            filename_or_texture=ROCKET_SMOKE_TEXTURE,
+            change_xy=Vec2(0.1, 0.2),
+            lifetime=1.5,
+            scale=1.0,
+        ),
+    )
+
+
+@dataclass
+class SmokingTrain:
+    train: Train
+    smoke_emitter: Emitter
 
 
 class TrainDrawer:
     def __init__(self) -> None:
-        self._trains: list[Train] = []
+        self._smoking_trains: list[SmokingTrain] = []
+        self._smoke_emitters_from_train: list[Emitter] = []
 
     def add(self, train: Train):
-        self._trains.append(train)
+        emitter = _make_smoke_emitter()
+        self._smoking_trains.append(SmokingTrain(train, emitter))
 
     def remove(self, train: Train):
-        self._trains.remove(train)
+        self._smoking_trains = [
+            smoking_train
+            for smoking_train in self._smoking_trains
+            if smoking_train.train != train
+        ]
 
     def draw(self):
         # TODO: Create a shapelist per train that we can move instead
-        for train in self._trains:
-            self._draw_train(train)
-            for wagon in train.wagons:
+        for train in self._smoking_trains:
+            self._draw_train(train.train)
+            for wagon in train.train.wagons:
                 self._draw_wagon(wagon)
+            train.smoke_emitter.draw()
+
+    def update(self):
+        for train in self._smoking_trains:
+            x = train.train.x + GRID_BOX_SIZE / 2
+            y = train.train.y + GRID_BOX_SIZE / 2
+            train.smoke_emitter.center_x = x
+            train.smoke_emitter.center_y = y
+            train.smoke_emitter.update()
 
     def _draw_train(self, train: Train):
         x = train.x + GRID_BOX_SIZE / 2
@@ -66,7 +111,7 @@ class TrainDrawer:
             y,
             GRID_BOX_SIZE * 0.5,
             GRID_BOX_SIZE * 0.8,
-            color=color.EGGSHELL,
+            color=color.REDWOOD,
             tilt_angle=wagon.angle,
         )
         if wagon.iron:

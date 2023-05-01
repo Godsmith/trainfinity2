@@ -8,7 +8,7 @@ class Wagon:
     x: float
     y: float
     iron: int = 0
-    heading: float = 0
+    angle: float = 0
     target_x: int = field(init=False)
     target_y: int = field(init=False)
 

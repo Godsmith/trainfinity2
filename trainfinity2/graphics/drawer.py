@@ -318,3 +318,6 @@ class Drawer:
         self.highlight_shape_element_list.draw()
 
         self._train_drawer.draw()
+
+    def update(self):
+        self._train_drawer.update()

@@ -108,6 +108,7 @@ class Game:
             if train1.is_colliding_with(train2):
                 train1.destroy()
                 train2.destroy()
+        self.drawer.update()
 
     def _update_gui_figures(self, delta_time):
         self.frame_count += 1
