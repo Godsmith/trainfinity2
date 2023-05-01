@@ -66,28 +66,28 @@ class TestTrain:
         train.x = 0
         train.move(1 / 60)
 
-        assert train.x == pytest.approx(2)
+        assert train.x == pytest.approx(1 / 90)
 
     def test_move_west(self, train):
         train.target_x = -100
         train.x = 0
         train.move(1 / 60)
 
-        assert train.x == pytest.approx(-2)
+        assert train.x == pytest.approx(-1 / 90)
 
     def test_move_north(self, train):
         train.target_y = 100
         train.y = 0
         train.move(1 / 60)
 
-        assert train.y == pytest.approx(2)
+        assert train.y == pytest.approx(1 / 90)
 
     def test_move_south(self, train):
         train.target_y = -100
         train.y = 0
         train.move(1 / 60)
 
-        assert train.y == pytest.approx(-2)
+        assert train.y == pytest.approx(-1 / 90)
 
 
 # class TestSignal:

@@ -36,8 +36,10 @@ class Train(Subject):
     selected = False
     wait_timer: float = 0.0
     angle: float = 0
+    speed = 0.0  # Pixels per second
 
-    TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
+    MAX_SPEED = 120.0  # 60.0  # Pixels per second
+    ACCELERATION = 40.0  # Pixels per second squared
 
     def __post_init__(self):
         super().__init__()
@@ -65,7 +67,11 @@ class Train(Subject):
             self.wait_timer -= delta_time
             return
 
-        train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
+        if self.speed < self.MAX_SPEED:
+            self.speed += self.ACCELERATION * delta_time
+            self.speed = min(self.speed, self.MAX_SPEED)
+
+        train_displacement = delta_time * self.speed
         dx = 0
         dy = 0
         if self.x > self.target_x + train_displacement:
@@ -81,7 +87,7 @@ class Train(Subject):
         self.angle = -(Vec2(dx, dy).heading * 360 / 2 / pi - 90)
 
         for wagon in self.wagons:
-            wagon.move(delta_time, self.TRAIN_SPEED_PIXELS_PER_SECOND)
+            wagon.move(delta_time, self.speed)
 
         if (
             abs(self.x - self.target_x) < train_displacement
@@ -113,27 +119,32 @@ class Train(Subject):
             or self.signal_controller.reserver(position) in train_and_wagon_ids
         )
 
+    def _stop_at_target_station(self):
+        # Check factories before mines, or a the iron will
+        # instantly be transported to the factory
+        if self.grid.adjacent_factories(Vec2(self.x, self.y)):
+            for wagon in self.wagons:
+                if wagon.iron:
+                    self.player.score += wagon.iron
+                    wagon.iron = 0
+        for mine in self.grid.adjacent_mines(Vec2(self.x, self.y)):
+            for wagon in self.wagons:
+                if mine.iron > 0 and wagon.iron == 0:
+                    wagon.iron += mine.remove_iron(1)
+        self._target_station = (
+            self.second_station
+            if self._target_station == self.first_station
+            else self.first_station
+        )
+        # This ensures that the train can immediately reverse at the station
+        # Otherwise it the train would prefer to continue forward and then reverse
+        self.current_rail = None
+
+        self.speed = 0
+
     def _on_reached_target(self):
         if _is_close(Vec2(self.x, self.y), self._target_station.position):
-            # Check factories before mines, or a the iron will
-            # instantly be transported to the factory
-            if self.grid.adjacent_factories(Vec2(self.x, self.y)):
-                for wagon in self.wagons:
-                    if wagon.iron:
-                        self.player.score += wagon.iron
-                        wagon.iron = 0
-            for mine in self.grid.adjacent_mines(Vec2(self.x, self.y)):
-                for wagon in self.wagons:
-                    if mine.iron > 0 and wagon.iron == 0:
-                        wagon.iron += mine.remove_iron(1)
-            self._target_station = (
-                self.second_station
-                if self._target_station == self.first_station
-                else self.first_station
-            )
-            # This ensures that the train can immediately reverse at the station
-            # Otherwise it the train would prefer to continue forward and then reverse
-            self.current_rail = None
+            self._stop_at_target_station()
 
         current_position = Vec2(self.target_x, self.target_y)
 
@@ -154,6 +165,8 @@ class Train(Subject):
             if not adjacent_reserved_positions:
                 self.destroy()
                 return
+            # Stop the train and wait
+            self.speed = 0
             self.wait_timer = 1
             return
 
