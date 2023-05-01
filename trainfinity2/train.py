@@ -32,7 +32,6 @@ class Train(Subject):
     target_x: int = field(init=False)
     target_y: int = field(init=False)
     current_rail: Rail | None = None
-    iron: int = 0
     wagons: list[Wagon] = field(init=False)
     selected = False
     wait_timer: float = 0.0

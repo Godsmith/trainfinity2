@@ -22,7 +22,7 @@ def test_draw(game: Game):
     )
     game._create_train(*game.grid.stations.values())
     # Mainly for code coverage
-    game.trains[0].iron = 1
+    game.trains[0].wagons[0].iron = 1
     game.on_draw()
 
 
@@ -532,12 +532,12 @@ def test_train_picks_up_iron_from_mine(game: Game):
     train.target_x = 30
     train._target_station = game.grid.stations[Vec2(30, 0)]
     assert mine.iron == 1
-    assert train.iron == 0
+    assert train.wagons[0].iron == 0
 
     game.on_update(1 / 60)
 
     assert mine.iron == 0
-    assert train.iron == 1
+    assert train.wagons[0].iron == 1
 
 
 def test_train_delivers_iron_to_factory_gives_score(game: Game):
@@ -551,14 +551,14 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
     )
     game._create_train(*game.grid.stations.values())
     train = game.trains[0]
-    train.iron = 1
+    train.wagons[0].iron = 1
     train.x = 90
     train.target_x = 90
     train._target_station = game.grid.stations[Vec2(90, 0)]
 
     game.on_update(1 / 60)
 
-    assert train.iron == 0
+    assert train.wagons[0].iron == 0
     assert game.player.score == 1
 
 

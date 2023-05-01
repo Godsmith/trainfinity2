@@ -41,6 +41,23 @@ class MockArcade:
         def move(self, dx, dy):
             pass
 
+    class FadeParticle:
+        pass
+
+    class Emitter:
+        def __init__(self, center_xy, emit_controller, particle_factory) -> None:
+            pass
+
+        def draw(self):
+            pass
+
+        def update(self):
+            pass
+
+    class EmitterIntervalWithTime:
+        def __init__(self, emit_interval: float, lifetime: float) -> None:
+            pass
+
     def get_viewport(self):
         return self.viewport
 
