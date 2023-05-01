@@ -56,7 +56,6 @@ class Mine(Subject):
 @dataclass
 class Station:
     position: Vec2
-    mine_or_factory: Mine | Factory
     east_west: bool = True
 
 

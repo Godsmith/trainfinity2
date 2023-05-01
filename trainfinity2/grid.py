@@ -276,13 +276,29 @@ class Grid(Subject):
         return self.stations.get(Vec2(x, y))
 
     def _is_adjacent(self, position1: Vec2, position2: Vec2):
+        dx = abs(position1.x - position2.x)
+        dy = abs(position1.y - position2.y)
         return (
-            abs(position1.x - position2.x) == GRID_BOX_SIZE
-            and position1.y == position2.y
+            GRID_BOX_SIZE * 3 / 4 < dx < GRID_BOX_SIZE * 5 / 4
+            and dy < GRID_BOX_SIZE / 4
         ) or (
-            abs(position1.y - position2.y) == GRID_BOX_SIZE
-            and position1.x == position2.x
+            GRID_BOX_SIZE * 3 / 4 < dy < GRID_BOX_SIZE * 5 / 4
+            and dx < GRID_BOX_SIZE / 4
         )
+
+    def adjacent_mines(self, position: Vec2) -> list[Mine]:
+        return [
+            mine
+            for mine in self.mines.values()
+            if self._is_adjacent(position, mine.position)
+        ]
+
+    def adjacent_factories(self, position: Vec2) -> list[Factory]:
+        return [
+            factory
+            for factory in self.factories.values()
+            if self._is_adjacent(position, factory.position)
+        ]
 
     def _adjacent_mine_or_factory(self, position: Vec2) -> Mine | Factory | None:
         for mine in self.mines.values():
@@ -299,7 +315,7 @@ class Grid(Subject):
         East-west if east_west == True, otherwise north-south."""
         mine_or_factory = self._adjacent_mine_or_factory(position)
         assert mine_or_factory
-        station = Station(position, mine_or_factory, east_west)
+        station = Station(position, east_west)
         self.stations[position] = station
         self._notify_about_other_object(station, CreateEvent())
 

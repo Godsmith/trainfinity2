@@ -115,21 +115,17 @@ class Train(Subject):
 
     def _on_reached_target(self):
         if _is_close(Vec2(self.x, self.y), self._target_station.position):
-            if isinstance(self._target_station.mine_or_factory, Mine):
-                for wagon in self.wagons:
-                    if (
-                        self._target_station.mine_or_factory.iron > 0
-                        and wagon.iron == 0
-                    ):
-                        wagon.iron += self._target_station.mine_or_factory.remove_iron(
-                            1
-                        )
-            else:
-                # Factory
+            # Check factories before mines, or a the iron will
+            # instantly be transported to the factory
+            if self.grid.adjacent_factories(Vec2(self.x, self.y)):
                 for wagon in self.wagons:
                     if wagon.iron:
                         self.player.score += wagon.iron
                         wagon.iron = 0
+            for mine in self.grid.adjacent_mines(Vec2(self.x, self.y)):
+                for wagon in self.wagons:
+                    if mine.iron > 0 and wagon.iron == 0:
+                        wagon.iron += mine.remove_iron(1)
             self._target_station = (
                 self.second_station
                 if self._target_station == self.first_station

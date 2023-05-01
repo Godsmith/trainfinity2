@@ -159,7 +159,7 @@ class TestBuildingRail:
         game.on_mouse_motion(x=75, y=15, dx=60, dy=0)
         game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(30, 0): Station(Vec2(30, 0), mine)}
+        assert game.grid.stations == {Vec2(30, 0): Station(Vec2(30, 0))}
 
     def test_building_vertical_station(self, game: Game):
         factory = game.grid._create_factory(Vec2(30, 30))
@@ -167,7 +167,7 @@ class TestBuildingRail:
         game.on_mouse_motion(x=15, y=75, dx=0, dy=60)
         game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 30): Station(Vec2(0, 30), factory, False)}
+        assert game.grid.stations == {Vec2(0, 30): Station(Vec2(0, 30), False)}
 
 
 class TestGui:

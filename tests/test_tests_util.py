@@ -88,8 +88,8 @@ def test_create_objects(game: Game):
     assert game.grid.mines == {Vec2(30, 30): Mine(Vec2(30, 30))}
     assert game.grid.factories == {Vec2(90, 30): Factory(Vec2(90, 30))}
     assert game.grid.stations == {
-        Vec2(90, 0): Station(Vec2(90, 0), Factory(Vec2(90, 30))),
-        Vec2(30, 0): Station(Vec2(30, 0), Mine(Vec2(30, 30))),
+        Vec2(90, 0): Station(Vec2(90, 0)),
+        Vec2(30, 0): Station(Vec2(30, 0)),
     }
     signal_facing_west = game.grid.signals[(Vec2(60, 0), Rail(60, 0, 90, 0))]
     signal_facing_east = game.grid.signals[(Vec2(90, 0), Rail(60, 0, 90, 0))]
