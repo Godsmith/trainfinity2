@@ -54,8 +54,8 @@ class TestRail:
 
 @pytest.fixture
 def train(player, mock_grid: Grid):
-    station1 = Station(Vec2(0, 0), Mine(Vec2(0, 0)))
-    station2 = Station(Vec2(30, 0), Mine(Vec2(0, 0)))
+    station1 = Station(Vec2(0, 0))
+    station2 = Station(Vec2(30, 0))
     mock_grid.create_rail([Rail(0, 0, 30, 0)])
     return Train(player, station1, station2, mock_grid, SignalController())
 
