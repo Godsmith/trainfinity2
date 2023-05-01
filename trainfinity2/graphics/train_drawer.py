@@ -37,21 +37,6 @@ class TrainDrawer:
             TRAIN_RADIUS,
             color=color.BLACK,
         )
-        if train.iron:
-            arcade.draw_rectangle_filled(
-                x,
-                y,
-                IRON_SIZE,
-                IRON_SIZE,
-                color=color.TROLLEY_GREY,
-            )
-            arcade.draw_rectangle_outline(
-                x,
-                y,
-                IRON_SIZE,
-                IRON_SIZE,
-                color=color.BLACK,
-            )
         if train.selected:
             arcade.draw_circle_outline(
                 x, y, TRAIN_RADIUS, color=HIGHLIGHT_COLOR, border_width=5
@@ -80,3 +65,18 @@ class TrainDrawer:
             TRAIN_RADIUS,
             color=color.EGGSHELL,
         )
+        if wagon.iron:
+            arcade.draw_rectangle_filled(
+                x,
+                y,
+                IRON_SIZE,
+                IRON_SIZE,
+                color=color.TROLLEY_GREY,
+            )
+            arcade.draw_rectangle_outline(
+                x,
+                y,
+                IRON_SIZE,
+                IRON_SIZE,
+                color=color.BLACK,
+            )

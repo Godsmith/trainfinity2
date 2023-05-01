@@ -111,11 +111,20 @@ class Train(Subject):
     def _on_reached_target(self):
         if _is_close(Vec2(self.x, self.y), self._target_station.position):
             if isinstance(self._target_station.mine_or_factory, Mine):
-                self.iron += self._target_station.mine_or_factory.remove_iron(1)
+                for wagon in self.wagons:
+                    if (
+                        self._target_station.mine_or_factory.iron > 0
+                        and wagon.iron == 0
+                    ):
+                        wagon.iron += self._target_station.mine_or_factory.remove_iron(
+                            1
+                        )
             else:
                 # Factory
-                self.player.score += self.iron
-                self.iron = 0
+                for wagon in self.wagons:
+                    if wagon.iron:
+                        self.player.score += wagon.iron
+                        wagon.iron = 0
             self._target_station = (
                 self.second_station
                 if self._target_station == self.first_station

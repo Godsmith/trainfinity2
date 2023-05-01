@@ -6,6 +6,7 @@ from pyglet.math import Vec2
 class Wagon:
     x: float
     y: float
+    iron: int = 0
     target_x: int = field(init=False)
     target_y: int = field(init=False)
 
@@ -24,5 +25,3 @@ class Wagon:
             self.y -= pixels_moved
         elif self.y < self.target_y - pixels_moved:
             self.y += pixels_moved
-
-
