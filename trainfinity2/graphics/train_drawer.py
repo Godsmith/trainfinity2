@@ -31,11 +31,13 @@ class TrainDrawer:
     def _draw_train(self, train: Train):
         x = train.x + GRID_BOX_SIZE / 2
         y = train.y + GRID_BOX_SIZE / 2
-        arcade.draw_circle_filled(
+        arcade.draw_rectangle_filled(
             x,
             y,
-            TRAIN_RADIUS,
+            GRID_BOX_SIZE * 0.5,
+            GRID_BOX_SIZE * 0.8,
             color=color.BLACK,
+            tilt_angle=train.angle,
         )
         if train.selected:
             arcade.draw_circle_outline(
@@ -59,11 +61,13 @@ class TrainDrawer:
     def _draw_wagon(self, wagon: Wagon):
         x = wagon.x + GRID_BOX_SIZE / 2
         y = wagon.y + GRID_BOX_SIZE / 2
-        arcade.draw_circle_filled(
+        arcade.draw_rectangle_filled(
             x,
             y,
-            TRAIN_RADIUS,
+            GRID_BOX_SIZE * 0.5,
+            GRID_BOX_SIZE * 0.8,
             color=color.EGGSHELL,
+            tilt_angle=wagon.angle,
         )
         if wagon.iron:
             arcade.draw_rectangle_filled(
@@ -72,6 +76,7 @@ class TrainDrawer:
                 IRON_SIZE,
                 IRON_SIZE,
                 color=color.TROLLEY_GREY,
+                tilt_angle=wagon.angle,
             )
             arcade.draw_rectangle_outline(
                 x,
@@ -79,4 +84,5 @@ class TrainDrawer:
                 IRON_SIZE,
                 IRON_SIZE,
                 color=color.BLACK,
+                tilt_angle=wagon.angle,
             )

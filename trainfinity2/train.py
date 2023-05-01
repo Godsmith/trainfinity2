@@ -1,6 +1,7 @@
 from collections import deque
 from dataclasses import dataclass, field
 
+from math import pi
 from pyglet.math import Vec2
 
 from .constants import GRID_BOX_SIZE
@@ -35,6 +36,7 @@ class Train(Subject):
     wagons: list[Wagon] = field(init=False)
     selected = False
     wait_timer: float = 0.0
+    angle: float = 0
 
     TRAIN_SPEED_PIXELS_PER_SECOND = 120.0  # 60.0
 
@@ -54,7 +56,6 @@ class Train(Subject):
         self.wagons.append(Wagon(self.x, self.y))
         self.wagons.append(Wagon(self.x, self.y))
         self.wagons.append(Wagon(self.x, self.y))
-        # self.signal_controller.reserve(id(self), Vec2(self.x, self.y))
 
     @property
     def rails_on_route(self):
@@ -66,14 +67,19 @@ class Train(Subject):
             return
 
         train_displacement = delta_time * self.TRAIN_SPEED_PIXELS_PER_SECOND
+        dx = 0
+        dy = 0
         if self.x > self.target_x + train_displacement:
-            self.x -= train_displacement
+            dx = -train_displacement
         elif self.x < self.target_x - train_displacement:
-            self.x += train_displacement
+            dx = train_displacement
         if self.y > self.target_y + train_displacement:
-            self.y -= train_displacement
+            dy = -train_displacement
         elif self.y < self.target_y - train_displacement:
-            self.y += train_displacement
+            dy = train_displacement
+        self.x += dx
+        self.y += dy
+        self.angle = -(Vec2(dx, dy).heading * 360 / 2 / pi - 90)
 
         for wagon in self.wagons:
             wagon.move(delta_time, self.TRAIN_SPEED_PIXELS_PER_SECOND)
