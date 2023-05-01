@@ -826,7 +826,12 @@ class TestTrainMovingAroundSignals:
         train = game._create_train(*game.grid.stations.values())
         game.on_update(1 / 60)
 
-        assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
+        # Currently, the block can be reserved either by the train or
+        # one of its wagons
+        train_and_wagon_ids = {id(train)} | {id(wagon) for wagon in train.wagons}
+        assert (
+            game.signal_controller._signal_blocks[0].reserved_by in train_and_wagon_ids
+        )
 
         train.destroy()
 

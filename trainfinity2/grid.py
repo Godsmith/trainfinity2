@@ -139,8 +139,8 @@ class Grid(Subject):
     def _create_factories(self):
         self._create_factory_in_random_unoccupied_location()
 
-    def snap_to(self, x, y) -> tuple[int, int]:
-        return self.snap_to_x(x), self.snap_to_y(y)
+    def snap_to(self, x, y) -> Vec2:
+        return Vec2(self.snap_to_x(x), self.snap_to_y(y))
 
     def snap_to_x(self, x) -> int:
         return math.floor(x / GRID_BOX_SIZE) * GRID_BOX_SIZE

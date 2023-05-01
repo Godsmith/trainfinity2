@@ -3,15 +3,21 @@ from dataclasses import dataclass, field
 
 from math import pi
 import math
+from typing import Iterator, Sequence
 from pyglet.math import Vec2
 
 from .constants import GRID_BOX_SIZE
 from .grid import Grid
 from .model import Player, Rail, Station
-from .wagon import Wagon, approx_equal
+from .wagon import Wagon
 from .observer import DestroyEvent, Subject
 from .route_finder import find_route
 from .signal_controller import SignalController
+from typing import NamedTuple
+
+
+def approx_equal(a: float, b: float):
+    return abs(a - b) < 1.0
 
 
 def _is_close(pos1: Vec2, pos2: Vec2):
@@ -19,6 +25,48 @@ def _is_close(pos1: Vec2, pos2: Vec2):
         abs(pos1.x - pos2.x) < GRID_BOX_SIZE / 2
         and abs(pos1.y - pos2.y) < GRID_BOX_SIZE / 2
     )
+
+
+class PointAndAngle(NamedTuple):
+    point: Vec2
+    angle: float
+
+
+def _find_equidistant_points_and_angles_along_line(
+    line_points: Sequence[Vec2], n: int, distance: float
+) -> list[Vec2]:
+    """Returns n positions with equal distance along the provided line set of positions.
+
+    If the provided line is not long enough for the number of points requested, all
+    remaining points returned will be at the end of the line."""
+
+    line_points = deque(line_points)
+    current_position = line_points.popleft()
+    equidistant_points_and_angles = []
+    distance_left_to_next_equidistant_point = distance
+    while len(equidistant_points_and_angles) < n:
+        if not line_points:
+            equidistant_points_and_angles.append(PointAndAngle(current_position, 0.0))
+        else:
+            distance_to_next_line_point = current_position.distance(line_points[0])
+            if distance_to_next_line_point > distance_left_to_next_equidistant_point:
+                equidistant_point = current_position.lerp(
+                    line_points[0],
+                    distance_left_to_next_equidistant_point
+                    / distance_to_next_line_point,
+                )
+                angle = -(
+                    (equidistant_point - current_position).heading * 360 / 2 / pi - 90
+                )
+                equidistant_points_and_angles.append(
+                    PointAndAngle(equidistant_point, angle)
+                )
+                current_position = equidistant_point
+                distance_left_to_next_equidistant_point = distance
+            else:
+                current_position = line_points.popleft()
+                distance_left_to_next_equidistant_point -= distance_to_next_line_point
+    return equidistant_points_and_angles
 
 
 @dataclass
@@ -50,8 +98,9 @@ class Train(Subject):
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route = []
-        self._target_x_history = deque(maxlen=3)
-        self._target_y_history = deque(maxlen=3)
+        self._position_history = deque(
+            maxlen=4
+        )  # TODO: needs to be more than number of wagons
         self._previous_targets_y = []
         # TODO: wagons are now created on top of train
         self.wagons = []
@@ -92,8 +141,16 @@ class Train(Subject):
         self.y += dy
         self.angle = -(Vec2(dx, dy).heading * 360 / 2 / pi - 90)
 
-        for wagon in self.wagons:
-            wagon.move(delta_time, self.speed)
+        wagon_positions_and_angles = _find_equidistant_points_and_angles_along_line(
+            [Vec2(self.x, self.y)] + list(self._position_history),
+            len(self.wagons),
+            GRID_BOX_SIZE,
+        )
+        for wagon, (wagon_position, wagon_angle) in zip(
+            self.wagons, wagon_positions_and_angles
+        ):
+            wagon.x, wagon.y = wagon_position
+            wagon.angle = wagon_angle
 
         if (
             abs(self.x - self.target_x) < train_displacement
@@ -190,16 +247,19 @@ class Train(Subject):
             return
         next_rail = self._rails_on_route[0]
         next_position = next_rail.other_end(*current_position)
-        self._target_x_history.append(self.target_x)
-        self._target_y_history.append(self.target_y)
-        for target_x, target_y, wagon in zip(
-            self._target_x_history, self._target_y_history, self.wagons
-        ):
-            wagon.target_x = target_x
-            wagon.target_y = target_y
-            self.signal_controller.reserve(id(wagon), Vec2(target_x, target_y))
+        self._position_history.appendleft(Vec2(self.target_x, self.target_y))
         self._update_current_rail_and_target_xy(next_rail, self.target_x, self.target_y)
+
         self.signal_controller.reserve(id(self), next_position)
+        for wagon in self.wagons:
+            # Kind of dangerous, an implementation change could
+            # mean that another train gets the chance to
+            # reserve the block before the wagon gets the chance
+            # to reserve it again
+            self.signal_controller.unreserve(id(wagon))
+            self.signal_controller.reserve(
+                id(wagon), self.grid.snap_to(wagon.x, wagon.y)
+            )
 
     def _update_current_rail_and_target_xy(self, next_rail: Rail, x, y):
         self.current_rail = next_rail
