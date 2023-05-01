@@ -2,12 +2,13 @@ from collections import deque
 from dataclasses import dataclass, field
 
 from math import pi
+import math
 from pyglet.math import Vec2
 
 from .constants import GRID_BOX_SIZE
 from .grid import Grid
 from .model import Player, Rail, Station
-from .wagon import Wagon
+from .wagon import Wagon, approx_equal
 from .observer import DestroyEvent, Subject
 from .route_finder import find_route
 from .signal_controller import SignalController
@@ -82,6 +83,11 @@ class Train(Subject):
             dy = -train_displacement
         elif self.y < self.target_y - train_displacement:
             dy = train_displacement
+
+        if approx_equal(self.angle % 90.0, 45.0):
+            dx /= math.sqrt(2)
+            dy /= math.sqrt(2)
+
         self.x += dx
         self.y += dy
         self.angle = -(Vec2(dx, dy).heading * 360 / 2 / pi - 90)
