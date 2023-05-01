@@ -90,7 +90,9 @@ class Train(Subject):
         )
 
     def destroy(self):
-        self.signal_controller.unreserve(id(self))
+        train_and_wagon_ids = {id(obj) for obj in [self] + self.wagons}
+        for id_ in train_and_wagon_ids:
+            self.signal_controller.unreserve(id_)
         self.notify(DestroyEvent())
 
     def is_colliding_with(self, train):
@@ -100,9 +102,11 @@ class Train(Subject):
         )
 
     def _can_reserve_position(self, position: Vec2) -> bool:
-        return not self.signal_controller.reserver(
-            position
-        ) or self.signal_controller.reserver(position) == id(self)
+        train_and_wagon_ids = {id(obj) for obj in [self] + self.wagons}
+        return (
+            not self.signal_controller.reserver(position)
+            or self.signal_controller.reserver(position) in train_and_wagon_ids
+        )
 
     def _on_reached_target(self):
         if _is_close(Vec2(self.x, self.y), self._target_station.position):
@@ -164,6 +168,7 @@ class Train(Subject):
         ):
             wagon.target_x = target_x
             wagon.target_y = target_y
+            self.signal_controller.reserve(id(wagon), Vec2(target_x, target_y))
         self._update_current_rail_and_target_xy(next_rail, self.target_x, self.target_y)
         self.signal_controller.reserve(id(self), next_position)
 
