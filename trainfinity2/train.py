@@ -6,7 +6,7 @@ from pyglet.math import Vec2
 
 from .constants import GRID_BOX_SIZE
 from .grid import Grid
-from .model import Mine, Player, Rail, Station
+from .model import Player, Rail, Station
 from .wagon import Wagon
 from .observer import DestroyEvent, Subject
 from .route_finder import find_route
