@@ -49,8 +49,11 @@ class Drawer:
         self._sprites_from_object_id = defaultdict(list)
         self._shapes_from_object_id = defaultdict(list)
         self._rail_shapes_from_object_id = defaultdict(list)
+        self._signal_shapes_from_object_id = defaultdict(list)
 
         self._rail_shape_list = arcade.ShapeElementList()
+        self._signal_shape_list = arcade.ShapeElementList()
+
         self._rails_being_built: set[Rail] = set()
         self.rails_being_built_shape_element_list = arcade.ShapeElementList()
         self.iron_shape_element_list = arcade.ShapeElementList()
@@ -87,6 +90,9 @@ class Drawer:
         for rail_shape in self._rail_shapes_from_object_id[id(object)]:
             self._rail_shape_list.remove(rail_shape)
         del self._rail_shapes_from_object_id[id(object)]
+        for signal_shape in self._signal_shapes_from_object_id[id(object)]:
+            self._signal_shape_list.remove(signal_shape)
+        del self._signal_shapes_from_object_id[id(object)]
 
     def _create_grid(self, grid: Grid):
         self._grid_shape_list = arcade.ShapeElementList()
@@ -170,7 +176,7 @@ class Drawer:
             GRID_BOX_SIZE / 6,
             color.RED if signal.signal_color == SignalColor.RED else color.GREEN,
         )
-        self._add_shape(shape, signal)
+        self._add_signal_shape(shape, signal)
 
     def _add_sprite(self, sprite: arcade.Sprite, object: Any):
         self._sprite_list.append(sprite)
@@ -183,6 +189,10 @@ class Drawer:
     def _add_rail_shape(self, shape: arcade.Shape, object: Any):
         self._rail_shape_list.append(shape)
         self._rail_shapes_from_object_id[id(object)].append(shape)
+
+    def _add_signal_shape(self, shape: arcade.Shape, object: Any):
+        self._signal_shape_list.append(shape)
+        self._signal_shapes_from_object_id[id(object)].append(shape)
 
     def create_terrain(
         self,
@@ -311,6 +321,7 @@ class Drawer:
         self._shape_list.draw()
         self._sprite_list.draw()
         self._rail_shape_list.draw()
+        self._signal_shape_list.draw()
 
         self.rails_being_built_shape_element_list.draw()
         self.iron_shape_element_list.draw()
