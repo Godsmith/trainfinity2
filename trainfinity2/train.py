@@ -121,17 +121,17 @@ class Train(Subject):
             self.speed += self.ACCELERATION * delta_time
             self.speed = min(self.speed, self.MAX_SPEED)
 
-        train_displacement = delta_time * self.speed
+        pixels_to_move = delta_time * self.speed
         dx = 0
         dy = 0
-        if self.x > self.target_x + train_displacement:
-            dx = -train_displacement
-        elif self.x < self.target_x - train_displacement:
-            dx = train_displacement
-        if self.y > self.target_y + train_displacement:
-            dy = -train_displacement
-        elif self.y < self.target_y - train_displacement:
-            dy = train_displacement
+        if self.x > self.target_x + pixels_to_move:
+            dx = -pixels_to_move
+        elif self.x < self.target_x - pixels_to_move:
+            dx = pixels_to_move
+        if self.y > self.target_y + pixels_to_move:
+            dy = -pixels_to_move
+        elif self.y < self.target_y - pixels_to_move:
+            dy = pixels_to_move
 
         if approx_equal(self.angle % 90.0, 45.0):
             dx /= math.sqrt(2)
@@ -153,8 +153,8 @@ class Train(Subject):
             wagon.angle = wagon_angle
 
         if (
-            abs(self.x - self.target_x) < train_displacement
-            and abs(self.y - self.target_y) < train_displacement
+            abs(self.x - self.target_x) < pixels_to_move
+            and abs(self.y - self.target_y) < pixels_to_move
         ):
             self._on_reached_target()
 
