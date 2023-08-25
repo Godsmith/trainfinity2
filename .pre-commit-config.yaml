@@ -14,7 +14,7 @@ repos:
         name: black
         language: system
         entry: python -m black
-        types: [python]
+        types_or: [python, pyi]
     -   id: ruff
         name: ruff
         language: system
@@ -25,7 +25,7 @@ repos:
         language: system
         require_serial: true
         entry: python -m mypy
-        types: [python]
+        types_or: [python, pyi]
     -   id: tests
         name: tests
         language: system
