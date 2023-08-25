@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 import arcade
 from arcade import Emitter, color
-from pyglet.math import Vec2
 
 from trainfinity2.constants import (
     GRID_BOX_SIZE,
@@ -21,13 +20,13 @@ def _make_smoke_emitter():
     """Returns an emitter that emits its particles at a constant rate for a given amount of time"""
     particle_factory = arcade.FadeParticle
     return arcade.Emitter(
-        center_xy=Vec2(0, 0),
+        center_xy=(0.0, 0.0),
         emit_controller=arcade.EmitterIntervalWithTime(
             emit_interval=0.2, lifetime=1000000.0
         ),
         particle_factory=lambda emitter: particle_factory(
             filename_or_texture=ROCKET_SMOKE_TEXTURE,
-            change_xy=Vec2(0.1, 0.2),
+            change_xy=(0.1, 0.2),
             lifetime=1.5,
             scale=1.0,
         ),

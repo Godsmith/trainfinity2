@@ -27,8 +27,8 @@ game.grid.create_rail(
         Rail(120, 90, 150, 60),
     ]
 )
-station1 = game.grid._create_station(Vec2(30, 60))
-station2 = game.grid._create_station(Vec2(180, 60))
+station1 = game.grid._create_station(Vec2(30, 60), True)
+station2 = game.grid._create_station(Vec2(180, 60), True)
 # game._create_signal(90, 60)
 # game._create_signal(90, 90)
 # game._create_signal(120, 60)

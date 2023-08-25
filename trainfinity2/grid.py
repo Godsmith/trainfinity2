@@ -7,7 +7,7 @@ from typing import Any, Iterable, Type
 
 from pyglet.math import Vec2
 
-from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
+from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH
 from .gui import Mode
 from .model import (
     Factory,
@@ -15,7 +15,6 @@ from .model import (
     Rail,
     Signal,
     SignalColor,
-    SignalConnection,
     Station,
     Water,
 )
@@ -352,7 +351,11 @@ class Grid(Subject):
 
     def _two_rails_at_position(self, position: Vec2) -> tuple[Rail, Rail] | None:
         rails = self.rails_at_position(position)
-        return tuple(rails) if len(rails) == 2 else None
+        match rails:
+            case (rail1, rail2):
+                return (rail1, rail2)
+            case _:
+                return None
 
     def _closest_rail(self, x, y) -> Rail | None:
         """Return None if

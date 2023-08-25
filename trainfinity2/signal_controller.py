@@ -1,10 +1,8 @@
-from collections import Counter
 from dataclasses import dataclass
-from collections.abc import Set
 
 from pyglet.math import Vec2
 
-from .model import Signal, SignalColor, Rail
+from .model import Signal, SignalColor
 from .protocols import RailCollection
 
 
@@ -103,7 +101,7 @@ class SignalController:
                     neighboring_position
                     for new_rail in new_rails
                     for neighboring_position in new_rail.positions
-                    if not new_rail in rails_with_signals
+                    if new_rail not in rails_with_signals
                 }
             )
             traversed_positions.add(position)

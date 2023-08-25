@@ -27,11 +27,11 @@ def _get_sleepers(rail: Rail, color: list[int]) -> list[arcade.Shape]:
     if x2 == x1:
         xs = [x1] * sleeper_count
     else:
-        xs = numeric_range(x1, x2, (x2 - x1) / sleeper_count)
+        xs = list(numeric_range(x1, x2, (x2 - x1) / sleeper_count))
     if y2 == y1:
         ys = [y1] * sleeper_count
     else:
-        ys = numeric_range(y1, y2, (y2 - y1) / sleeper_count)
+        ys = list(numeric_range(y1, y2, (y2 - y1) / sleeper_count))
     for x, y in zip(xs, ys):
         x += (x2 - x1) / sleeper_count
         y += (y2 - y1) / sleeper_count
@@ -80,11 +80,11 @@ def _get_metal_rail_shapes(rail: Rail, color: list[int]) -> list[arcade.Shape]:
 
 def _offset_multiplier(x1: float, x2: float, y1: float, y2: float) -> Vec2:
     if x1 == x2:  # vertical
-        x_offset = 1
-        y_offset = 0
+        x_offset = 1.0
+        y_offset = 0.0
     elif y1 == y2:  # horizontal
-        x_offset = 0
-        y_offset = 1
+        x_offset = 0.0
+        y_offset = 1.0
     elif (x2 > x1 and y2 > y1) or (x2 < x1 and y2 < y1):  # NE or SW
         x_offset = 1 / math.sqrt(2)
         y_offset = -1 / math.sqrt(2)

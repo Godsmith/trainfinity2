@@ -33,7 +33,7 @@ class Gui:
         ]
         self._mode = Mode.RAIL
         self._enabled = True
-        self._shape_element_list = arcade.ShapeElementList()
+        self._shape_element_list: arcade.ShapeElementList = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
         self._text_sprite_list = arcade.SpriteList()
         self._fps_sprite = arcade.Sprite()

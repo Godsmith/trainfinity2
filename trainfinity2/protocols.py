@@ -3,7 +3,7 @@ from typing import Protocol
 import typing
 
 if typing.TYPE_CHECKING:
-    from model import Rail  # pragma: no cover
+    from trainfinity2.model import Rail  # pragma: no cover
 
 
 class GridEnlarger(Protocol):

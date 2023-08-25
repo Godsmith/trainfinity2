@@ -1,4 +1,3 @@
-from collections import namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 
@@ -129,7 +128,7 @@ class Rail:
             return Vec2(self.x2, self.y2)
         if self.x2 == x and self.y2 == y:
             return Vec2(self.x1, self.y1)
-        raise ValueError(f"The provided coordinates was not at either end of the rail.")
+        raise ValueError("The provided coordinates was not at either end of the rail.")
 
     @property
     def positions(self) -> set[Vec2]:

@@ -37,6 +37,8 @@ dependencies = [
 "pytest-cov==3.0.0",
 "perlin_noise==1.12",
 "more-itertools==9.1.0",
+"mypy==1.5.1",
+"pre-commit==3.3.3",
 ]
 [tool.hatch.envs.default.scripts]
 start = "python -m trainfinity2"
@@ -59,3 +61,10 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+ignore = ["E501"]
+
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
+check_untyped_defs = true

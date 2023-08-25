@@ -1,7 +1,7 @@
 import pytest
 from pyglet.math import Vec2
 from trainfinity2.grid import Grid
-from trainfinity2.model import Mine, Player, Rail, Signal, SignalConnection, Station
+from trainfinity2.model import Player, Rail, Station
 from trainfinity2.signal_controller import SignalController
 from trainfinity2.terrain import Terrain
 from trainfinity2.train import Train

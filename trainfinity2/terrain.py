@@ -3,7 +3,7 @@ from itertools import product
 from perlin_noise import PerlinNoise
 from pyglet.math import Vec2
 
-from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH, WATER_TILES
+from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH
 
 
 class Terrain:
@@ -20,7 +20,7 @@ class Terrain:
             noise1 = PerlinNoise(octaves=3)
             noise2 = PerlinNoise(octaves=6)
             noise3 = PerlinNoise(octaves=12)
-            noise4 = PerlinNoise(octaves=24)
+            PerlinNoise(octaves=24)
             for x, y in product(
                 range(-GRID_WIDTH * 2, GRID_WIDTH * 3 + 1, GRID_BOX_SIZE),
                 range(-GRID_HEIGHT * 2, GRID_HEIGHT * 3 + 1, GRID_BOX_SIZE),

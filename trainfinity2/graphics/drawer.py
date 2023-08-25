@@ -39,8 +39,8 @@ from ..train import Train
 class Drawer:
     def __init__(self):
 
-        self._grid_shape_list = arcade.ShapeElementList()
-        self._shape_list = arcade.ShapeElementList()
+        self._grid_shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
+        self._shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
 
         # Needed to easily remove sprites and shapes
@@ -51,14 +51,20 @@ class Drawer:
         self._rail_shapes_from_object_id = defaultdict(list)
         self._signal_shapes_from_object_id = defaultdict(list)
 
-        self._rail_shape_list = arcade.ShapeElementList()
-        self._signal_shape_list = arcade.ShapeElementList()
+        self._rail_shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
+        self._signal_shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
 
         self._rails_being_built: set[Rail] = set()
-        self.rails_being_built_shape_element_list = arcade.ShapeElementList()
-        self.iron_shape_element_list = arcade.ShapeElementList()
+        self.rails_being_built_shape_element_list: arcade.ShapeElementList = (
+            arcade.ShapeElementList()
+        )
+        self.iron_shape_element_list: arcade.ShapeElementList = (
+            arcade.ShapeElementList()
+        )
 
-        self.highlight_shape_element_list = arcade.ShapeElementList()
+        self.highlight_shape_element_list: arcade.ShapeElementList = (
+            arcade.ShapeElementList()
+        )
 
         self._train_drawer = TrainDrawer()
 
@@ -277,7 +283,7 @@ class Drawer:
         self.iron_shape_element_list.append(filled_rectangle)
         self.iron_shape_element_list.append(rectangle_outline)
 
-    def _remove_iron(self, position: tuple[int, int], amount: int):
+    def _remove_iron(self, position: Vec2, amount: int):
         for _ in range(amount):
             filled_rectangle = self.iron_shapes_from_position[position].pop()
             rectangle_outline = self.iron_shapes_from_position[position].pop()

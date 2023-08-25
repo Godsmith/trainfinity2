@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from math import pi
 import math
-from typing import Iterator, Sequence
+from typing import Sequence
 from pyglet.math import Vec2
 
 from .constants import GRID_BOX_SIZE
@@ -34,7 +34,7 @@ class PointAndAngle(NamedTuple):
 
 def _find_equidistant_points_and_angles_along_line(
     line_points: Sequence[Vec2], n: int, distance: float
-) -> list[Vec2]:
+) -> list[PointAndAngle]:
     """Returns n positions with equal distance along the provided line set of positions.
 
     If the provided line is not long enough for the number of points requested, all
@@ -42,7 +42,7 @@ def _find_equidistant_points_and_angles_along_line(
 
     line_points = deque(line_points)
     current_position = line_points.popleft()
-    equidistant_points_and_angles = []
+    equidistant_points_and_angles: list[PointAndAngle] = []
     distance_left_to_next_equidistant_point = distance
     while len(equidistant_points_and_angles) < n:
         if not line_points:
@@ -78,8 +78,8 @@ class Train(Subject):
     signal_controller: SignalController
     x: float = field(init=False)
     y: float = field(init=False)
-    target_x: int = field(init=False)
-    target_y: int = field(init=False)
+    target_x: float = field(init=False)
+    target_y: float = field(init=False)
     current_rail: Rail | None = None
     wagons: list[Wagon] = field(init=False)
     selected = False
@@ -97,8 +97,8 @@ class Train(Subject):
         self.target_x = self.x
         self.target_y = self.y
         self._target_station = self.first_station
-        self._rails_on_route = []
-        self._position_history = deque(
+        self._rails_on_route: list[Rail] | None = []
+        self._position_history: deque[Vec2] = deque(
             maxlen=4
         )  # TODO: needs to be more than number of wagons
         self._previous_targets_y = []
@@ -122,8 +122,8 @@ class Train(Subject):
             self.speed = min(self.speed, self.MAX_SPEED)
 
         pixels_to_move = delta_time * self.speed
-        dx = 0
-        dy = 0
+        dx = 0.0
+        dy = 0.0
         if self.x > self.target_x + pixels_to_move:
             dx = -pixels_to_move
         elif self.x < self.target_x - pixels_to_move:

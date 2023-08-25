@@ -1,8 +1,5 @@
 import arcade
 import pytest
-import trainfinity2.camera
-import trainfinity2.graphics.drawer
-import trainfinity2.gui
 from pyglet.math import Vec2
 from pytest import approx
 from trainfinity2.constants import SECONDS_BETWEEN_IRON_CREATION
@@ -154,7 +151,7 @@ class TestBuildingRail:
         assert len(game.grid.rails) == 1
 
     def test_building_horizontal_station(self, game: Game):
-        mine = game.grid._create_mine(Vec2(30, 30))
+        game.grid._create_mine(Vec2(30, 30))
         game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=75, y=15, dx=60, dy=0)
         game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
@@ -162,7 +159,7 @@ class TestBuildingRail:
         assert game.grid.stations == {Vec2(30, 0): Station(Vec2(30, 0))}
 
     def test_building_vertical_station(self, game: Game):
-        factory = game.grid._create_factory(Vec2(30, 30))
+        game.grid._create_factory(Vec2(30, 30))
         game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=15, y=75, dx=0, dy=60)
         game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
@@ -215,7 +212,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -236,7 +233,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -257,7 +254,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -290,7 +287,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -308,7 +305,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -326,7 +323,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S .-S-.
             """,
         )
@@ -346,7 +343,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -364,7 +361,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -395,7 +392,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -411,7 +408,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -426,7 +423,7 @@ class TestCreateTrain:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -575,7 +572,7 @@ class TestSelect:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -594,7 +591,7 @@ class TestSelect:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -611,7 +608,7 @@ class TestSelect:
             game,
             """
             . M . F .
-    
+
             .-S-.-S-.
             """,
         )
@@ -790,8 +787,8 @@ class TestTrainMovingAroundSignals:
         create_objects(
             game,
             r"""
-            .-.-.-.-.-. 
-            |         | 
+            .-.-.-.-.-.
+            |         |
             S-.-S-S-.-S
 
             M . M F . F
@@ -804,7 +801,7 @@ class TestTrainMovingAroundSignals:
         game.create_signals_at_click_position(15, 60)
         game.create_signals_at_click_position(165, 60)
         train = game._create_train(stations[0], stations[3])
-        train2 = game._create_train(stations[1], stations[2])
+        game._create_train(stations[1], stations[2])
 
         # Needs two updates because in the first update the train reaches the first
         # station, and in the second update it begins to move.

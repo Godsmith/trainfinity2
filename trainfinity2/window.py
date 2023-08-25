@@ -3,9 +3,7 @@
 import arcade
 from arcade import color
 
-from .graphics.drawer import Drawer
 from .game import Game
-from .model import Station
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600

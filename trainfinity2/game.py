@@ -62,7 +62,7 @@ class Game:
 
         self.frame_count = 0
         self.score_last_second = 0
-        self.score_increase_per_second_last_minute = deque(maxlen=60)
+        self.score_increase_per_second_last_minute: deque[int] = deque(maxlen=60)
         self.seconds_since_last_gui_figures_update = 0.0
 
     def setup(self, terrain: Terrain):

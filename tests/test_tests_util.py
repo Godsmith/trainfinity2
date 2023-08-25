@@ -1,6 +1,5 @@
-import pytest
 from pyglet.math import Vec2
-from trainfinity2.model import Factory, Mine, Rail, Signal, SignalColor, Station
+from trainfinity2.model import Factory, Mine, Rail, SignalColor, Station
 from trainfinity2.__main__ import Game
 
 from tests.util import create_objects
@@ -55,7 +54,7 @@ def test_create_diagonal_rail_2(game: Game):
 def test_create_multiple_rail(game: Game):
     map_ = r"""
 . .-. .
- /   \ 
+ /   \
 . . . .
 |     |
 . . . .
@@ -81,7 +80,7 @@ def test_create_objects(game: Game):
         game,
         """
     . M . F .
-     
+
     .-S-.hS-.""",
     )
 
