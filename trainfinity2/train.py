@@ -139,7 +139,6 @@ class Train(Subject):
 
         self.x += dx
         self.y += dy
-        self.angle = -(Vec2(dx, dy).heading * 360 / 2 / pi - 90)
 
         wagon_positions_and_angles = _find_equidistant_points_and_angles_along_line(
             [Vec2(self.x, self.y)] + list(self._position_history),
@@ -269,3 +268,8 @@ class Train(Subject):
         else:
             self.target_x = self.current_rail.x1
             self.target_y = self.current_rail.y1
+
+        dx = self.target_x - self.x
+        dy = self.target_y - self.y
+        angle = Vec2(dx, dy).heading * 360 / 2 / pi - 90
+        self.angle = -round(angle / 45.0) * 45.0
