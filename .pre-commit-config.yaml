@@ -26,6 +26,7 @@ repos:
         require_serial: true
         entry: python -m mypy
         types_or: [python, pyi]
+        stages: [pre-push]
     -   id: tests
         name: tests
         language: system
