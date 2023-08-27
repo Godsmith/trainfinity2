@@ -788,20 +788,15 @@ class TestTrainMovingAroundSignals:
             game,
             r"""
             .-.-.-.-.-.
-            |         |
-            S-.-S-S-.-S
+            v         v
+            Sh.-S-S-.hS
 
             M . M F . F
             """,
         )
         stations = list(game.grid.stations.values())
         game._create_train(stations[1], stations[2])
-        game.create_signals_at_click_position(30, 45)  # right of leftmost station
-        game.create_signals_at_click_position(150, 45)  # left of rightmost station
-        game.create_signals_at_click_position(15, 60)  # leftmost NS rail
-        game.create_signals_at_click_position(165, 60)  # rightmost NS rail
         train = game._create_train(stations[0], stations[3])
-        game._create_train(stations[1], stations[2])
 
         # Needs two updates because in the first update the train reaches the first
         # station, and in the second update it begins to move.
