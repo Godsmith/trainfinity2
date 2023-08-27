@@ -6,6 +6,7 @@ import math
 from typing import Sequence
 from pyglet.math import Vec2
 
+
 from .constants import GRID_BOX_SIZE
 from .grid import Grid
 from .model import Player, Rail, Station
@@ -76,6 +77,7 @@ class Train(Subject):
     second_station: Station
     grid: Grid
     signal_controller: SignalController
+    wagon_count: int
     x: float = field(init=False)
     y: float = field(init=False)
     target_x: float = field(init=False)
@@ -85,7 +87,7 @@ class Train(Subject):
     selected = False
     wait_timer: float = 0.0
     angle: float = 0
-    speed = 0.0  # Pixels per second
+    speed: float = 0.0  # Pixels per second
 
     MAX_SPEED = 120.0  # 60.0  # Pixels per second
     ACCELERATION = 40.0  # Pixels per second squared
@@ -98,15 +100,13 @@ class Train(Subject):
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route: list[Rail] | None = []
-        self._position_history: deque[Vec2] = deque(
-            maxlen=4
-        )  # TODO: needs to be more than number of wagons
+        # The position history needs to be approximately as long as the train,
+        # since it is used for reserving positions. As long as one wagon is
+        # approximately as long as a block, this will do.
+        self._position_history: deque[Vec2] = deque(maxlen=self.wagon_count + 1)
         self._previous_targets_y = []
         # TODO: wagons are now created on top of train
-        self.wagons = []
-        self.wagons.append(Wagon(self.x, self.y))
-        self.wagons.append(Wagon(self.x, self.y))
-        self.wagons.append(Wagon(self.x, self.y))
+        self.wagons = [Wagon(self.x, self.y) for _ in range(self.wagon_count)]
 
     @property
     def rails_on_route(self):
@@ -163,9 +163,7 @@ class Train(Subject):
         )
 
     def destroy(self):
-        train_and_wagon_ids = {id(obj) for obj in [self] + self.wagons}
-        for id_ in train_and_wagon_ids:
-            self.signal_controller.unreserve(id_)
+        self.signal_controller.reserve(id(self), set())
         self.notify(DestroyEvent())
 
     def is_colliding_with(self, train):
@@ -175,11 +173,7 @@ class Train(Subject):
         )
 
     def _can_reserve_position(self, position: Vec2) -> bool:
-        train_and_wagon_ids = {id(obj) for obj in [self] + self.wagons}
-        return (
-            not self.signal_controller.reserver(position)
-            or self.signal_controller.reserver(position) in train_and_wagon_ids
-        )
+        return self.signal_controller.reserver(position) in {id(self), None}
 
     def _stop_at_target_station(self):
         # Check factories before mines, or a the iron will
@@ -249,16 +243,9 @@ class Train(Subject):
         self._position_history.appendleft(Vec2(self.target_x, self.target_y))
         self._update_current_rail_and_target_xy(next_rail, self.target_x, self.target_y)
 
-        self.signal_controller.reserve(id(self), next_position)
-        for wagon in self.wagons:
-            # Kind of dangerous, an implementation change could
-            # mean that another train gets the chance to
-            # reserve the block before the wagon gets the chance
-            # to reserve it again
-            self.signal_controller.unreserve(id(wagon))
-            self.signal_controller.reserve(
-                id(wagon), self.grid.snap_to(wagon.x, wagon.y)
-            )
+        self.signal_controller.reserve(
+            id(self), [*self._position_history, next_position]
+        )
 
     def _update_current_rail_and_target_xy(self, next_rail: Rail, x, y):
         self.current_rail = next_rail

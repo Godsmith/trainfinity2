@@ -1,4 +1,6 @@
+from collections import defaultdict
 from dataclasses import dataclass
+from typing import Iterable
 
 from pyglet.math import Vec2
 
@@ -55,7 +57,9 @@ class SignalController:
         # self._signal_blocks: list[SignalBlock] = []
         self._signal_block_from_position: dict[Vec2, SignalBlock] = {}
         self._signals: list[Signal] = []
-        self._reserved_position_from_reserver_id: dict[int, Vec2] = {}
+        self._reserved_positions_from_reserver_id: dict[int, set[Vec2]] = defaultdict(
+            set
+        )
 
     def __repr__(self) -> str:
         return (
@@ -147,23 +151,16 @@ class SignalController:
     def reserver(self, position: Vec2) -> int | None:
         return self._signal_block_from_position[position].reserved_by
 
-    def reserve(self, reserver_id: int, position: Vec2):
-        """Called by trains when they enter a new rail. The correct blocks
-        are then reserved and unreserved."""
-        self._reserved_position_from_reserver_id[reserver_id] = position
-        self._update_signal_block_reservations()
-
-    def unreserve(self, reserver_id: int):
-        """Called by a train when it is destroyed."""
-        if reserver_id in self._reserved_position_from_reserver_id:
-            del self._reserved_position_from_reserver_id[reserver_id]
+    def reserve(self, reserver_id: int, positions: Iterable[Vec2]):
+        """Called by trains when they enter a new rail, or when they are destroyed."""
+        self._reserved_positions_from_reserver_id[reserver_id] = set(positions)
         self._update_signal_block_reservations()
 
     def _update_signal_block_reservations(self):
         for signal_block in self._signal_blocks:
             signal_block.reserved_by = None
-            for id_, position in self._reserved_position_from_reserver_id.items():
-                if position in signal_block.positions:
+            for id_, positions in self._reserved_positions_from_reserver_id.items():
+                if positions & signal_block.positions:
                     signal_block.reserved_by = id_
         self._update_signals()
 

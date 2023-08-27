@@ -828,3 +828,93 @@ class TestTrainMovingAroundSignals:
         train.destroy()
 
         assert game.signal_controller._signal_blocks[0].reserved_by is None
+
+
+class TestReserveAndUnreserveRail:
+    def test_train_reserves_block_when_moving(self, game: Game):
+        """Sends a train right and asserts that it stops reserving the first block
+        and begins to reserve the other instead."""
+        create_objects(
+            game,
+            """
+            . M . F .
+
+            .-S-.-S-.
+            """,
+        )
+        train = game._create_train(*game.grid.stations.values())
+        game.on_update(1 / 60)
+
+        assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
+
+    def test_a_train_without_wagons_reserves_both_blocks_when_leaving(self, game: Game):
+        """Sends a train right and asserts that eventually it reserves both blocks"""
+        create_objects(
+            game,
+            """
+            . M . F .
+
+            .-Sh.-S-.
+            """,
+        )
+        train = game._create_train(*game.grid.stations.values(), wagon_count=0)
+        game.on_update(1 / 60)
+        left_signal_block = game.signal_controller._signal_block_from_position[
+            Vec2(30, 0)
+        ]
+        right_signal_block = game.signal_controller._signal_block_from_position[
+            Vec2(120, 0)
+        ]
+        assert left_signal_block.reserved_by == id(train)
+        while not right_signal_block.reserved_by:
+            game.on_update(1 / 60)
+
+        assert left_signal_block.reserved_by == id(train)
+        assert right_signal_block.reserved_by == id(train)
+
+    def test_a_train_without_wagons_eventually_unreserves_first_block(self, game: Game):
+        """Sends a train right and asserts that eventually it reserves both blocks"""
+        create_objects(
+            game,
+            """
+            . M . F .
+
+            .-Sh.-S-.
+            """,
+        )
+        train = game._create_train(*game.grid.stations.values(), wagon_count=0)
+        game.on_update(1 / 60)
+        left_signal_block = game.signal_controller._signal_block_from_position[
+            Vec2(30, 0)
+        ]
+        right_signal_block = game.signal_controller._signal_block_from_position[
+            Vec2(120, 0)
+        ]
+        while left_signal_block.reserved_by == id(train):
+            game.on_update(1 / 60)
+
+        assert right_signal_block.reserved_by == id(train)
+
+    def test_a_train_with_one_wagon_can_reserve_two_signal_blocks(self, game: Game):
+        """Sends a train right and asserts that it eventually reserves both blocks"""
+        create_objects(
+            game,
+            """
+            . M . F .
+
+            .-Sh.-S-.
+            """,
+        )
+        train = game._create_train(*game.grid.stations.values(), wagon_count=1)
+
+        game.on_update(1 / 60)
+        assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
+
+        while not game.signal_controller._signal_blocks[1].reserved_by:
+            game.on_update(1 / 60)
+
+        assert (
+            game.signal_controller._signal_blocks[1].reserved_by
+            == game.signal_controller._signal_blocks[0].reserved_by
+            == id(train)
+        )

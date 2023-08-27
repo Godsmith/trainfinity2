@@ -207,9 +207,16 @@ class Game:
             signal.add_observer(self.drawer, ChangeEvent)
         return signals
 
-    def _create_train(self, station1: Station, station2: Station):
+    def _create_train(
+        self, station1: Station, station2: Station, *, wagon_count: int = 3
+    ):
         train = Train(
-            self.player, station1, station2, self.grid, self.signal_controller
+            self.player,
+            station1,
+            station2,
+            self.grid,
+            self.signal_controller,
+            wagon_count=wagon_count,
         )
         self.trains.append(train)
         train.add_observer(self, DestroyEvent)

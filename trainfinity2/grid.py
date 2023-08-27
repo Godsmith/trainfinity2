@@ -138,13 +138,13 @@ class Grid(Subject):
     def _create_factories(self):
         self._create_factory_in_random_unoccupied_location()
 
-    def snap_to(self, x, y) -> Vec2:
+    def snap_to(self, x: float, y: float) -> Vec2:
         return Vec2(self.snap_to_x(x), self.snap_to_y(y))
 
-    def snap_to_x(self, x) -> int:
+    def snap_to_x(self, x: float) -> int:
         return math.floor(x / GRID_BOX_SIZE) * GRID_BOX_SIZE
 
-    def snap_to_y(self, y) -> int:
+    def snap_to_y(self, y: float) -> int:
         return math.floor(y / GRID_BOX_SIZE) * GRID_BOX_SIZE
 
     def find_route_between_stations(
