@@ -49,9 +49,6 @@ class _TrainPlacer:
 
 class Game:
     def __init__(self):
-        self.horizontal_grid_lines = []
-        self.vertical_grid_lines = []
-
         self.is_mouse1_pressed = False
         self.mouse1_pressed_x = 0
         self.mouse1_pressed_y = 0
