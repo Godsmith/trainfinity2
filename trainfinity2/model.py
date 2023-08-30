@@ -1,11 +1,11 @@
 from dataclasses import dataclass, replace
 from enum import Enum, auto
+from typing import Callable
 
 from pyglet.math import Vec2
 
 from .gui import Gui
 from .observer import ChangeEvent, Event, Subject
-from .protocols import GridEnlarger
 
 
 @dataclass
@@ -80,7 +80,7 @@ def get_level_scores() -> list[int]:
 @dataclass
 class Player:
     gui: Gui
-    grid_enlarger: GridEnlarger
+    enlarge_grid: Callable[[], None]
     _score: int = 0
     _level = 0
 
@@ -98,7 +98,7 @@ class Player:
         self._score = value
         while self._score >= self.LEVELS[self._level + 1]:
             self._level += 1
-            self.grid_enlarger.enlarge_grid()
+            self.enlarge_grid()
         self.gui.update_score(value, self._level, self.score_to_grid_increase())
 
 

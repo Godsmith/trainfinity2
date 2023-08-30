@@ -17,20 +17,8 @@ def mock_gui():
 
 
 @pytest.fixture
-def mock_drawer():
-    class MockDrawer:
-        def __init__(self, width, height) -> None:
-            pass
-
-        def enlarge_grid(self):
-            pass
-
-    return MockDrawer
-
-
-@pytest.fixture
-def player(mock_gui, mock_drawer):
-    return Player(mock_gui(), mock_drawer(800, 600))
+def player(mock_gui):
+    return Player(mock_gui(), lambda: None)
 
 
 @pytest.fixture

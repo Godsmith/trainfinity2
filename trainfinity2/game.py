@@ -79,7 +79,7 @@ class Game:
         self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
         self.grid.create_buildings()
 
-        self.player = Player(self.gui, self.grid)
+        self.player = Player(self.gui, self.enlarge_grid)
 
         self.iron_counter = 0
 
@@ -297,3 +297,7 @@ class Game:
         self.camera.resize(width, height)
         self.gui_camera.resize(width, height)
         self.camera.set_viewport()
+
+    def enlarge_grid(self):
+        self.grid.enlarge_grid()
+        self.drawer.upsert(self.grid)

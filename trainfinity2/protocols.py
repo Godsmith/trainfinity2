@@ -6,11 +6,6 @@ if typing.TYPE_CHECKING:
     from trainfinity2.model import Rail  # pragma: no cover
 
 
-class GridEnlarger(Protocol):
-    def enlarge_grid(self):
-        raise NotImplementedError
-
-
 class RailCollection(Protocol):
     rails: list["Rail"]
 
