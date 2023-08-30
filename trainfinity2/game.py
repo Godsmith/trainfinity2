@@ -69,7 +69,8 @@ class Game:
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
-        self.gui = Gui()
+        self.gui_camera = Camera()
+        self.gui = Gui(self.gui_camera)
 
         self.trains: list[Train] = []
 
@@ -98,7 +99,6 @@ class Game:
             for mine in self.grid.mines.values():
                 mine.add_iron()
             self.iron_counter = 0
-
         self._update_gui_figures(delta_time)
 
         for train in self.trains:
@@ -142,7 +142,6 @@ class Game:
             self.is_mouse2_pressed = True
             self.camera_position_when_mouse2_pressed = self.camera.position
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            x, y = self.camera.to_world_coordinates(x, y)
             self.mouse1_pressed_x = x
             self.mouse1_pressed_y = y
             self.is_mouse1_pressed = True
@@ -156,15 +155,19 @@ class Game:
         )
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        x, y = self.camera.to_world_coordinates(x, y)
         if button == arcade.MOUSE_BUTTON_RIGHT:
+            self.is_mouse2_pressed = False
             if self._is_click(self.mouse2_pressed_x, self.mouse2_pressed_y, x, y):
                 self.on_right_click(x, y)
-            self.is_mouse2_pressed = False
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            if self._is_click(self.mouse1_pressed_x, self.mouse1_pressed_y, x, y):
-                self.on_left_click(x, y)
             self.is_mouse1_pressed = False
+            if self._is_click(
+                self.mouse1_pressed_x,
+                self.mouse1_pressed_y,
+                x,
+                y,
+            ):
+                self.on_left_click(x, y)
             self.grid.release_mouse_button()
 
     def on_left_click(self, x, y):
@@ -173,8 +176,10 @@ class Game:
             for train in self.trains:
                 train.selected = False
             return
-        elif self.gui.mode == Mode.TRAIN:
-            if station := self.grid.get_station(x, y):
+
+        world_x, world_y = self.camera.to_world_coordinates(x, y)
+        if self.gui.mode == Mode.TRAIN:
+            if station := self.grid.get_station(world_x, world_y):
                 if not self._train_placer.session:
                     self._train_placer.start_session(station)
                 else:
@@ -187,13 +192,13 @@ class Game:
                     self._train_placer.stop_session()
         elif self.gui.mode == Mode.SELECT:
             for train in self.trains:
-                if train.is_at(x, y):
+                if train.is_at(world_x, world_y):
                     train.selected = True
                     return
                 else:
                     train.selected = False
         elif self.gui.mode == Mode.SIGNAL:
-            self.create_signals_at_click_position(x, y)
+            self.create_signals_at_click_position(world_x, world_y)
 
     def create_signals_at_click_position(self, x, y) -> list[Signal]:
         signals = self.grid.create_signals_at_click_position(x, y)
@@ -237,9 +242,16 @@ class Game:
         if self.is_mouse2_pressed:
             self._on_mouse_move_when_mouse_2_pressed(x, y)
         elif self.is_mouse1_pressed:
-            x, y = self.camera.to_world_coordinates(x, y)
+            world_x, world_y = self.camera.to_world_coordinates(x, y)
+            pressed_world_x, pressed_world_y = self.camera.to_world_coordinates(
+                self.mouse1_pressed_x, self.mouse1_pressed_y
+            )
             self.grid.click_and_drag(
-                x, y, self.mouse1_pressed_x, self.mouse1_pressed_y, self.gui.mode
+                world_x,
+                world_y,
+                pressed_world_x,
+                pressed_world_y,
+                self.gui.mode,
             )
 
         elif self.gui.mode == Mode.TRAIN and self._train_placer.session:
@@ -258,7 +270,6 @@ class Game:
     def _on_mouse_move_when_mouse_2_pressed(self, x, y):
         delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)
         delta = delta.scale(self.camera.scale)
-        previous_camera_position = self.camera.position
         new_position = self.camera_position_when_mouse2_pressed - delta
         min_x = -self.camera.viewport_width / 2
         max_x = GRID_WIDTH + min_x
@@ -269,8 +280,6 @@ class Game:
         new_position = Vec2(new_position.x, max(min_y, new_position.y))
         new_position = Vec2(new_position.x, min(max_y, new_position.y))
         self.camera.move(new_position)
-        camera_dx, camera_dy = new_position - previous_camera_position
-        self.gui.pan(camera_dx, camera_dy)
 
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         scale_delta = 0.1 if scroll_y < 0 else -0.1
@@ -280,8 +289,7 @@ class Game:
 
         self.camera.scale = new_scale
 
-        self.gui.refresh()
-
     def on_resize(self, width, height):
-        self.camera = Camera()
-        self.gui.refresh()
+        self.camera.resize(width, height)
+        self.gui_camera.resize(width, height)
+        self.camera.set_viewport()

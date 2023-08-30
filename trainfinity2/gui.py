@@ -4,6 +4,8 @@ from enum import Enum, auto
 import arcade
 from arcade import color
 
+from trainfinity2.camera import Camera
+
 SELECTED_BOX_BACKGROUND_COLOR = color.WHITE
 DESELECTED_BOX_BACKGROUND_COLOR = color.GRAY
 BOX_TEXT_COLOR = color.BLACK
@@ -23,7 +25,8 @@ class Mode(Enum):
 
 
 class Gui:
-    def __init__(self) -> None:
+    def __init__(self, camera: Camera) -> None:
+        self.camera = camera
         self.boxes = [
             Box("SELECT", Mode.SELECT),
             Box("RAIL", Mode.RAIL),
@@ -66,9 +69,10 @@ class Gui:
         self.refresh()
 
     def draw(self):
-        self._shape_element_list.draw()
-        self._sprite_list.draw()
-        self._text_sprite_list.draw()
+        with self.camera:
+            self._shape_element_list.draw()
+            self._sprite_list.draw()
+            self._text_sprite_list.draw()
 
     def pan(self, dx, dy):
         self._sprite_list.move(dx, dy)
@@ -76,15 +80,16 @@ class Gui:
         self._shape_element_list.move(dx, dy)
 
     def refresh(self):
-        """Recreates the boxes. Necessary for example after zooming and after
-        changing color of the boxes when switching active mode."""
-        self._shape_element_list = arcade.ShapeElementList()
-        self._sprite_list = arcade.SpriteList()
-        for i, box in enumerate(self.boxes):
-            self._create_box(box, i)
+        with self.camera:
+            """Recreates the boxes. Necessary for example after zooming and after
+            changing color of the boxes when switching active mode."""
+            self._shape_element_list = arcade.ShapeElementList()
+            self._sprite_list = arcade.SpriteList()
+            for i, box in enumerate(self.boxes):
+                self._create_box(box, i)
 
-        self._refresh_fps_sprite()
-        self._refresh_score_sprite()
+            self._refresh_fps_sprite()
+            self._refresh_score_sprite()
 
     def _is_inside(self, x, y, index):
         left, _, bottom, _ = arcade.get_viewport()
@@ -95,12 +100,13 @@ class Gui:
 
     def on_left_click(self, x, y):
         """Returns True if the event was handled, False otherwise."""
-        if self._enabled:
-            for i, box in enumerate(self.boxes):
-                if self._is_inside(x, y, i):
-                    self.mode = box.mode
-                    return True
-        return False
+        with self.camera:
+            if self._enabled:
+                for i, box in enumerate(self.boxes):
+                    if self._is_inside(x, y, i):
+                        self.mode = box.mode
+                        return True
+            return False
 
     def _create_box(self, box: Box, index: int):
         left, _, bottom, _ = arcade.get_viewport()
@@ -134,12 +140,14 @@ class Gui:
         )
 
     def update_fps_number(self, fps: int):
-        self._fps = fps
-        self._refresh_fps_sprite()
+        with self.camera:
+            self._fps = fps
+            self._refresh_fps_sprite()
 
     def update_score_per_minute(self, value: int):
-        self._score_per_minute = value
-        self._refresh_score_per_minute_sprite()
+        with self.camera:
+            self._score_per_minute = value
+            self._refresh_score_per_minute_sprite()
 
     def _refresh_fps_sprite(self):
         _, right, _, top = arcade.get_viewport()
@@ -168,10 +176,11 @@ class Gui:
         self._text_sprite_list.append(sprite)
 
     def update_score(self, score: int, level: int, score_to_next_level: int):
-        self._score = score
-        self._level = level
-        self._score_to_next_level = score_to_next_level
-        self._refresh_score_sprite()
+        with self.camera:
+            self._score = score
+            self._level = level
+            self._score_to_next_level = score_to_next_level
+            self._refresh_score_sprite()
 
     def _refresh_score_sprite(self):
         _, right, _, top = arcade.get_viewport()

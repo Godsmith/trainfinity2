@@ -10,17 +10,30 @@ class Camera:
             self.original_bottom,
             self.original_top,
         ) = arcade.get_viewport()
+        self.left = self.original_left
+        self.right = self.original_right
+        self.bottom = self.original_bottom
+        self.top = self.original_top
+        self._old_viewport = (0, 0, 0, 0)
+        self._is_active = False
+
+    def __enter__(self):
+        if not self._is_active:
+            self._old_viewport = arcade.get_viewport()
+            self._is_active = True
+            self.set_viewport()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        arcade.set_viewport(*self._old_viewport)
+        self._is_active = False
 
     @property
     def position(self):
-        x, _, y, _ = arcade.get_viewport()
-        return Vec2(x, y)
+        return Vec2(self.left, self.bottom)
 
     @property
     def scale(self):
-        left, right, _, _ = arcade.get_viewport()
-
-        return (right - left) / (self.original_right - self.original_left)
+        return (self.right - self.left) / (self.original_right - self.original_left)
 
     @scale.setter
     def scale(self, number):
@@ -28,17 +41,15 @@ class Camera:
         new_width = original_width * number
         original_height = self.original_top - self.original_bottom
         new_height = original_height * number
-        left, right, bottom, top = arcade.get_viewport()
-        width_difference = (right - left) - new_width
-        height_difference = (top - bottom) - new_height
+        width_difference = (self.right - self.left) - new_width
+        height_difference = (self.top - self.bottom) - new_height
 
-        # arcade.set_viewport(left, left + new_width, bottom, bottom + new_height)
-        arcade.set_viewport(
-            left + width_difference / 2,
-            right - width_difference / 2,
-            bottom + height_difference / 2,
-            top - height_difference / 2,
-        )
+        self.left += width_difference / 2
+        self.right -= width_difference / 2
+        self.bottom += height_difference / 2
+        self.top -= height_difference / 2
+
+        self.set_viewport()
 
     @property
     def viewport_width(self):
@@ -51,9 +62,12 @@ class Camera:
         return top - bottom
 
     def move(self, position: Vec2):
-        left, right, bottom, top = arcade.get_viewport()
-        dx, dy = position - Vec2(left, bottom)
-        arcade.set_viewport(left + dx, right + dx, bottom + dy, top + dy)
+        dx, dy = position - Vec2(self.left, self.bottom)
+        self.left = self.left + dx
+        self.right = self.right + dx
+        self.bottom = self.bottom + dy
+        self.top = self.top + dy
+        self.set_viewport()
 
     def to_world_coordinates(self, x, y) -> tuple[int, int]:
         """Convert a position x, y in the current window to world coordinates."""
@@ -63,3 +77,14 @@ class Camera:
         return int(left + (right - left) * relative_x), int(
             bottom + (top - bottom) * relative_y
         )
+
+    def set_viewport(self):
+        arcade.set_viewport(self.left, self.right, self.bottom, self.top)
+
+    def resize(self, width, height):
+        # Currently, the zoom always resets when resizing
+        self.right = self.left + width
+        self.top = self.bottom + height
+        self.original_right = width
+        self.original_top = height
+        self.set_viewport()

@@ -152,6 +152,7 @@ class TestBuildingRail:
 
     def test_building_horizontal_station(self, game: Game):
         game.grid._create_mine(Vec2(30, 30))
+        game.gui.disable()
         game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=75, y=15, dx=60, dy=0)
         game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
