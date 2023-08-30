@@ -199,6 +199,8 @@ class Game:
                     train.selected = False
         elif self.gui.mode == Mode.SIGNAL:
             self.create_signals_at_click_position(world_x, world_y)
+        elif self.gui.mode == Mode.DESTROY:
+            self.grid.remove_rail(Vec2(world_x, world_y))
 
     def create_signals_at_click_position(self, x, y) -> list[Signal]:
         signals = self.grid.create_signals_at_click_position(x, y)

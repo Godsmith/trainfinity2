@@ -449,7 +449,7 @@ class TestCreateTrain:
         assert len(game.trains) == 1
 
 
-def test_clicking_position_in_destroy_mode_destroys_station_and_rail(
+def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
     game,
 ):
     create_objects(
@@ -470,6 +470,23 @@ def test_clicking_position_in_destroy_mode_destroys_station_and_rail(
 
     assert len(game.grid.stations) == 1
     assert len(game.grid.rails) == 2
+
+
+def test_clicking_in_destroy_mode_destroys_rail(game: Game):
+    create_objects(
+        game,
+        """
+        .-.-.
+        """,
+    )
+    game.gui.mode = Mode.DESTROY
+    game.gui.disable()
+
+    assert len(game.grid.rails) == 2
+
+    game.on_left_click(15, 15)
+
+    assert len(game.grid.rails) == 1
 
 
 def test_iron_is_regularly_added_to_mines(game):

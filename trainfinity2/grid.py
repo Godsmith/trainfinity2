@@ -229,6 +229,7 @@ class Grid(Subject):
             self.remove_rail(Vec2(x, y))
 
     def remove_rail(self, position: Vec2):
+        position = self.snap_to(*position)
         new_rails = []
         for rail in self.rails:
             if rail.is_at_position(position):
