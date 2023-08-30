@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Collection, Iterable
 
 import arcade
-from arcade import color
+from arcade import Shape, color
 from pyglet.math import Vec2
 
 from trainfinity2.graphics.rail_shapes import get_rail_shapes
@@ -42,7 +42,7 @@ class _ShapeElementList:
     if trying to draw an empty list."""
 
     def __init__(self) -> None:
-        self._list = arcade.ShapeElementList()
+        self._list = arcade.ShapeElementList[Shape]()
 
     def __len__(self) -> int:
         return len(self._list)
@@ -119,7 +119,7 @@ class Drawer:
         del self._signal_shapes_from_object_id[id(object)]
 
     def _create_grid(self, grid: Grid):
-        self._grid_shape_list = arcade.ShapeElementList()
+        self._grid_shape_list = _ShapeElementList()
         for x in range(grid.left, grid.right + 1, GRID_BOX_SIZE):
             self._grid_shape_list.append(
                 arcade.create_line(
@@ -310,7 +310,7 @@ class Drawer:
 
     def _show_rails_being_built(self, rails: set[Rail]):
         if rails != self._rails_being_built:
-            self.rails_being_built_shape_element_list = arcade.ShapeElementList()
+            self.rails_being_built_shape_element_list = _ShapeElementList()
             for rail in rails:
                 color = (
                     BUILDING_RAIL_COLOR if rail.legal else BUILDING_ILLEGAL_RAIL_COLOR
@@ -325,7 +325,7 @@ class Drawer:
             self._add_rail_shape(rail_shape, rail)
 
     def highlight(self, positions: Iterable[Vec2]):
-        self.highlight_shape_element_list = arcade.ShapeElementList()
+        self.highlight_shape_element_list = _ShapeElementList()
         for position in positions:
             shape = arcade.create_rectangle_filled(
                 position.x + GRID_BOX_SIZE / 2,

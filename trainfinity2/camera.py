@@ -14,7 +14,7 @@ class Camera:
         self.right = self.original_right
         self.bottom = self.original_bottom
         self.top = self.original_top
-        self._old_viewport = (0, 0, 0, 0)
+        self._old_viewport = (0.0, 0.0, 0.0, 0.0)
         self._is_active = False
 
     def __enter__(self):
