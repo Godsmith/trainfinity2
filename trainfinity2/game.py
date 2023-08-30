@@ -267,6 +267,11 @@ class Game:
             else:
                 self.drawer.highlight([self._train_placer.session.station.position])
 
+        if self.gui.mode == Mode.DESTROY:
+            world_x, world_y = self.camera.to_world_coordinates(x, y)
+            world_x, world_y = self.grid.snap_to(world_x, world_y)
+            self.drawer.highlight([Vec2(world_x, world_y)])
+
     def _on_mouse_move_when_mouse_2_pressed(self, x, y):
         delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)
         delta = delta.scale(self.camera.scale)
