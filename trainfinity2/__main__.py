@@ -9,4 +9,5 @@ if __name__ == "__main__":
     game = Game()
     window = Window(game)
     game.setup(Terrain(water=[Vec2(0, 0)]))
+    # game.setup(Terrain())
     arcade.run()
