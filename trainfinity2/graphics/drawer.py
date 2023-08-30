@@ -36,11 +36,34 @@ from ..observer import ChangeEvent, CreateEvent, DestroyEvent, Event
 from ..train import Train
 
 
+class _ShapeElementList:
+    """Wrapper class for arcade.ShapeElementList that recreates the list
+    if the last element is removed, because the draw() method crashes
+    if trying to draw an empty list."""
+
+    def __init__(self) -> None:
+        self._list = arcade.ShapeElementList()
+
+    def __len__(self) -> int:
+        return len(self._list)
+
+    def append(self, obj: Any):
+        self._list.append(obj)
+
+    def remove(self, obj: Any):
+        self._list.remove(obj)
+        if not self._list:
+            self._list = arcade.ShapeElementList()
+
+    def draw(self):
+        self._list.draw()
+
+
 class Drawer:
     def __init__(self):
 
-        self._grid_shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
-        self._shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
+        self._grid_shape_list = _ShapeElementList()
+        self._shape_list = _ShapeElementList()
         self._sprite_list = arcade.SpriteList()
 
         # Needed to easily remove sprites and shapes
@@ -51,20 +74,15 @@ class Drawer:
         self._rail_shapes_from_object_id = defaultdict(list)
         self._signal_shapes_from_object_id = defaultdict(list)
 
-        self._rail_shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
-        self._signal_shape_list: arcade.ShapeElementList = arcade.ShapeElementList()
+        self._rail_shape_list = _ShapeElementList()
+        self._signal_shape_list = _ShapeElementList()
 
         self._rails_being_built: set[Rail] = set()
-        self.rails_being_built_shape_element_list: arcade.ShapeElementList = (
-            arcade.ShapeElementList()
-        )
-        self.iron_shape_element_list: arcade.ShapeElementList = (
-            arcade.ShapeElementList()
-        )
+        self.rails_being_built_shape_element_list = _ShapeElementList()
 
-        self.highlight_shape_element_list: arcade.ShapeElementList = (
-            arcade.ShapeElementList()
-        )
+        self.iron_shape_element_list = _ShapeElementList()
+
+        self.highlight_shape_element_list = _ShapeElementList()
 
         self._train_drawer = TrainDrawer()
 
@@ -289,10 +307,6 @@ class Drawer:
             rectangle_outline = self.iron_shapes_from_position[position].pop()
             self.iron_shape_element_list.remove(filled_rectangle)
             self.iron_shape_element_list.remove(rectangle_outline)
-        # Workaround for Arcade.py bug: If the last element in a ShapeElementList is removed,
-        # the draw() method crashes, so we have to recreate the list if it becomes empty.
-        if not self.iron_shape_element_list:
-            self.iron_shape_element_list = arcade.ShapeElementList()
 
     def _show_rails_being_built(self, rails: set[Rail]):
         if rails != self._rails_being_built:
