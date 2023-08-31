@@ -39,12 +39,19 @@ class TestRail:
         with pytest.raises(ValueError):
             rail.other_end(999, 999)
 
+    def test_rails_in_different_direction_are_equivalent(self):
+        rail1 = Rail(30, 60, 90, 120)
+        rail2 = Rail(90, 120, 30, 60)
+
+        assert rail1 == rail2
+        assert hash(rail1) == hash(rail2)
+
 
 @pytest.fixture
 def train(player, mock_grid: Grid):
-    station1 = Station(Vec2(0, 0))
-    station2 = Station(Vec2(30, 0))
-    mock_grid.create_rail([Rail(0, 0, 30, 0)])
+    station1 = Station((Vec2(0, 0),))
+    station2 = Station((Vec2(30, 0),))
+    mock_grid.create_rail({Rail(0, 0, 30, 0)})
     return Train(
         player, station1, station2, mock_grid, SignalController(), wagon_count=3
     )

@@ -9,7 +9,7 @@ from pyglet.math import Vec2
 from .camera import Camera
 from .constants import GRID_HEIGHT, GRID_WIDTH, SECONDS_BETWEEN_IRON_CREATION
 from .graphics.drawer import Drawer
-from .grid import Grid, RailsBeingBuiltEvent
+from .grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
 from .gui import Gui, Mode
 from .model import Player, Signal, Station
 from .observer import ChangeEvent, CreateEvent, DestroyEvent, Event
@@ -40,7 +40,7 @@ class _TrainPlacer:
 
     def start_session(self, station: Station):
         self._session = _TrainPlacerSession(station)
-        self.drawer.highlight([station.position])
+        self.drawer.highlight(station.positions)
 
     def stop_session(self):
         self._session = None
@@ -77,6 +77,7 @@ class Game:
         self.grid.add_observer(self.drawer, CreateEvent)
         self.grid.add_observer(self.drawer, DestroyEvent)
         self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
+        self.grid.add_observer(self.drawer, StationBeingBuiltEvent)
         self.grid.create_buildings()
 
         self.player = Player(self.gui, self.enlarge_grid)
@@ -165,7 +166,7 @@ class Game:
                 y,
             ):
                 self.on_left_click(x, y)
-            self.grid.release_mouse_button()
+            self.grid.release_mouse_button(self.gui.mode)
 
     def on_left_click(self, x, y):
         if self.gui.on_left_click(x, y):
@@ -182,7 +183,7 @@ class Game:
                 else:
                     first_station = self._train_placer.session.station
                     # If signal block for first station is reserved, do not create train
-                    if self.signal_controller.reserver(first_station.position):
+                    if self.signal_controller.reserver(first_station.positions[0]):
                         return
                     if self.grid.find_route_between_stations(first_station, station):
                         self._create_train(self._train_placer.session.station, station)
@@ -198,6 +199,7 @@ class Game:
             self.create_signals_at_click_position(world_x, world_y)
         elif self.gui.mode == Mode.DESTROY:
             self.grid.remove_rail(Vec2(world_x, world_y))
+            self.drawer.show_rails_to_be_destroyed(set())
 
     def create_signals_at_click_position(self, x, y) -> list[Signal]:
         signals = self.grid.create_signals_at_click_position(x, y)
@@ -264,12 +266,14 @@ class Game:
                     }
                     self.drawer.highlight(positions)
             else:
-                self.drawer.highlight([self._train_placer.session.station.position])
+                self.drawer.highlight(self._train_placer.session.station.positions)
 
         if self.gui.mode == Mode.DESTROY:
             world_x, world_y = self.camera.to_world_coordinates(x, y)
-            world_x, world_y = self.grid.snap_to(world_x, world_y)
-            self.drawer.highlight([Vec2(world_x, world_y)])
+            position = Vec2(*self.grid.snap_to(world_x, world_y))
+            self.drawer.show_rails_to_be_destroyed(
+                self.grid.rails_at_position(position)
+            )
 
     def _on_mouse_move_when_mouse_2_pressed(self, x, y):
         delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)

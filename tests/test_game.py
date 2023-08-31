@@ -10,14 +10,14 @@ from tests.util import create_objects
 
 def test_draw(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         . M . F .
 
         .-S-.-S-.
         """,
     )
-    game._create_train(*game.grid.stations.values())
+    game._create_train(*game.grid.station_from_position.values())
     # Mainly for code coverage
     game.trains[0].wagons[0].iron = 1
     game.on_draw()
@@ -123,6 +123,18 @@ class TestBuildingRail:
         assert len(game.grid.rails_being_built) == 0
         assert len(game.grid.rails) == 1
 
+    def test_building_rail_twice_only_creates_one_set_of_rail_shapes(self, game: Game):
+        for _ in range(2):
+            game.on_mouse_press(
+                x=100, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0
+            )
+            game.on_mouse_motion(x=130, y=100, dx=30, dy=0)
+            game.on_mouse_release(
+                x=130, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0
+            )
+
+        assert len(game.drawer._rail_shapes_from_object_id) == 1
+
     def test_cannot_build_rail_in_illegal_position(self, game: Game):
         game.grid.water = {Vec2(90, 90): Water(Vec2(90, 90))}
 
@@ -150,22 +162,49 @@ class TestBuildingRail:
 
         assert len(game.grid.rails) == 1
 
-    def test_building_horizontal_station(self, game: Game):
-        game.grid._create_mine(Vec2(30, 30))
-        game.gui.disable()
-        game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        game.on_mouse_motion(x=75, y=15, dx=60, dy=0)
-        game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(30, 0): Station(Vec2(30, 0))}
+class TestBuildingStations:
+    def test_building_horizontal_station(self, game: Game):
+        """
+        D: where the drag occurs
+        M: the mine
+        .....
+        .DDD.
+        .M...
+        """
+        game.grid._create_mine(Vec2(30, 0))
+        game.gui.mode = Mode.STATION
+        game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=105, y=45, dx=60, dy=0)
+        game.on_mouse_release(x=105, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+
+        positions = (Vec2(30, 30), Vec2(60, 30), Vec2(90, 30))
+
+        assert game.grid.station_from_position[Vec2(30, 30)] == Station(
+            positions=positions, east_west=True
+        )
 
     def test_building_vertical_station(self, game: Game):
-        game.grid._create_factory(Vec2(30, 30))
-        game.on_mouse_press(x=15, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        game.on_mouse_motion(x=15, y=75, dx=0, dy=60)
-        game.on_mouse_release(x=15, y=75, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        """
+        D: where the drag occurs
+        F: the factory
+        ...
+        .D.
+        .D.
+        FD.
+        ...
+        """
+        game.gui.mode = Mode.STATION
+        game.grid._create_factory(Vec2(0, 30))
+        game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=45, y=105, dx=0, dy=60)
+        game.on_mouse_release(x=45, y=105, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        assert game.grid.stations == {Vec2(0, 30): Station(Vec2(0, 30), False)}
+        positions = (Vec2(30, 30), Vec2(30, 60), Vec2(30, 90))
+
+        assert game.grid.station_from_position[Vec2(30, 30)] == Station(
+            positions=positions, east_west=False
+        )
 
 
 class TestGui:
@@ -192,7 +231,7 @@ class TestCreateTrain:
         self, game: Game
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -210,7 +249,7 @@ class TestCreateTrain:
 
     def test_clicking_station_in_train_mode_highlights_station(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -231,7 +270,7 @@ class TestCreateTrain:
         self, game: Game
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -252,7 +291,7 @@ class TestCreateTrain:
     @pytest.fixture
     def hover_over_connected_station(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -285,7 +324,7 @@ class TestCreateTrain:
 
     def test_clicking_two_connected_stations_creates_train(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -303,7 +342,7 @@ class TestCreateTrain:
 
     def test_clicking_two_connected_stations_removes_highlight(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -321,7 +360,7 @@ class TestCreateTrain:
 
     def test_clicking_two_unconnected_stations_does_not_create_train(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -341,7 +380,7 @@ class TestCreateTrain:
         self, game: Game
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -359,7 +398,7 @@ class TestCreateTrain:
     @pytest.fixture
     def two_trains(self, game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -390,7 +429,7 @@ class TestCreateTrain:
 
     # def test_destroying_the_rails_under_train_destroys_train(self, game: Game):
     #     create_objects(
-    #         game,
+    #         game.grid,
     #         """
     #         . M . F .
 
@@ -406,14 +445,14 @@ class TestCreateTrain:
 
     def test_destroying_rail_on_train_route_does_not_crash_game(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        game._create_train(*game.grid.stations.values())
+        game._create_train(*game.grid.station_from_position.values())
         train = game.trains[0]
         train.target_x = 30
         game.grid.remove_rail(Vec2(60, 0))
@@ -421,7 +460,7 @@ class TestCreateTrain:
 
     def test_cannot_create_train_in_reserved_signal_block(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
@@ -450,10 +489,10 @@ class TestCreateTrain:
 
 
 def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
-    game,
+    game: Game,
 ):
     create_objects(
-        game,
+        game.grid,
         """
         . M . F .
 
@@ -462,19 +501,19 @@ def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
     )
     game.gui.mode = Mode.DESTROY
 
-    assert len(game.grid.stations) == 2
+    assert len(game.grid.station_from_position) == 2
     assert len(game.grid.rails) == 4
 
     game.on_mouse_press(x=45, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
     game.on_mouse_motion(x=46, y=15, dx=1, dy=30)
 
-    assert len(game.grid.stations) == 1
+    assert len(game.grid.station_from_position) == 1
     assert len(game.grid.rails) == 2
 
 
 def test_clicking_in_destroy_mode_destroys_rail(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         .-.-.
         """,
@@ -491,7 +530,7 @@ def test_clicking_in_destroy_mode_destroys_rail(game: Game):
 
 def test_iron_is_regularly_added_to_mines(game):
     create_objects(
-        game,
+        game.grid,
         """
         . M . F .
 
@@ -510,30 +549,30 @@ def test_iron_is_regularly_added_to_mines(game):
 
 
 class TestTrainMoving:
-    def test_trains_are_moved_in_on_update(self, game):
+    def test_trains_are_moved_in_on_update(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        game._create_train(*game.grid.stations.values())
+        game._create_train(*game.grid.station_from_position.values())
         # For code coverage
         game.on_update(1 / 60)
 
     def test_train_speed_is_set_to_0_when_passing_corner(self, game: Game):
         """The train starts at 30,0 and the corner is at 60,0"""
         create_objects(
-            game,
+            game.grid,
             """
             . M S F
                 |
             .-S-. .
             """,
         )
-        train = game._create_train(*game.grid.stations.values())
+        train = game._create_train(*game.grid.station_from_position.values())
         # For code coverage
         game.on_update(1 / 60)
         game.on_update(1 / 60)
@@ -551,20 +590,20 @@ def test_fps_is_updated_every_second(game: Game):
 
 def test_train_picks_up_iron_from_mine(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         . M . F .
 
         .-S-.-S-.
         """,
     )
-    game._create_train(*game.grid.stations.values())
+    game._create_train(*game.grid.station_from_position.values())
     mine = game.grid.mines[Vec2(30, 30)]
     train = game.trains[0]
     mine.add_iron()
     train.x = 30
     train.target_x = 30
-    train._target_station = game.grid.stations[Vec2(30, 0)]
+    train._target_station = game.grid.station_from_position[Vec2(30, 0)]
     assert mine.iron == 1
     assert train.wagons[0].iron == 0
 
@@ -576,19 +615,19 @@ def test_train_picks_up_iron_from_mine(game: Game):
 
 def test_train_delivers_iron_to_factory_gives_score(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         . M . F .
 
         .-S-.-S-.
         """,
     )
-    game._create_train(*game.grid.stations.values())
+    game._create_train(*game.grid.station_from_position.values())
     train = game.trains[0]
     train.wagons[0].iron = 1
     train.x = 90
     train.target_x = 90
-    train._target_station = game.grid.stations[Vec2(90, 0)]
+    train._target_station = game.grid.station_from_position[Vec2(90, 0)]
 
     game.on_update(1 / 60)
 
@@ -603,17 +642,17 @@ def test_on_resize(game):
 
 class TestSelect:
     def test_clicking_outside_all_trains_in_select_mode_deselects_all_trains(
-        self, game
+        self, game: Game
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        game._create_train(*game.grid.stations.values())
+        game._create_train(*game.grid.station_from_position.values())
         game.gui.disable()
         game.gui.mode = Mode.SELECT
         train = game.trains[0]
@@ -623,16 +662,16 @@ class TestSelect:
 
         assert not train.selected
 
-    def test_clicking_gui_deselects_all_trains(self, game):
+    def test_clicking_gui_deselects_all_trains(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        game._create_train(*game.grid.stations.values())
+        game._create_train(*game.grid.station_from_position.values())
         train = game.trains[0]
         train.selected = True
 
@@ -640,16 +679,16 @@ class TestSelect:
 
         assert not train.selected
 
-    def test_clicking_a_train_selects_the_train(self, game):
+    def test_clicking_a_train_selects_the_train(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        game._create_train(*game.grid.stations.values())
+        game._create_train(*game.grid.station_from_position.values())
         game.gui.disable()
         game.gui.mode = Mode.SELECT
         train = game.trains[0]
@@ -663,7 +702,7 @@ class TestSelect:
 class TestSignals:
     def test_creating_signal_creates_two_signal_blocks(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             .-.h.-.
             """,
@@ -676,7 +715,7 @@ class TestSignals:
 
     def test_clicking_grid_in_signal_mode_creates_signal(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
         . M . F .
 
@@ -691,7 +730,7 @@ class TestSignals:
 
     def test_green_signal_colors_are_shown_for_adjacent_positions(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
         .-.h.-.
         """,
@@ -705,14 +744,14 @@ class TestSignals:
         self, game: Game
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F . . .
 
             .-S-.-S-.h.-.
             """,
         )
-        game._create_train(*game.grid.stations.values())
+        game._create_train(*game.grid.station_from_position.values())
 
         signal_to_the_west = game.grid.signals[(Vec2(120, 0), Rail(120, 0, 150, 0))]
         signal_to_the_east = game.grid.signals[(Vec2(150, 0), Rail(120, 0, 150, 0))]
@@ -727,7 +766,7 @@ class TestSignals:
 
     def test_signal_is_green_when_rail_loop(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             r"""
             . .-. .
              /   \
@@ -750,7 +789,7 @@ class TestSignals:
         game,
     ):
         create_objects(
-            game,
+            game.grid,
             """
         . M . F .
 
@@ -772,7 +811,7 @@ class TestSignals:
     ):
         """Removing a rail splits two signal blocks into three."""
         create_objects(
-            game,
+            game.grid,
             """
             . M . F . .
 
@@ -790,7 +829,7 @@ class TestSignals:
         game: Game,
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F . .
 
@@ -810,7 +849,7 @@ class TestSignals:
         game: Game,
     ):
         create_objects(
-            game,
+            game.grid,
             """
             . M . . F .
 
@@ -822,7 +861,7 @@ class TestSignals:
 class TestTrainMovingAroundSignals:
     def test_train_chooses_green_route(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             r"""
             .-.-.-.-.-.
             v         v
@@ -831,7 +870,7 @@ class TestTrainMovingAroundSignals:
             M . M F . F
             """,
         )
-        stations = list(game.grid.stations.values())
+        stations = list(game.grid.station_from_position.values())
         game._create_train(stations[1], stations[2])
         train = game._create_train(stations[0], stations[3])
 
@@ -845,14 +884,14 @@ class TestTrainMovingAroundSignals:
 
     def test_if_a_train_is_destroyed_the_signals_become_green(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        train = game._create_train(*game.grid.stations.values())
+        train = game._create_train(*game.grid.station_from_position.values())
         game.on_update(1 / 60)
 
         # Currently, the block can be reserved either by the train or
@@ -872,14 +911,14 @@ class TestReserveAndUnreserveRail:
         """Sends a train right and asserts that it stops reserving the first block
         and begins to reserve the other instead."""
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        train = game._create_train(*game.grid.stations.values())
+        train = game._create_train(*game.grid.station_from_position.values())
         game.on_update(1 / 60)
 
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
@@ -887,14 +926,16 @@ class TestReserveAndUnreserveRail:
     def test_a_train_without_wagons_reserves_both_blocks_when_leaving(self, game: Game):
         """Sends a train right and asserts that eventually it reserves both blocks"""
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-Sh.-S-.
             """,
         )
-        train = game._create_train(*game.grid.stations.values(), wagon_count=0)
+        train = game._create_train(
+            *game.grid.station_from_position.values(), wagon_count=0
+        )
         game.on_update(1 / 60)
         left_signal_block = game.signal_controller._signal_block_from_position[
             Vec2(30, 0)
@@ -912,14 +953,16 @@ class TestReserveAndUnreserveRail:
     def test_a_train_without_wagons_eventually_unreserves_first_block(self, game: Game):
         """Sends a train right and asserts that eventually it reserves both blocks"""
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-Sh.-S-.
             """,
         )
-        train = game._create_train(*game.grid.stations.values(), wagon_count=0)
+        train = game._create_train(
+            *game.grid.station_from_position.values(), wagon_count=0
+        )
         game.on_update(1 / 60)
         left_signal_block = game.signal_controller._signal_block_from_position[
             Vec2(30, 0)
@@ -935,14 +978,16 @@ class TestReserveAndUnreserveRail:
     def test_a_train_with_one_wagon_can_reserve_two_signal_blocks(self, game: Game):
         """Sends a train right and asserts that it eventually reserves both blocks"""
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-Sh.-S-.
             """,
         )
-        train = game._create_train(*game.grid.stations.values(), wagon_count=1)
+        train = game._create_train(
+            *game.grid.station_from_position.values(), wagon_count=1
+        )
 
         game.on_update(1 / 60)
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)

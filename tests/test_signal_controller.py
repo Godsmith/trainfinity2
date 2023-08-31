@@ -4,11 +4,11 @@ from trainfinity2.signal_controller import SignalController
 
 
 class Rails:
-    def __init__(self, rails: list[Rail]) -> None:
+    def __init__(self, rails: set[Rail]) -> None:
         self.rails = rails
 
     def rails_at_position(self, position: Vec2) -> set[Rail]:
-        return {rail for rail in self.rails if rail.is_at_position(position)}
+        return {rail for rail in self.rails if position in rail.positions}
 
 
 class TestCreateSignalBlocks:
@@ -17,7 +17,7 @@ class TestCreateSignalBlocks:
         rail1 = Rail(0, 0, 30, 0)
         rail2 = Rail(30, 0, 60, 0)
         rail3 = Rail(60, 0, 90, 0)
-        rails = Rails([rail1, rail2, rail3])
+        rails = Rails({rail1, rail2, rail3})
 
         signal1 = Signal(Vec2(30, 0), rail2)
         signal2 = Signal(Vec2(60, 0), rail2)

@@ -19,6 +19,7 @@ Box = namedtuple("Box", "text mode")
 class Mode(Enum):
     SELECT = auto()
     RAIL = auto()
+    STATION = auto()
     TRAIN = auto()
     SIGNAL = auto()
     DESTROY = auto()
@@ -30,6 +31,7 @@ class Gui:
         self.boxes = [
             Box("SELECT", Mode.SELECT),
             Box("RAIL", Mode.RAIL),
+            Box("STATION", Mode.STATION),
             Box("TRAIN", Mode.TRAIN),
             Box("SIGNAL", Mode.SIGNAL),
             Box("DESTROY", Mode.DESTROY),

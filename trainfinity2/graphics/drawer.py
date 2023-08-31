@@ -10,17 +10,18 @@ from trainfinity2.graphics.rail_shapes import get_rail_shapes
 from trainfinity2.graphics.train_drawer import TrainDrawer
 
 from ..constants import (
-    BUILDING_ILLEGAL_RAIL_COLOR,
     BUILDING_RAIL_COLOR,
     FINISHED_RAIL_COLOR,
+    BUILDING_ILLEGAL_RAIL_COLOR,
     GRID_BOX_SIZE,
     GRID_COLOR,
     GRID_LINE_WIDTH,
     HIGHLIGHT_COLOR,
     IRON_SIZE,
     PIXEL_OFFSET_PER_IRON,
+    RAIL_TO_BE_DESTROYED_COLOR,
 )
-from ..grid import Grid, RailsBeingBuiltEvent
+from ..grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
 from ..model import (
     Building,
     Factory,
@@ -58,6 +59,9 @@ class _ShapeElementList:
     def draw(self):
         self._list.draw()
 
+    def clear(self):
+        self._list = arcade.ShapeElementList()
+
 
 class Drawer:
     def __init__(self):
@@ -77,8 +81,14 @@ class Drawer:
         self._rail_shape_list = _ShapeElementList()
         self._signal_shape_list = _ShapeElementList()
 
+        self._previous_rails_to_be_marked_as_to_be_destroyed: set[Rail] = set()
+        self._rail_to_be_destroyed_shape_list = _ShapeElementList()
+
         self._rails_being_built: set[Rail] = set()
         self.rails_being_built_shape_element_list = _ShapeElementList()
+
+        self._station_being_built: Station | None = None
+        self.stations_being_built_shape_element_list = _ShapeElementList()
 
         self.iron_shape_element_list = _ShapeElementList()
 
@@ -158,34 +168,49 @@ class Drawer:
                 )
                 self._add_sprite(sprite, building)
             case Station():
-                self._create_station(building)
+                self._add_station(building)
 
-    def _create_station(self, station: Station):
-        ground_shape = arcade.create_rectangle_filled(
-            station.position.x + GRID_BOX_SIZE / 2,
-            station.position.y + GRID_BOX_SIZE / 2,
-            GRID_BOX_SIZE,
-            GRID_BOX_SIZE,
-            color.ASH_GREY,
+    def _get_station_shapes(self, station: Station, is_building: bool = False):
+        def set_alpha(color_: tuple[int, int, int]) -> tuple[int, int, int, int]:
+            alpha = 128 if is_building else 255
+            return (*color_, alpha)
+
+        shapes = []
+        for position in station.positions:
+            ground_shape = arcade.create_rectangle_filled(
+                position.x + GRID_BOX_SIZE / 2,
+                position.y + GRID_BOX_SIZE / 2,
+                GRID_BOX_SIZE,
+                GRID_BOX_SIZE,
+                set_alpha(color.ASH_GREY),
+            )
+            shapes.append(ground_shape)
+
+        house_position = Vec2(
+            (station.positions[0].x + station.positions[-1].x) / 2,
+            (station.positions[0].y + station.positions[-1].y) / 2,
         )
-        self._add_shape(ground_shape, station)
-        x = station.position.x + GRID_BOX_SIZE / 2
-        y = station.position.y + GRID_BOX_SIZE / 7
+        x = house_position.x + GRID_BOX_SIZE / 2
+        y = house_position.y + GRID_BOX_SIZE / 7
         width = GRID_BOX_SIZE * 3 / 4
         height = GRID_BOX_SIZE / 4
         if not station.east_west:
-            x = station.position.x + GRID_BOX_SIZE / 7
-            y = station.position.y + GRID_BOX_SIZE / 2
+            x = house_position.x + GRID_BOX_SIZE / 7
+            y = house_position.y + GRID_BOX_SIZE / 2
             width, height = height, width
-
         house_shape = arcade.create_rectangle_filled(
             x,
             y,
             width,
             height,
-            color.DARK_BROWN,
+            set_alpha(color.DARK_BROWN),
         )
-        self._add_shape(house_shape, station)
+        shapes.append(house_shape)
+        return shapes
+
+    def _add_station(self, station: Station):
+        for shape in self._get_station_shapes(station):
+            self._add_shape(shape, station)
 
     def _update_signal(self, signal: Signal):
         self._remove(signal)
@@ -268,6 +293,9 @@ class Drawer:
             case Grid(), RailsBeingBuiltEvent():
                 event = typing.cast(RailsBeingBuiltEvent, event)
                 self._show_rails_being_built(event.rails)
+            case Grid(), StationBeingBuiltEvent():
+                event = typing.cast(StationBeingBuiltEvent, event)
+                self._show_station_being_built(event.station, event.illegal_positions)
             case Factory() | Station(), CreateEvent():
                 self.upsert(object)
             case Signal(), CreateEvent() | ChangeEvent():
@@ -320,6 +348,27 @@ class Drawer:
                     self.rails_being_built_shape_element_list.append(rail_shape)
             self._rails_being_built = rails
 
+    def _show_station_being_built(
+        self, station: Station | None, illegal_positions: set[Vec2]
+    ):
+        if station != self._station_being_built:
+            self.stations_being_built_shape_element_list = _ShapeElementList()
+            if station:
+                station_shapes = self._get_station_shapes(station, True)
+                for station_shape in station_shapes:
+                    self.stations_being_built_shape_element_list.append(station_shape)
+                self._station_being_built = station
+            for position in illegal_positions:
+                red_box_shape = arcade.create_rectangle_filled(
+                    position.x + GRID_BOX_SIZE / 2,
+                    position.y + GRID_BOX_SIZE / 2,
+                    GRID_BOX_SIZE,
+                    GRID_BOX_SIZE,
+                    color=HIGHLIGHT_COLOR,
+                )
+                self.stations_being_built_shape_element_list.append(red_box_shape)
+            self._station_being_built = station
+
     def _create_rail(self, rail: Rail):
         for rail_shape in get_rail_shapes(rail, FINISHED_RAIL_COLOR):
             self._add_rail_shape(rail_shape, rail)
@@ -336,14 +385,24 @@ class Drawer:
             )
             self.highlight_shape_element_list.append(shape)
 
+    def show_rails_to_be_destroyed(self, rails: set[Rail]):
+        if rails != self._previous_rails_to_be_marked_as_to_be_destroyed:
+            self._rail_to_be_destroyed_shape_list.clear()
+            for rail in rails:
+                for shape in get_rail_shapes(rail, RAIL_TO_BE_DESTROYED_COLOR):
+                    self._rail_to_be_destroyed_shape_list.append(shape)
+        self._previous_rails_to_be_marked_as_to_be_destroyed = rails
+
     def draw(self):
         self._grid_shape_list.draw()
         self._shape_list.draw()
         self._sprite_list.draw()
         self._rail_shape_list.draw()
+        self._rail_to_be_destroyed_shape_list.draw()
         self._signal_shape_list.draw()
 
         self.rails_being_built_shape_element_list.draw()
+        self.stations_being_built_shape_element_list.draw()
         self.iron_shape_element_list.draw()
 
         self.highlight_shape_element_list.draw()

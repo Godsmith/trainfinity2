@@ -27,12 +27,15 @@ def find_route(
     while unvisited_position_distances_and_positions:
         _, current_position = heappop(unvisited_position_distances_and_positions)
         visited_positions.add(current_position)
-        if current_position == target_station.position:
+        if current_position == target_station.positions[0]:
             route: list[Rail] = []
             while current_position != initial_position:
                 rail = rail_in_shortest_route_from_position[current_position]
                 route.append(rail)
                 current_position = rail.other_end(*current_position)
+            # Make sure that the train always goes to the furthest end of the station
+            if not (set(route) & set(target_station.internal_rail)):
+                route = list(reversed(target_station.internal_rail)) + route
             return route[::-1]
 
         if first_iteration:

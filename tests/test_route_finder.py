@@ -8,14 +8,14 @@ from pyglet.math import Vec2
 class TestFindRoute:
     def test_find_route(self, game: Game):
         create_objects(
-            game,
+            game.grid,
             """
             . M . F .
 
             .-S-.-S-.
             """,
         )
-        station1, station2 = [*game.grid.stations.values()]
+        station1, station2 = [*game.grid.station_from_position.values()]
         game._create_train(station1, station2)
         assert find_route(
             game.grid.possible_next_rails_ignore_red_lights,

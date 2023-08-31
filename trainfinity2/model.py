@@ -1,11 +1,52 @@
 from dataclasses import dataclass, replace
 from enum import Enum, auto
+import functools
 from typing import Callable
 
 from pyglet.math import Vec2
 
+from trainfinity2.constants import GRID_BOX_SIZE
+from itertools import pairwise
+
 from .gui import Gui
 from .observer import ChangeEvent, Event, Subject
+
+
+@dataclass(frozen=True)
+class Rail:
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+    legal: bool = True  # Whether a rail tile that is currently being built can be built
+
+    def __eq__(self, other: object):
+        if isinstance(other, Rail):
+            return self.positions == other.positions
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(tuple(sorted(((self.x1, self.y1), (self.x2, self.y2)))))
+
+    def is_horizontal(self):
+        return self.y1 == self.y2
+
+    def is_vertical(self):
+        return self.x1 == self.x2
+
+    def to_illegal(self):
+        return replace(self, legal=False)
+
+    def other_end(self, x, y) -> Vec2:
+        if self.x1 == x and self.y1 == y:
+            return Vec2(self.x2, self.y2)
+        if self.x2 == x and self.y2 == y:
+            return Vec2(self.x1, self.y1)
+        raise ValueError("The provided coordinates was not at either end of the rail.")
+
+    @functools.cached_property
+    def positions(self) -> set[Vec2]:
+        return {Vec2(self.x1, self.y1), Vec2(self.x2, self.y2)}
 
 
 @dataclass
@@ -52,10 +93,41 @@ class Mine(Subject):
         return amount_taken
 
 
-@dataclass
+@dataclass(frozen=True)
 class Station:
-    position: Vec2
+    positions: tuple[Vec2, ...]
     east_west: bool = True
+
+    @functools.cached_property
+    def positions_before_and_after(self) -> tuple[Vec2, Vec2]:
+        if self.east_west:
+            positions = sorted(self.positions, key=lambda position: position.x)
+            return (
+                Vec2(positions[0].x - GRID_BOX_SIZE, positions[0].y),
+                Vec2(positions[-1].x + GRID_BOX_SIZE, positions[-1].y),
+            )
+        else:
+            positions = sorted(self.positions, key=lambda position: position.y)
+            return (
+                Vec2(positions[0].x, positions[0].y - GRID_BOX_SIZE),
+                Vec2(positions[-1].x, positions[-1].y + GRID_BOX_SIZE),
+            )
+
+    @functools.cached_property
+    def internal_rail(self) -> list[Rail]:
+        return [Rail(p1.x, p1.y, p2.x, p2.y) for p1, p2 in pairwise(self.positions)]
+
+    @functools.cached_property
+    def internal_and_external_rail(self) -> set[Rail]:
+        if self.east_west:
+            positions = sorted(self.positions, key=lambda position: position.x)
+        else:
+            positions = sorted(self.positions, key=lambda position: position.y)
+        pos1 = self.positions_before_and_after[0]
+        rail1 = Rail(pos1.x, pos1.y, positions[0].x, positions[0].y)
+        pos2 = self.positions_before_and_after[1]
+        rail2 = Rail(positions[-1].x, positions[-1].y, pos2.x, pos2.y)
+        return {rail1, rail2}.union(self.internal_rail)
 
 
 Building = Mine | Factory | Station
@@ -100,39 +172,6 @@ class Player:
             self._level += 1
             self.enlarge_grid()
         self.gui.update_score(value, self._level, self.score_to_grid_increase())
-
-
-@dataclass(frozen=True)
-class Rail:
-    x1: int
-    y1: int
-    x2: int
-    y2: int
-    legal: bool = True  # Whether a rail tile that is currently being built can be built
-
-    def is_horizontal(self):
-        return self.y1 == self.y2
-
-    def is_vertical(self):
-        return self.x1 == self.x2
-
-    def to_illegal(self):
-        return replace(self, legal=False)
-
-    def is_at_position(self, position: Vec2):
-        x, y = position
-        return (self.x1 == x and self.y1 == y) or (self.x2 == x and self.y2 == y)
-
-    def other_end(self, x, y) -> Vec2:
-        if self.x1 == x and self.y1 == y:
-            return Vec2(self.x2, self.y2)
-        if self.x2 == x and self.y2 == y:
-            return Vec2(self.x1, self.y1)
-        raise ValueError("The provided coordinates was not at either end of the rail.")
-
-    @property
-    def positions(self) -> set[Vec2]:
-        return {Vec2(self.x1, self.y1), Vec2(self.x2, self.y2)}
 
 
 class SignalColor(Enum):

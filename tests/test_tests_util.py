@@ -7,7 +7,7 @@ from tests.util import create_objects
 
 def test_create_horizontal_rail(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         .-.""",
     )
@@ -17,7 +17,7 @@ def test_create_horizontal_rail(game: Game):
 
 def test_create_vertical_rail(game: Game):
     create_objects(
-        game,
+        game.grid,
         r"""
          .
          |
@@ -29,7 +29,7 @@ def test_create_vertical_rail(game: Game):
 
 def test_create_diagonal_rail_1(game: Game):
     create_objects(
-        game,
+        game.grid,
         r"""
          . .
          ./.
@@ -41,7 +41,7 @@ def test_create_diagonal_rail_1(game: Game):
 
 def test_create_diagonal_rail_2(game: Game):
     create_objects(
-        game,
+        game.grid,
         r"""
          . .
           \
@@ -61,7 +61,7 @@ def test_create_multiple_rail(game: Game):
  \   /
 . .-. .
 """
-    create_objects(game, map_)
+    create_objects(game.grid, map_)
 
     assert set(game.grid.rails) == {
         Rail(x1=30, y1=0, x2=0, y2=30),
@@ -77,7 +77,7 @@ def test_create_multiple_rail(game: Game):
 
 def test_create_objects(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
     . M . F .
 
@@ -86,9 +86,9 @@ def test_create_objects(game: Game):
 
     assert game.grid.mines == {Vec2(30, 30): Mine(Vec2(30, 30))}
     assert game.grid.factories == {Vec2(90, 30): Factory(Vec2(90, 30))}
-    assert game.grid.stations == {
-        Vec2(90, 0): Station(Vec2(90, 0)),
-        Vec2(30, 0): Station(Vec2(30, 0)),
+    assert game.grid.station_from_position == {
+        Vec2(90, 0): Station((Vec2(90, 0),)),
+        Vec2(30, 0): Station((Vec2(30, 0),)),
     }
     signal_facing_west = game.grid.signals[(Vec2(60, 0), Rail(60, 0, 90, 0))]
     signal_facing_east = game.grid.signals[(Vec2(90, 0), Rail(60, 0, 90, 0))]
@@ -99,7 +99,7 @@ def test_create_objects(game: Game):
 
 def test_create_with_offset(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         . M
 
@@ -110,7 +110,7 @@ def test_create_with_offset(game: Game):
 
 def test_create_with_offset_and_last_line(game: Game):
     create_objects(
-        game,
+        game.grid,
         """
         . M
 

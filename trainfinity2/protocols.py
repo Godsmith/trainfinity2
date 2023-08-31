@@ -7,7 +7,7 @@ if typing.TYPE_CHECKING:
 
 
 class RailCollection(Protocol):
-    rails: list["Rail"]
+    rails: set["Rail"]
 
     def rails_at_position(self, position: Vec2) -> set["Rail"]:
         raise NotImplementedError

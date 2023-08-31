@@ -94,8 +94,9 @@ class Train(Subject):
 
     def __post_init__(self):
         super().__init__()
-        self.x = self.first_station.position.x
-        self.y = self.first_station.position.y
+        # TODO: probably not [0] here
+        self.x = self.first_station.positions[0].x
+        self.y = self.first_station.positions[0].y
         self.target_x = self.x
         self.target_y = self.y
         self._target_station = self.first_station
@@ -178,12 +179,12 @@ class Train(Subject):
     def _stop_at_target_station(self):
         # Check factories before mines, or a the iron will
         # instantly be transported to the factory
-        if self.grid.adjacent_factories(Vec2(self.x, self.y)):
+        if self.grid.adjacent_factories(self._target_station.positions):
             for wagon in self.wagons:
                 if wagon.iron:
                     self.player.score += wagon.iron
                     wagon.iron = 0
-        for mine in self.grid.adjacent_mines(Vec2(self.x, self.y)):
+        for mine in self.grid.adjacent_mines(self._target_station.positions):
             for wagon in self.wagons:
                 if mine.iron > 0 and wagon.iron == 0:
                     wagon.iron += mine.remove_iron(1)
@@ -198,8 +199,18 @@ class Train(Subject):
 
         self.speed = 0
 
+    def _has_reached_station(self):
+        if not _is_close(
+            Vec2(self.x, self.y), self._target_station.positions[0]
+        ) and not _is_close(Vec2(self.x, self.y), self._target_station.positions[-1]):
+            return False
+        return (
+            len(self._target_station.positions) == 1
+            or self.current_rail in self._target_station.internal_rail
+        )
+
     def _on_reached_target(self):
-        if _is_close(Vec2(self.x, self.y), self._target_station.position):
+        if self._has_reached_station():
             self._stop_at_target_station()
 
         current_position = Vec2(self.target_x, self.target_y)
