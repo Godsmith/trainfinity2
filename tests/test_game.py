@@ -509,18 +509,37 @@ def test_iron_is_regularly_added_to_mines(game):
     )  # One for the interior, one for the frame
 
 
-def test_trains_are_moved_in_on_update(game):
-    create_objects(
-        game,
-        """
-        . M . F .
+class TestTrainMoving:
+    def test_trains_are_moved_in_on_update(self, game):
+        create_objects(
+            game,
+            """
+            . M . F .
 
-        .-S-.-S-.
-        """,
-    )
-    game._create_train(*game.grid.stations.values())
-    # For code coverage
-    game.on_update(1 / 60)
+            .-S-.-S-.
+            """,
+        )
+        game._create_train(*game.grid.stations.values())
+        # For code coverage
+        game.on_update(1 / 60)
+
+    def test_train_speed_is_set_to_0_when_passing_corner(self, game: Game):
+        """The train starts at 30,0 and the corner is at 60,0"""
+        create_objects(
+            game,
+            """
+            . M S F
+                |
+            .-S-. .
+            """,
+        )
+        train = game._create_train(*game.grid.stations.values())
+        # For code coverage
+        game.on_update(1 / 60)
+        game.on_update(1 / 60)
+        while train.speed > 0:
+            game.on_update(1 / 60)
+        assert 59.0 < train.x < 61.0
 
 
 def test_fps_is_updated_every_second(game: Game):

@@ -246,6 +246,23 @@ class Train(Subject):
             id(self), [*self._position_history, next_position]
         )
 
+        # When just started. Might mean that there is no impact on speed for trains with
+        # no wagons, but that might be an acceptable edge case.
+        if len(self._position_history) >= 2 and self._is_sharp_corner(
+            middle=self._position_history[0],
+            point1=self._position_history[1],
+            point2=next_position,
+        ):
+            self.speed = 0
+
+    def _is_sharp_corner(self, middle: Vec2, point1: Vec2, point2: Vec2):
+        angle = math.atan2(point2.y - middle.y, point2.x - middle.x) - math.atan2(
+            point1.y - middle.y, point1.x - middle.x
+        )
+        turn_angle = abs(math.pi - abs(angle))
+        # pi/4 is 45 degrees, which is ok. pi/2 is 90 degrees, which is not ok.
+        return turn_angle > math.pi / 3
+
     def _update_current_rail_and_target_xy(self, next_rail: Rail, x, y):
         self.current_rail = next_rail
         if self.current_rail.x1 == x and self.current_rail.y1 == y:
