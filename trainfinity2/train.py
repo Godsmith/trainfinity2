@@ -194,7 +194,7 @@ class Train(Subject):
         )
         # This ensures that the train can immediately reverse at the station
         # Otherwise it the train would prefer to continue forward and then reverse
-        self.current_rail = None
+        # self.current_rail = None
 
         self.speed = 0
 
@@ -218,9 +218,6 @@ class Train(Subject):
         if not starting_rails:
             # If the train has nowhere to go from the current position,
             # destroy the train. TODO: is this needed?
-            if not adjacent_reserved_positions:
-                self.destroy()
-                return
             # Stop the train and wait
             self.speed = 0
             self.wait_timer = 1
@@ -234,10 +231,12 @@ class Train(Subject):
             previous_rail=self.current_rail,
         )
 
-        # If there is no path to the target, destroy the train
+        # If there is no path to the target, wait
         if not self._rails_on_route:
-            self.destroy()
+            self.speed = 0
+            self.wait_timer = 1
             return
+
         next_rail = self._rails_on_route[0]
         next_position = next_rail.other_end(*current_position)
         self._position_history.appendleft(Vec2(self.target_x, self.target_y))
