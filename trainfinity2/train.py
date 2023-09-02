@@ -227,8 +227,6 @@ class Train(Subject):
                 adjacent_reserved_positions.append(position)
 
         if not starting_rails:
-            # If the train has nowhere to go from the current position,
-            # destroy the train. TODO: is this needed?
             # Stop the train and wait
             self.speed = 0
             self.wait_timer = 1
