@@ -31,19 +31,19 @@ def _create_rails(grid: Grid, lines: list[str]):
             if character in "-h":
                 x1, y1 = _coordinates(row_number, column_number - 1)
                 x2, y2 = _coordinates(row_number, column_number + 1)
-                grid.create_rail([Rail(x1, y1, x2, y2)])
+                grid.create_rail({Rail(x1, y1, x2, y2)})
             elif character in "|v":
                 x1, y1 = _coordinates(row_number - 1, column_number)
                 x2, y2 = _coordinates(row_number + 1, column_number)
-                grid.create_rail([Rail(x1, y1, x2, y2)])
+                grid.create_rail({Rail(x1, y1, x2, y2)})
             elif character == "/":
                 x1, y1 = _coordinates(row_number - 1, column_number - 1)
                 x2, y2 = _coordinates(row_number + 1, column_number + 1)
-                grid.create_rail([Rail(x1, y1, x2, y2)])
+                grid.create_rail({Rail(x1, y1, x2, y2)})
             elif character == "\\":
                 x1, y1 = _coordinates(row_number - 1, column_number + 1)
                 x2, y2 = _coordinates(row_number + 1, column_number - 1)
-                grid.create_rail([Rail(x1, y1, x2, y2)])
+                grid.create_rail({Rail(x1, y1, x2, y2)})
             if character in "hv":
                 grid.create_signals_at_grid_position(abs(x1 + x2) / 2, abs(y1 + y2) / 2)
 
@@ -58,7 +58,7 @@ def _remove_offset(lines: Iterable[str]):
 
 def create_station_method(grid: Grid, east_west: bool) -> Callable[[Vec2], None]:
     def inner(position: Vec2):
-        grid._create_station(Station(positions=(position,), east_west=east_west)),
+        grid._create_station(Station(positions=(position,), east_west=east_west))
 
     return inner
 

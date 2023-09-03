@@ -844,7 +844,7 @@ class TestSignals:
 
         assert len(game.signal_controller._signal_blocks) == 3
 
-        game.grid.create_rail([Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)])
+        game.grid.create_rail({Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)})
 
         assert len(game.signal_controller._signal_blocks) == 2
 
