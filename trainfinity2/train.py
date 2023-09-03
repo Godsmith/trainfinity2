@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from math import pi
 import math
-from typing import Sequence
+from typing import Callable, Sequence
 from pyglet.math import Vec2
 
 
@@ -108,6 +108,7 @@ class Train(Subject):
         self._previous_targets_y = []
         # TODO: wagons are now created on top of train
         self.wagons = [Wagon(self.x, self.y) for _ in range(self.wagon_count)]
+        self._run_after_wait: Callable[[], None] | None = None
 
     @property
     def rails_on_route(self):
@@ -117,6 +118,10 @@ class Train(Subject):
         if self.wait_timer > 0:
             self.wait_timer -= delta_time
             return
+
+        if self._run_after_wait:
+            self._run_after_wait()
+            self._run_after_wait = None
 
         if self.speed < self.MAX_SPEED:
             self.speed += self.ACCELERATION * delta_time
@@ -176,42 +181,64 @@ class Train(Subject):
     def _can_reserve_position(self, position: Vec2) -> bool:
         return self.signal_controller.reserver(position) in {id(self), None}
 
-    def _stop_at_target_station(self):
+    def _stop_at_station(self, station: Station):
         # Check factories before mines, or a the iron will
         # instantly be transported to the factory
-        if self.grid.adjacent_factories(self._target_station.positions):
-            for wagon in self.wagons:
-                if wagon.iron:
-                    self.player.score += wagon.iron
-                    wagon.iron = 0
-        for mine in self.grid.adjacent_mines(self._target_station.positions):
-            for wagon in self.wagons:
-                if mine.iron > 0 and wagon.iron == 0:
-                    wagon.iron += mine.remove_iron(1)
+        self.speed = 0
+        if self.grid.adjacent_factories(station.positions):
+            if self._has_iron():
+                self.wait_timer = 1
+                self._run_after_wait = self._unload_iron
+            else:
+                self.continue_to_next_station()
+        for mine in self.grid.adjacent_mines(station.positions):
+            if self._has_space():
+                if mine.iron > 0:
+                    mine.remove_iron(1)
+                    self.wait_timer = 1
+                    self._run_after_wait = self._load_iron
+            else:
+                self.continue_to_next_station()
+        # This ensures that the train can immediately reverse at the station
+        # Otherwise it the train would prefer to continue forward and then reverse
+        # self.current_rail = None
+
+    def _has_iron(self):
+        return any(wagon.iron for wagon in self.wagons)
+
+    def _unload_iron(self):
+        for wagon in reversed(self.wagons):
+            if wagon.iron:
+                self.player.score += wagon.iron
+                wagon.iron = 0
+                return
+
+    def _has_space(self):
+        return any(not wagon.iron for wagon in self.wagons)
+
+    def _load_iron(self):
+        for wagon in self.wagons:
+            if not wagon.iron:
+                wagon.iron = 1
+                return
+
+    def continue_to_next_station(self):
         self._target_station = (
             self.second_station
             if self._target_station == self.first_station
             else self.first_station
         )
-        # This ensures that the train can immediately reverse at the station
-        # Otherwise it the train would prefer to continue forward and then reverse
-        # self.current_rail = None
 
-        self.speed = 0
-
-    def _has_reached_station(self):
-        if not _is_close(
-            Vec2(self.x, self.y), self._target_station.positions[0]
-        ) and not _is_close(Vec2(self.x, self.y), self._target_station.positions[-1]):
+    def _has_reached_station(self, station: Station):
+        if not _is_close(Vec2(self.x, self.y), station.positions[0]) and not _is_close(
+            Vec2(self.x, self.y), station.positions[-1]
+        ):
             return False
-        return (
-            len(self._target_station.positions) == 1
-            or self.current_rail in self._target_station.internal_rail
-        )
+        return len(station.positions) == 1 or self.current_rail in station.internal_rail
 
     def _on_reached_target(self):
-        if self._has_reached_station():
-            self._stop_at_target_station()
+        if self._has_reached_station(self._target_station):
+            self._stop_at_station(self._target_station)
 
         current_position = Vec2(self.target_x, self.target_y)
 

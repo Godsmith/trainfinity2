@@ -17,6 +17,15 @@ def find_route(
     """Finds the shortest route (list of Rail) to a station from a specific station.
 
     Returns None if no route can be found."""
+
+    if initial_position in {
+        target_station.positions[0],
+        target_station.positions[-1],
+    } and (
+        previous_rail in target_station.internal_rail
+        or len(target_station.positions) == 1
+    ):
+        return []
     distance_at_position = defaultdict(lambda: 999999999)
     distance_at_position[initial_position] = 0
     rail_in_shortest_route_from_position: dict[Vec2, Rail] = {}

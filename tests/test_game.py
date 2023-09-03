@@ -475,7 +475,8 @@ class TestCreateTrain:
         game.on_left_click(90, 0)
 
         assert not game.signal_controller.reserver(Vec2(30, 0))
-        game.on_update(1 / 60)
+        while game.trains[0].speed == 0.0:
+            game.on_update(1 / 60)
         assert game.signal_controller.reserver(Vec2(30, 0))
 
         game.gui.mode = Mode.TRAIN
@@ -574,8 +575,8 @@ class TestTrainMoving:
         )
         train = game._create_train(*game.grid.station_from_position.values())
         # For code coverage
-        game.on_update(1 / 60)
-        game.on_update(1 / 60)
+        while train.speed == 0.0:
+            game.on_update(1 / 60)
         while train.speed > 0:
             game.on_update(1 / 60)
         assert 59.0 < train.x < 61.0
@@ -607,7 +608,8 @@ def test_train_picks_up_iron_from_mine(game: Game):
     assert mine.iron == 1
     assert train.wagons[0].iron == 0
 
-    game.on_update(1 / 60)
+    while train.wagons[0].iron == 0:
+        game.on_update(1 / 60)
 
     assert mine.iron == 0
     assert train.wagons[0].iron == 1
@@ -629,7 +631,8 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
     train.target_x = 90
     train._target_station = game.grid.station_from_position[Vec2(90, 0)]
 
-    game.on_update(1 / 60)
+    while train.wagons[0].iron:
+        game.on_update(1 / 60)
 
     assert train.wagons[0].iron == 0
     assert game.player.score == 1
@@ -751,7 +754,7 @@ class TestSignals:
             .-S-.-S-.h.-.
             """,
         )
-        game._create_train(*game.grid.station_from_position.values())
+        train = game._create_train(*game.grid.station_from_position.values())
 
         signal_to_the_west = game.grid.signals[(Vec2(120, 0), Rail(120, 0, 150, 0))]
         signal_to_the_east = game.grid.signals[(Vec2(150, 0), Rail(120, 0, 150, 0))]
@@ -759,7 +762,8 @@ class TestSignals:
         assert signal_to_the_west.signal_color == SignalColor.GREEN
         assert signal_to_the_east.signal_color == SignalColor.GREEN
 
-        game.on_update(1 / 60)
+        while train.speed == 0.0:
+            game.on_update(1 / 60)
 
         assert signal_to_the_west.signal_color == SignalColor.GREEN
         assert signal_to_the_east.signal_color == SignalColor.RED
@@ -874,10 +878,8 @@ class TestTrainMovingAroundSignals:
         game._create_train(stations[1], stations[2])
         train = game._create_train(stations[0], stations[3])
 
-        # Needs two updates because in the first update the train reaches the first
-        # station, and in the second update it begins to move.
-        game.on_update(1 / 60)
-        game.on_update(1 / 60)
+        while train.speed == 0.0:
+            game.on_update(1 / 60)
 
         # Train chooses north route
         assert train.y > 30
@@ -892,7 +894,9 @@ class TestTrainMovingAroundSignals:
             """,
         )
         train = game._create_train(*game.grid.station_from_position.values())
-        game.on_update(1 / 60)
+
+        while train.speed == 0.0:
+            game.on_update(1 / 60)
 
         # Currently, the block can be reserved either by the train or
         # one of its wagons
@@ -919,7 +923,8 @@ class TestReserveAndUnreserveRail:
             """,
         )
         train = game._create_train(*game.grid.station_from_position.values())
-        game.on_update(1 / 60)
+        while train.speed == 0.0:
+            game.on_update(1 / 60)
 
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
 
@@ -989,7 +994,9 @@ class TestReserveAndUnreserveRail:
             *game.grid.station_from_position.values(), wagon_count=1
         )
 
-        game.on_update(1 / 60)
+        while train.speed == 0.0:
+            game.on_update(1 / 60)
+
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
 
         while not game.signal_controller._signal_blocks[1].reserved_by:
