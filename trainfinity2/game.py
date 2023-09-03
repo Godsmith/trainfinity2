@@ -153,11 +153,7 @@ class Game:
         )
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        if button == arcade.MOUSE_BUTTON_RIGHT:
-            self.is_mouse2_pressed = False
-            if self._is_click(self.mouse2_pressed_x, self.mouse2_pressed_y, x, y):
-                self.on_right_click(x, y)
-        elif button == arcade.MOUSE_BUTTON_LEFT:
+        if button == arcade.MOUSE_BUTTON_LEFT:
             self.is_mouse1_pressed = False
             if self._is_click(
                 self.mouse1_pressed_x,
@@ -207,12 +203,6 @@ class Game:
             signal.add_observer(self.drawer, ChangeEvent)
         return signals
 
-    def create_signals_at_grid_position(self, x, y) -> list[Signal]:
-        signals = self.grid.create_signals_at_grid_position(x, y)
-        for signal in signals:
-            signal.add_observer(self.drawer, ChangeEvent)
-        return signals
-
     def _create_train(
         self, station1: Station, station2: Station, *, wagon_count: int = 3
     ):
@@ -235,9 +225,6 @@ class Game:
         match object, event:
             case Train(), DestroyEvent():
                 self.trains.remove(object)
-
-    def on_right_click(self, x, y):
-        pass
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         if self.is_mouse2_pressed:

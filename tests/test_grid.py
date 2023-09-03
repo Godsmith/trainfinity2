@@ -28,6 +28,22 @@ class TestPositionsBetween:
 
 
 class TestBuildStation:
+    def test_cannot_build_station_away_from_mine_or_factory(self, grid: Grid):
+        create_objects(
+            grid,
+            """
+            M . .
+
+            . . .
+
+            . . .
+            """,
+        )
+        assert grid._illegal_station_positions(Station((Vec2(30, 0), Vec2(60, 0)))) == {
+            Vec2(30, 0),
+            Vec2(60, 0),
+        }
+
     def test_cannot_build_station_if_rail_in_wrong_direction(self, grid: Grid):
         create_objects(
             grid,

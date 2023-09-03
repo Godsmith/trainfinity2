@@ -2,7 +2,11 @@ import arcade
 import pytest
 from pyglet.math import Vec2
 from pytest import approx
-from trainfinity2.constants import SECONDS_BETWEEN_IRON_CREATION
+from trainfinity2.constants import (
+    GRID_BOX_SIZE,
+    GRID_WIDTH,
+    SECONDS_BETWEEN_IRON_CREATION,
+)
 from trainfinity2.game import Mode, Game
 from trainfinity2.model import Rail, SignalColor, Station, Water
 from tests.util import create_objects
@@ -731,6 +735,13 @@ class TestSignals:
         game.on_left_click(61, 1)
         assert len(game.grid.signals) == 2
 
+    def test_clicking_grid_in_signal_mode_when_no_rail_does_nothing(self, game: Game):
+        """For code coverage."""
+        game.gui.disable()
+        game.gui.mode = Mode.SIGNAL
+        game.on_left_click(61, 1)
+        assert len(game.grid.signals) == 0
+
     def test_green_signal_colors_are_shown_for_adjacent_positions(self, game: Game):
         create_objects(
             game.grid,
@@ -935,7 +946,7 @@ class TestReserveAndUnreserveRail:
             """
             . M . F .
 
-            .-Sh.-S-.
+            .-S-.hS-.
             """,
         )
         train = game._create_train(
@@ -987,7 +998,7 @@ class TestReserveAndUnreserveRail:
             """
             . M . F .
 
-            .-Sh.-S-.
+            .-S-.hS-.
             """,
         )
         train = game._create_train(
@@ -1007,3 +1018,12 @@ class TestReserveAndUnreserveRail:
             == game.signal_controller._signal_blocks[0].reserved_by
             == id(train)
         )
+
+
+class TestPlayer:
+    def test_grid_is_enlarged_when_leveling_up(self, game: Game):
+        assert game.grid.left == 0
+        assert game.grid.right == GRID_WIDTH
+        game.player.score = 10
+        assert game.grid.left == -GRID_BOX_SIZE
+        assert game.grid.right == GRID_WIDTH + GRID_BOX_SIZE

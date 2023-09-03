@@ -1,4 +1,5 @@
 import pytest
+import tests.run_debug
 import trainfinity2.camera
 import trainfinity2.graphics.drawer
 import trainfinity2.graphics.rail_shapes
@@ -31,14 +32,8 @@ class MockArcade:
         def draw(self):
             pass
 
-        def move(self, dx, dy):
-            pass
-
     class ShapeElementList(list):
         def draw(self):
-            pass
-
-        def move(self, dx, dy):
             pass
 
     class FadeParticle:
@@ -79,16 +74,10 @@ class MockArcade:
     def create_line(self, *args, **kwargs):
         pass
 
-    def draw_circle_filled(self, *args, **kwargs):
-        pass
-
     def draw_rectangle_filled(self, *args, **kwargs):
         pass
 
     def draw_rectangle_outline(self, *args, **kwargs):
-        pass
-
-    def draw_circle_outline(self, *args, **kwargs):
         pass
 
 
@@ -99,6 +88,7 @@ def game(monkeypatch: pytest.MonkeyPatch) -> Game:
     monkeypatch.setattr(trainfinity2.graphics.drawer, "arcade", MockArcade())
     monkeypatch.setattr(trainfinity2.graphics.rail_shapes, "arcade", MockArcade())
     monkeypatch.setattr(trainfinity2.graphics.train_drawer, "arcade", MockArcade())
+    monkeypatch.setattr(tests.run_debug, "arcade", MockArcade())
     # Add a single water tile for code coverage
     game = Game()
     game.setup(terrain=Terrain(water=[Vec2(210, 210)]))

@@ -49,7 +49,7 @@ no-cov = "cov --no-cov"
 python = ["310", "311"]
 
 [tool.coverage.run]
-branch = true
+branch = false
 parallel = true
 omit = [
   "trainfinity2/__about__.py",

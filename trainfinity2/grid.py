@@ -14,7 +14,6 @@ from .model import (
     Mine,
     Rail,
     Signal,
-    SignalColor,
     Station,
     Water,
 )
@@ -178,22 +177,6 @@ class Grid(Subject):
         self, position: Vec2, previous_rail: Rail | None
     ):
         return self.rails_at_position(position) - {previous_rail}
-
-    def possible_next_rails(self, position: Vec2, previous_rail: Rail | None):
-        """Given a position and where the train came from, return a list of possible rails
-        it can continue on.
-        Current rules:
-        1. The train cannot reverse, i.e. the output cannot contain `previous_rail`.
-           (if previous_rail = None, the train is at a standstill, e.g. at a station)
-        2. The train cannot go into a red light
-        Possible future rules:
-        3. The train cannot turn more than X degrees"""
-        next_rails = set(self.rails_at_position(position)) - {previous_rail}
-        next_rails_with_signals = next_rails.intersection(self.signals)
-        for rail in next_rails_with_signals:
-            if self.signals[(position, rail)].signal_color == SignalColor.RED:
-                next_rails.remove(rail)
-        return next_rails
 
     def _rail_is_inside_grid(self, rail: Rail):
         return all(
@@ -391,14 +374,6 @@ class Grid(Subject):
         # self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)
-
-    def _two_rails_at_position(self, position: Vec2) -> tuple[Rail, Rail] | None:
-        rails = self.rails_at_position(position)
-        match rails:
-            case (rail1, rail2):
-                return (rail1, rail2)
-            case _:
-                return None
 
     def _closest_rail(self, x, y) -> Rail | None:
         """Return None if
