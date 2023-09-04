@@ -289,7 +289,7 @@ class Train(Subject):
             point1=self._position_history[1],
             point2=next_position,
         ):
-            self.speed = 0
+            self.speed /= 2
 
     def _is_sharp_corner(self, middle: Vec2, point1: Vec2, point2: Vec2):
         angle = math.atan2(point2.y - middle.y, point2.x - middle.x) - math.atan2(
