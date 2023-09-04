@@ -171,6 +171,7 @@ class TestBuildingRail:
 
     def test_can_build_rail_outside_grid_when_grid_has_enlarged(self, game: Game):
         game.grid.enlarge_grid()
+        game.gui.disable()
         self.drag_one_tile_outside_grid(game)
 
         assert len(game.grid.rails) == 1
@@ -185,6 +186,7 @@ class TestBuildingStations:
         .DDD.
         .M...
         """
+        game.gui.disable()
         game.grid._create_mine(Vec2(30, 0))
         game.gui.mode = Mode.STATION
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
@@ -207,6 +209,7 @@ class TestBuildingStations:
         FD.
         ...
         """
+        game.gui.disable()
         game.gui.mode = Mode.STATION
         game.grid._create_factory(Vec2(0, 30))
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
@@ -225,8 +228,16 @@ class TestGui:
         assert game.gui.mode == Mode.RAIL
 
     def test_clicking_bottom_left_corner_switches_to_select_mode(self, game: Game):
-        game.on_left_click(15, 15)
+        """Even works as long as press and release are both inside the box"""
+        game.on_mouse_press(5, 5, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_release(25, 25, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         assert game.gui.mode == Mode.SELECT
+
+    def test_mouse_down_on_bottom_left_corner_highlights_select_mode_button(
+        self, game: Game
+    ):
+        game.on_mouse_press(15, 15, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        assert game.gui.mouse_press_mode == Mode.SELECT
 
 
 class TestCreateTrain:
@@ -296,7 +307,8 @@ class TestCreateTrain:
         game.gui.enable()
 
         # Click GUI
-        game.on_left_click(15, 15)
+        game.on_mouse_press(15, 15, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_release(15, 15, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
         assert not game._train_placer.session
         assert len(game.drawer.highlight_shape_element_list) == 0
@@ -514,6 +526,7 @@ def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
         """,
     )
     game.gui.mode = Mode.DESTROY
+    game.gui.disable()
 
     assert len(game.grid.station_from_position) == 2
     assert len(game.grid.rails) == 4

@@ -140,6 +140,8 @@ class Game:
             self.is_mouse2_pressed = True
             self.camera_position_when_mouse2_pressed = self.camera.position
         elif button == arcade.MOUSE_BUTTON_LEFT:
+            if self.gui.on_mouse_press(x, y):
+                return
             self.mouse1_pressed_x = x
             self.mouse1_pressed_y = y
             self.is_mouse1_pressed = True
@@ -156,6 +158,11 @@ class Game:
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.is_mouse2_pressed = False
         elif button == arcade.MOUSE_BUTTON_LEFT:
+            if self.gui.mouse_press_mode:
+                self._train_placer.stop_session()
+                for train in self.trains:
+                    train.selected = False
+                return self.gui.on_mouse_release(x, y)
             self.is_mouse1_pressed = False
             if self._is_click(
                 self.mouse1_pressed_x,
@@ -167,12 +174,6 @@ class Game:
             self.grid.release_mouse_button(self.gui.mode)
 
     def on_left_click(self, x, y):
-        if self.gui.on_left_click(x, y):
-            self._train_placer.stop_session()
-            for train in self.trains:
-                train.selected = False
-            return
-
         world_x, world_y = self.camera.to_world_coordinates(x, y)
         if self.gui.mode == Mode.TRAIN:
             if station := self.grid.get_station(world_x, world_y):

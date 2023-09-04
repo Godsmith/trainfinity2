@@ -6,7 +6,8 @@ from arcade import color
 
 from trainfinity2.camera import Camera
 
-SELECTED_BOX_BACKGROUND_COLOR = color.WHITE
+SELECTED_BOX_BACKGROUND_COLOR = color.LIGHT_GRAY
+PRESSED_BOX_BACKGROUND_COLOR = color.WHITE
 DESELECTED_BOX_BACKGROUND_COLOR = color.GRAY
 BOX_TEXT_COLOR = color.BLACK
 BOX_OUTLINE_COLOR = color.BLACK
@@ -37,6 +38,7 @@ class Gui:
             Box("DESTROY", Mode.DESTROY),
         ]
         self._mode = Mode.RAIL
+        self.mouse_press_mode: Mode | None = None
         self._enabled = True
         self._shape_element_list: arcade.ShapeElementList = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
@@ -100,24 +102,38 @@ class Gui:
             left < x < left + BOX_SIZE_PIXELS and bottom < y < bottom + BOX_SIZE_PIXELS
         )
 
-    def on_left_click(self, x, y):
-        """Returns True if the event was handled, False otherwise."""
-        with self.camera:
-            if self._enabled:
+    def on_mouse_press(self, x, y) -> bool:
+        if self._enabled:
+            with self.camera:
                 for i, box in enumerate(self.boxes):
                     if self._is_inside(x, y, i):
-                        self.mode = box.mode
+                        self.mouse_press_mode = box.mode
+                        self.refresh()
                         return True
-            return False
+        return False
+
+    def on_mouse_release(self, x, y) -> None:
+        if self._enabled:
+            with self.camera:
+                for i, box in enumerate(self.boxes):
+                    if self._is_inside(x, y, i):
+                        if self.mouse_press_mode == box.mode:
+                            self.mode = box.mode
+        self.mouse_press_mode = None
+        self.refresh()
 
     def _create_box(self, box: Box, index: int):
         left, _, bottom, _ = arcade.get_viewport()
         left += index * BOX_SIZE_PIXELS
-        background_color = (
-            SELECTED_BOX_BACKGROUND_COLOR
-            if self.mode == box.mode
-            else DESELECTED_BOX_BACKGROUND_COLOR
-        )
+
+        match box.mode:
+            case self.mouse_press_mode:
+                background_color = PRESSED_BOX_BACKGROUND_COLOR
+            case self.mode:
+                background_color = SELECTED_BOX_BACKGROUND_COLOR
+            case _:
+                background_color = DESELECTED_BOX_BACKGROUND_COLOR
+
         center_x = left + BOX_SIZE_PIXELS / 2
         center_y = bottom + BOX_SIZE_PIXELS / 2
         self._shape_element_list.append(
