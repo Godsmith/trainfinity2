@@ -46,6 +46,7 @@ class Gui:
         self._fps_sprite = arcade.Sprite()
         self._score_sprite = arcade.Sprite()
         self._score_per_minute_sprite = arcade.Sprite()
+        self._score_per_minute = 0
         self._text_sprite_list = arcade.SpriteList()
         self._text_sprite_list.append(self._fps_sprite)
         self._text_sprite_list.append(self._score_sprite)
@@ -92,6 +93,11 @@ class Gui:
             for i, box in enumerate(self.boxes):
                 self._create_box(box, i)
 
+            self.refresh_text()
+
+    def refresh_text(self):
+        with self.camera:
+            self._refresh_score_per_minute_sprite()
             self._refresh_fps_sprite()
             self._refresh_score_sprite()
 

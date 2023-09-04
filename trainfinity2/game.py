@@ -291,6 +291,7 @@ class Game:
         self.camera.resize(width, height)
         self.gui_camera.resize(width, height)
         self.camera.set_viewport()
+        self.gui.refresh_text()
 
     def enlarge_grid(self):
         self.grid.enlarge_grid()
