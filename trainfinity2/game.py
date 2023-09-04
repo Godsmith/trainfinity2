@@ -153,7 +153,9 @@ class Game:
         )
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        if button == arcade.MOUSE_BUTTON_LEFT:
+        if button == arcade.MOUSE_BUTTON_RIGHT:
+            self.is_mouse2_pressed = False
+        elif button == arcade.MOUSE_BUTTON_LEFT:
             self.is_mouse1_pressed = False
             if self._is_click(
                 self.mouse1_pressed_x,

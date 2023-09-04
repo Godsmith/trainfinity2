@@ -53,8 +53,17 @@ class TestCamera:
             x=200, y=300, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0
         )
 
-        # TODO: forgot assert here
-        assert game.camera
+        assert game.camera.position == Vec2(-100, -200)
+
+    def test_camera_stops_panning_when_releasesing_mouse_button(self, game: Game):
+        game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0)
+        game.on_mouse_motion(x=200, y=300, dx=100, dy=200)
+        game.on_mouse_release(
+            x=200, y=300, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0
+        )
+        game.on_mouse_motion(x=300, y=500, dx=100, dy=200)
+
+        assert game.camera.position == Vec2(-100, -200)
 
     def test_camera_stops_when_trying_to_move_past_top_left_corner(self, game):
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_RIGHT, modifiers=0)
