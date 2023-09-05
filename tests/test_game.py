@@ -11,6 +11,18 @@ from trainfinity2.game import Mode, Game
 from trainfinity2.model import Rail, SignalColor, Station, Water
 from tests.util import create_objects
 
+check_call_count = 0
+
+
+def check(statement: bool, count=[0]):
+    """Pretty hacky way to ensure that we don't get any infinite loops.
+    Does not reset the count between function calls, except if one hangs."""
+    count[0] += 1
+    if count[0] < 10000:
+        return statement
+    count[0] = 0
+    raise AssertionError("Max iterations reached")
+
 
 def test_draw(game: Game):
     create_objects(
@@ -500,7 +512,7 @@ class TestCreateTrain:
         game.on_left_click(90, 0)
 
         assert not game.signal_controller.reserver(Vec2(30, 0))
-        while game.trains[0].speed == 0.0:
+        while check(game.trains[0].speed == 0.0):
             game.on_update(1 / 60)
         assert game.signal_controller.reserver(Vec2(30, 0))
 
@@ -601,9 +613,9 @@ class TestTrainMoving:
         )
         train = game._create_train(*game.grid.station_from_position.values())
         # For code coverage
-        while train.speed == 0.0:
+        while check(train.speed == 0.0):
             game.on_update(1 / 60)
-        while train.speed > 0:
+        while check(train.speed > 0):
             game.on_update(1 / 60)
         assert 59.0 < train.x < 61.0
 
@@ -634,7 +646,7 @@ def test_train_picks_up_iron_from_mine(game: Game):
     assert mine.iron == 1
     assert train.wagons[0].iron == 0
 
-    while train.wagons[0].iron == 0:
+    while check(train.wagons[0].iron == 0):
         game.on_update(1 / 60)
 
     assert mine.iron == 0
@@ -657,7 +669,7 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
     train.target_x = 90
     train._target_station = game.grid.station_from_position[Vec2(90, 0)]
 
-    while train.wagons[0].iron:
+    while check(train.wagons[0].iron):
         game.on_update(1 / 60)
 
     assert train.wagons[0].iron == 0
@@ -795,7 +807,7 @@ class TestSignals:
         assert signal_to_the_west.signal_color == SignalColor.GREEN
         assert signal_to_the_east.signal_color == SignalColor.GREEN
 
-        while train.speed == 0.0:
+        while check(train.speed == 0.0):
             game.on_update(1 / 60)
 
         assert signal_to_the_west.signal_color == SignalColor.GREEN
@@ -911,7 +923,7 @@ class TestTrainMovingAroundSignals:
         game._create_train(stations[1], stations[2])
         train = game._create_train(stations[0], stations[3])
 
-        while train.speed == 0.0:
+        while check(train.speed == 0.0):
             game.on_update(1 / 60)
 
         # Train chooses north route
@@ -928,7 +940,7 @@ class TestTrainMovingAroundSignals:
         )
         train = game._create_train(*game.grid.station_from_position.values())
 
-        while train.speed == 0.0:
+        while check(train.speed == 0.0):
             game.on_update(1 / 60)
 
         # Currently, the block can be reserved either by the train or
@@ -956,7 +968,7 @@ class TestReserveAndUnreserveRail:
             """,
         )
         train = game._create_train(*game.grid.station_from_position.values())
-        while train.speed == 0.0:
+        while check(train.speed == 0.0):
             game.on_update(1 / 60)
 
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
@@ -982,7 +994,7 @@ class TestReserveAndUnreserveRail:
             Vec2(120, 0)
         ]
         assert left_signal_block.reserved_by == id(train)
-        while not right_signal_block.reserved_by:
+        while check(not right_signal_block.reserved_by):
             game.on_update(1 / 60)
 
         assert left_signal_block.reserved_by == id(train)
@@ -1008,7 +1020,7 @@ class TestReserveAndUnreserveRail:
         right_signal_block = game.signal_controller._signal_block_from_position[
             Vec2(120, 0)
         ]
-        while left_signal_block.reserved_by == id(train):
+        while check(left_signal_block.reserved_by == id(train)):
             game.on_update(1 / 60)
 
         assert right_signal_block.reserved_by == id(train)
@@ -1027,12 +1039,12 @@ class TestReserveAndUnreserveRail:
             *game.grid.station_from_position.values(), wagon_count=1
         )
 
-        while train.speed == 0.0:
+        while check(train.speed == 0.0):
             game.on_update(1 / 60)
 
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
 
-        while not game.signal_controller._signal_blocks[1].reserved_by:
+        while check(not game.signal_controller._signal_blocks[1].reserved_by):
             game.on_update(1 / 60)
 
         assert (
