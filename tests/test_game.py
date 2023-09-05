@@ -377,6 +377,48 @@ class TestCreateTrain:
 
         assert len(game.trains) == 1
 
+    def test_clicking_two_connected_stations_creates_train_that_starts_moving(
+        self, game: Game
+    ):
+        create_objects(
+            game.grid,
+            """
+            . M . F .
+
+            .-S-.-S-.
+            """,
+        )
+        game.gui.mode = Mode.TRAIN
+
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(90, 0)
+
+        while check(game.trains[0].x < 45.0):
+            game.on_update(1 / 60)
+
+    def test_clicking_two_connected_stations_of_size_2_creates_train_that_starts_moving(
+        self, game: Game
+    ):
+        create_objects(
+            game.grid,
+            """
+            . M . . F . .
+
+            .-S-S-.-S-S-.
+            """,
+        )
+        game.gui.mode = Mode.TRAIN
+
+        # Click first station
+        game.on_left_click(30, 0)
+        # Click next station
+        game.on_left_click(120, 0)
+
+        while check(game.trains[0].x < 90.0):
+            game.on_update(1 / 60)
+
     def test_clicking_two_connected_stations_removes_highlight(self, game: Game):
         create_objects(
             game.grid,
@@ -606,7 +648,7 @@ class TestTrainMoving:
         create_objects(
             game.grid,
             """
-            . M S F
+            . M s F
                 |
             .-S-. .
             """,
@@ -912,19 +954,23 @@ class TestTrainMovingAroundSignals:
         create_objects(
             game.grid,
             r"""
-            .-.-.-.-.-.
-            v         v
-            Sh.-S-S-.hS
+            .-.-.-.-.-.-.
+            v           v
+            Sh.-S-.-S-.hS
 
-            M . M F . F
+            M . M . F . F
             """,
         )
-        stations = list(game.grid.station_from_position.values())
+        stations = sorted(
+            game.grid.station_from_position.values(),
+            key=lambda station: station.positions[0],
+        )
         game._create_train(stations[1], stations[2])
         train = game._create_train(stations[0], stations[3])
 
         while check(train.speed == 0.0):
             game.on_update(1 / 60)
+        game.on_update(1 / 60)
 
         # Train chooses north route
         assert train.y > 30

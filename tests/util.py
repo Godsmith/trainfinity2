@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 from trainfinity2.constants import GRID_BOX_SIZE
 from trainfinity2.grid import Grid
@@ -56,11 +57,43 @@ def _remove_offset(lines: Iterable[str]):
     return [line[number_of_beginning_spaces:] for line in lines]
 
 
-def create_station_method(grid: Grid, east_west: bool) -> Callable[[Vec2], None]:
-    def inner(position: Vec2):
-        grid._create_station(Station(positions=(position,), east_west=east_west))
+@dataclass
+class StationCreator:
+    """Creates stations from sets of positions. Adjacent positions are clumped into
+    one large station."""
 
-    return inner
+    grid: Grid
+    east_west: bool
+    _positions: set[Vec2] = field(default_factory=set)
+    _sets_of_positions: list[set[Vec2]] = field(default_factory=list)
+
+    def add(self, position: Vec2):
+        self._positions.add(position)
+
+    def create_stations(self):
+        self._sets_of_positions = []
+        for position in self._positions:
+            self._add_to_set_of_positions(position)
+        for set_of_positions in self._sets_of_positions:
+            self.grid._create_station(
+                Station(
+                    positions=tuple(sorted(set_of_positions)), east_west=self.east_west
+                )
+            )
+
+    def _add_to_set_of_positions(self, position: Vec2):
+        for set_of_positions in self._sets_of_positions:
+            for other_position in set_of_positions:
+                if self._is_adjacent(other_position, position):
+                    set_of_positions.add(position)
+                    return
+        self._sets_of_positions.append({position})
+
+    @staticmethod
+    def _is_adjacent(pos1: Vec2, pos2: Vec2) -> bool:
+        return (pos1.x == pos2.x and abs(pos1.y - pos2.y) == GRID_BOX_SIZE) or (
+            pos1.y == pos2.y and abs(pos1.x - pos2.x) == GRID_BOX_SIZE
+        )
 
 
 def create_objects(grid: Grid, map_: str):
@@ -78,8 +111,15 @@ def create_objects(grid: Grid, map_: str):
     lines = map_without_empty_lines_at_the_end.splitlines()
     lines.reverse()  # Reverse to get row indices to match with coordinates
     lines = _remove_offset(lines)
+
     _create_buildings(lines, "M", grid._create_mine)
     _create_buildings(lines, "F", grid._create_factory)
-    _create_buildings(lines, "S", create_station_method(grid, east_west=True))
-    _create_buildings(lines, "s", create_station_method(grid, east_west=False))
+
+    east_west_station_creator = StationCreator(grid, east_west=True)
+    north_south_station_creator = StationCreator(grid, east_west=False)
+    _create_buildings(lines, "S", east_west_station_creator.add)
+    _create_buildings(lines, "s", north_south_station_creator.add)
+    east_west_station_creator.create_stations()
+    north_south_station_creator.create_stations()
+
     _create_rails(grid, lines)

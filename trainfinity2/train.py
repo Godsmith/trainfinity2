@@ -12,7 +12,7 @@ from .grid import Grid
 from .model import Player, Rail, Station
 from .wagon import Wagon
 from .observer import DestroyEvent, Subject
-from .route_finder import find_route
+from .route_finder import find_route, has_reached_end_of_target_station
 from .signal_controller import SignalController
 from typing import NamedTuple
 
@@ -185,20 +185,20 @@ class Train(Subject):
         # Check factories before mines, or a the iron will
         # instantly be transported to the factory
         self.speed = 0
-        if self.grid.adjacent_factories(station.positions):
-            if self._has_iron():
-                self.wait_timer = 1
-                self._run_after_wait = self._unload_iron
-            else:
-                self.continue_to_next_station()
+        is_finished = True
+        if self.grid.adjacent_factories(station.positions) and self._has_iron():
+            self.wait_timer = 1
+            self._run_after_wait = self._unload_iron
+            is_finished = False
         for mine in self.grid.adjacent_mines(station.positions):
-            if self._has_space():
-                if mine.iron > 0:
-                    mine.remove_iron(1)
-                    self.wait_timer = 1
-                    self._run_after_wait = self._load_iron
-            else:
-                self.continue_to_next_station()
+            if self._has_space() and mine.iron > 0:
+                mine.remove_iron(1)
+                self.wait_timer = 1
+                self._run_after_wait = self._load_iron
+                is_finished = False
+                break
+        if is_finished:
+            self.continue_to_next_station()
         # This ensures that the train can immediately reverse at the station
         # Otherwise it the train would prefer to continue forward and then reverse
         # self.current_rail = None
@@ -229,34 +229,27 @@ class Train(Subject):
             else self.first_station
         )
 
-    def _has_reached_station(self, station: Station):
-        if not _is_close(Vec2(self.x, self.y), station.positions[0]) and not _is_close(
-            Vec2(self.x, self.y), station.positions[-1]
-        ):
-            return False
-        return len(station.positions) == 1 or self.current_rail in station.internal_rail
-
     def _on_reached_target(self):
-        if self._has_reached_station(self._target_station):
-            self._stop_at_station(self._target_station)
-
         current_position = Vec2(self.target_x, self.target_y)
 
-        starting_rails = []
-        adjacent_reserved_positions = []
-        for rail in self.grid.possible_next_rails_ignore_red_lights(
-            position=current_position, previous_rail=self.current_rail
-        ):
-            position = rail.other_end(*current_position)
-            if self._can_reserve_position(position):
-                starting_rails.append(rail)
-            else:
-                adjacent_reserved_positions.append(position)
+        starting_rails = {
+            rail
+            for rail in self.grid.possible_next_rails_ignore_red_lights(
+                position=current_position, previous_rail=self.current_rail
+            )
+            if self._can_reserve_position(rail.other_end(*current_position))
+        }
 
         if not starting_rails:
-            # Stop the train and wait
             self.speed = 0
             self.wait_timer = 1
+            return
+
+        if has_reached_end_of_target_station(
+            current_position, self.current_rail, self._target_station
+        ):
+            self._reserve(current_position)
+            self._stop_at_station(self._target_station)
             return
 
         self._rails_on_route = find_route(
@@ -276,20 +269,21 @@ class Train(Subject):
         next_rail = self._rails_on_route[0]
         next_position = next_rail.other_end(*current_position)
         self._position_history.appendleft(Vec2(self.target_x, self.target_y))
+
+        self._reserve(next_position)
+
         self._update_current_rail_and_target_xy(next_rail, self.target_x, self.target_y)
 
-        self.signal_controller.reserve(
-            id(self), [*self._position_history, next_position]
-        )
-
-        # When just started. Might mean that there is no impact on speed for trains with
-        # no wagons, but that might be an acceptable edge case.
+        # Halve speed, except for trains with no wagons, but that might be unimportant.
         if len(self._position_history) >= 2 and self._is_sharp_corner(
             middle=self._position_history[0],
             point1=self._position_history[1],
             point2=next_position,
         ):
             self.speed /= 2
+
+    def _reserve(self, position: Vec2):
+        self.signal_controller.reserve(id(self), [*self._position_history, position])
 
     def _is_sharp_corner(self, middle: Vec2, point1: Vec2, point2: Vec2):
         angle = math.atan2(point2.y - middle.y, point2.x - middle.x) - math.atan2(
