@@ -13,7 +13,7 @@ from ..constants import (
     BUILDING_RAIL_COLOR,
     FINISHED_RAIL_COLOR,
     BUILDING_ILLEGAL_RAIL_COLOR,
-    GRID_BOX_SIZE,
+    GRID_BOX_SIZE_PIXELS,
     GRID_COLOR,
     GRID_LINE_WIDTH,
     HIGHLIGHT_COLOR,
@@ -130,22 +130,35 @@ class Drawer:
 
     def _create_grid(self, grid: Grid):
         self._grid_shape_list = _ShapeElementList()
-        for x in range(grid.left, grid.right + 1, GRID_BOX_SIZE):
+        for x in range(
+            grid.left * GRID_BOX_SIZE_PIXELS,
+            grid.right * GRID_BOX_SIZE_PIXELS + 1,
+            GRID_BOX_SIZE_PIXELS,
+        ):
             self._grid_shape_list.append(
                 arcade.create_line(
                     x,
-                    grid.bottom,
+                    grid.bottom * GRID_BOX_SIZE_PIXELS,
                     x,
-                    grid.top,
+                    grid.top * GRID_BOX_SIZE_PIXELS,
                     GRID_COLOR,
                     GRID_LINE_WIDTH,
                 )
             )
 
-        for y in range(grid.bottom, grid.top + 1, GRID_BOX_SIZE):
+        for y in range(
+            grid.bottom * GRID_BOX_SIZE_PIXELS,
+            grid.top * GRID_BOX_SIZE_PIXELS + 1,
+            GRID_BOX_SIZE_PIXELS,
+        ):
             self._grid_shape_list.append(
                 arcade.create_line(
-                    grid.left, y, grid.right, y, GRID_COLOR, GRID_LINE_WIDTH
+                    grid.left * GRID_BOX_SIZE_PIXELS,
+                    y,
+                    grid.right * GRID_BOX_SIZE_PIXELS,
+                    y,
+                    GRID_COLOR,
+                    GRID_LINE_WIDTH,
                 )
             )
 
@@ -155,16 +168,20 @@ class Drawer:
                 sprite = arcade.Sprite(
                     "images/factory.png",
                     0.75,
-                    center_x=building.position.x + GRID_BOX_SIZE / 2,
-                    center_y=building.position.y + GRID_BOX_SIZE / 2,
+                    center_x=building.position.x * GRID_BOX_SIZE_PIXELS
+                    + GRID_BOX_SIZE_PIXELS / 2,
+                    center_y=building.position.y * GRID_BOX_SIZE_PIXELS
+                    + GRID_BOX_SIZE_PIXELS / 2,
                 )
                 self._add_sprite(sprite, building)
             case Mine():
                 sprite = arcade.Sprite(
                     "images/mine.png",
                     0.75,
-                    center_x=building.position.x + GRID_BOX_SIZE / 2,
-                    center_y=building.position.y + GRID_BOX_SIZE / 2,
+                    center_x=building.position.x * GRID_BOX_SIZE_PIXELS
+                    + GRID_BOX_SIZE_PIXELS / 2,
+                    center_y=building.position.y * GRID_BOX_SIZE_PIXELS
+                    + GRID_BOX_SIZE_PIXELS / 2,
                 )
                 self._add_sprite(sprite, building)
             case Station():
@@ -178,25 +195,33 @@ class Drawer:
         shapes = []
         for position in station.positions:
             ground_shape = arcade.create_rectangle_filled(
-                position.x + GRID_BOX_SIZE / 2,
-                position.y + GRID_BOX_SIZE / 2,
-                GRID_BOX_SIZE,
-                GRID_BOX_SIZE,
+                position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+                position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+                GRID_BOX_SIZE_PIXELS,
+                GRID_BOX_SIZE_PIXELS,
                 set_alpha(color.ASH_GREY),
             )
             shapes.append(ground_shape)
 
         house_position = Vec2(
-            (station.positions[0].x + station.positions[-1].x) / 2,
-            (station.positions[0].y + station.positions[-1].y) / 2,
+            (
+                station.positions[0].x * GRID_BOX_SIZE_PIXELS
+                + station.positions[-1].x * GRID_BOX_SIZE_PIXELS
+            )
+            / 2,
+            (
+                station.positions[0].y * GRID_BOX_SIZE_PIXELS
+                + station.positions[-1].y * GRID_BOX_SIZE_PIXELS
+            )
+            / 2,
         )
-        x = house_position.x + GRID_BOX_SIZE / 2
-        y = house_position.y + GRID_BOX_SIZE / 7
-        width = GRID_BOX_SIZE * 3 / 4
-        height = GRID_BOX_SIZE / 4
+        x = house_position.x + GRID_BOX_SIZE_PIXELS / 2
+        y = house_position.y + GRID_BOX_SIZE_PIXELS / 7
+        width = GRID_BOX_SIZE_PIXELS * 3 / 4
+        height = GRID_BOX_SIZE_PIXELS / 4
         if not station.east_west:
-            x = house_position.x + GRID_BOX_SIZE / 7
-            y = house_position.y + GRID_BOX_SIZE / 2
+            x = house_position.x + GRID_BOX_SIZE_PIXELS / 7
+            y = house_position.y + GRID_BOX_SIZE_PIXELS / 2
             width, height = height, width
         house_shape = arcade.create_rectangle_filled(
             x,
@@ -217,12 +242,15 @@ class Drawer:
         positions = list(signal.rail.positions)
         middle_of_rail = positions[0].lerp(positions[1], 0.5)
         position = middle_of_rail.lerp(signal.from_position, 0.5)
-        position = Vec2(position.x + GRID_BOX_SIZE / 2, position.y + GRID_BOX_SIZE / 2)
+        position = Vec2(
+            position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+            position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+        )
         shape = arcade.create_ellipse_filled(
             position.x,
             position.y,
-            GRID_BOX_SIZE / 6,
-            GRID_BOX_SIZE / 6,
+            GRID_BOX_SIZE_PIXELS / 6,
+            GRID_BOX_SIZE_PIXELS / 6,
             color.RED if signal.signal_color == SignalColor.RED else color.GREEN,
         )
         self._add_signal_shape(shape, signal)
@@ -259,10 +287,10 @@ class Drawer:
                 self._create_terrain(position, terrain_color)
 
     def _create_terrain(self, position: Vec2, color):
-        center_x = position.x + GRID_BOX_SIZE / 2
-        center_y = position.y + GRID_BOX_SIZE / 2
+        center_x = position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2
+        center_y = position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2
         shape = arcade.create_rectangle_filled(
-            center_x, center_y, GRID_BOX_SIZE, GRID_BOX_SIZE, color=color
+            center_x, center_y, GRID_BOX_SIZE_PIXELS, GRID_BOX_SIZE_PIXELS, color=color
         )
         self._shape_list.append(shape)
 
@@ -306,7 +334,7 @@ class Drawer:
                 )
 
     def _add_iron(self, position: Vec2):
-        x, y = position
+        x, y = position.x * GRID_BOX_SIZE_PIXELS, position.y * GRID_BOX_SIZE_PIXELS
         x += len(self.iron_shapes_from_position[position]) * int(
             PIXEL_OFFSET_PER_IRON / 2
         )
@@ -360,10 +388,10 @@ class Drawer:
                 self._station_being_built = station
             for position in illegal_positions:
                 red_box_shape = arcade.create_rectangle_filled(
-                    position.x + GRID_BOX_SIZE / 2,
-                    position.y + GRID_BOX_SIZE / 2,
-                    GRID_BOX_SIZE,
-                    GRID_BOX_SIZE,
+                    position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+                    position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+                    GRID_BOX_SIZE_PIXELS,
+                    GRID_BOX_SIZE_PIXELS,
                     color=HIGHLIGHT_COLOR,
                 )
                 self.stations_being_built_shape_element_list.append(red_box_shape)
@@ -377,10 +405,10 @@ class Drawer:
         self.highlight_shape_element_list = _ShapeElementList()
         for position in positions:
             shape = arcade.create_rectangle_filled(
-                position.x + GRID_BOX_SIZE / 2,
-                position.y + GRID_BOX_SIZE / 2,
-                GRID_BOX_SIZE,
-                GRID_BOX_SIZE,
+                position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+                position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+                GRID_BOX_SIZE_PIXELS,
+                GRID_BOX_SIZE_PIXELS,
                 color=HIGHLIGHT_COLOR,
             )
             self.highlight_shape_element_list.append(shape)

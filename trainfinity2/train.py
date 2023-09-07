@@ -7,7 +7,6 @@ from typing import Callable, Sequence
 from pyglet.math import Vec2
 
 
-from .constants import GRID_BOX_SIZE
 from .grid import Grid
 from .model import Player, Rail, Station
 from .wagon import Wagon
@@ -22,10 +21,7 @@ def approx_equal(a: float, b: float):
 
 
 def _is_close(pos1: Vec2, pos2: Vec2):
-    return (
-        abs(pos1.x - pos2.x) < GRID_BOX_SIZE / 2
-        and abs(pos1.y - pos2.y) < GRID_BOX_SIZE / 2
-    )
+    return abs(pos1.x - pos2.x) < 0.5 and abs(pos1.y - pos2.y) < 0.5
 
 
 class PointAndAngle(NamedTuple):
@@ -87,10 +83,10 @@ class Train(Subject):
     selected = False
     wait_timer: float = 0.0
     angle: float = 0
-    speed: float = 0.0  # Pixels per second
+    speed: float = 0.0  # Cells per second
 
-    MAX_SPEED = 120.0  # 60.0  # Pixels per second
-    ACCELERATION = 40.0  # Pixels per second squared
+    MAX_SPEED = 4.0  # 60.0  # Cells per second
+    ACCELERATION = 1.3  # Cells per second squared
 
     def __post_init__(self):
         super().__init__()
@@ -149,7 +145,7 @@ class Train(Subject):
         wagon_positions_and_angles = _find_equidistant_points_and_angles_along_line(
             [Vec2(self.x, self.y)] + list(self._position_history),
             len(self.wagons),
-            GRID_BOX_SIZE,
+            1.0,
         )
         for wagon, (wagon_position, wagon_angle) in zip(
             self.wagons, wagon_positions_and_angles
@@ -163,20 +159,15 @@ class Train(Subject):
         ):
             self._on_reached_target()
 
-    def is_at(self, x, y):
-        return (
-            self.x < x < self.x + GRID_BOX_SIZE and self.y < y < self.y + GRID_BOX_SIZE
-        )
+    def is_close_enough_to_click(self, x, y):
+        return self.x - 1 <= x <= self.x + 1 and self.y - 1 <= y <= self.y + 1
 
     def destroy(self):
         self.signal_controller.reserve(id(self), set())
         self.notify(DestroyEvent())
 
     def is_colliding_with(self, train):
-        return (
-            abs(self.x - train.x) < GRID_BOX_SIZE / 4
-            and abs(self.y - train.y) < GRID_BOX_SIZE / 4
-        )
+        return abs(self.x - train.x) < 0.25 and abs(self.y - train.y) < 0.25
 
     def _can_reserve_position(self, position: Vec2) -> bool:
         return self.signal_controller.reserver(position) in {id(self), None}

@@ -1,15 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
-from trainfinity2.constants import GRID_BOX_SIZE
 from trainfinity2.grid import Grid
 from trainfinity2.model import Rail, Station
 from pyglet.math import Vec2
-
-
-def _coordinates(row_number: int, column_number: int):
-    # assert row_number % 2 == 0
-    # assert column_number % 2 == 0
-    return (int(column_number / 2 * GRID_BOX_SIZE), int(row_number / 2 * GRID_BOX_SIZE))
 
 
 def _create_buildings(
@@ -19,31 +12,31 @@ def _create_buildings(
 ):
     for row_number, row in enumerate(lines):
         for column_number, character in enumerate(row):
-            if column_number % 2 == 0 and row_number % 2 == 0:
-                x, y = _coordinates(row_number, column_number)
-                if character == building_character:
-                    create_method(Vec2(x, y))
+            if character == building_character:
+                if column_number % 2 == 0 and row_number % 2 == 0:
+                    create_method(Vec2(column_number / 2, row_number / 2))
 
 
 def _create_rails(grid: Grid, lines: list[str]):
     for row_number, row in enumerate(lines):
         for column_number, character in enumerate(row):
+            # TODO: simplify assignments
             x1 = y1 = x2 = y2 = 0  # To avoid unbound warning
             if character in "-h":
-                x1, y1 = _coordinates(row_number, column_number - 1)
-                x2, y2 = _coordinates(row_number, column_number + 1)
+                y1, x1 = row_number // 2, (column_number - 1) // 2
+                y2, x2 = row_number // 2, (column_number + 1) // 2
                 grid.create_rail({Rail(x1, y1, x2, y2)})
             elif character in "|v":
-                x1, y1 = _coordinates(row_number - 1, column_number)
-                x2, y2 = _coordinates(row_number + 1, column_number)
+                y1, x1 = (row_number - 1) // 2, column_number // 2
+                y2, x2 = (row_number + 1) // 2, column_number // 2
                 grid.create_rail({Rail(x1, y1, x2, y2)})
             elif character == "/":
-                x1, y1 = _coordinates(row_number - 1, column_number - 1)
-                x2, y2 = _coordinates(row_number + 1, column_number + 1)
+                y1, x1 = (row_number - 1) // 2, (column_number - 1) // 2
+                y2, x2 = (row_number + 1) // 2, (column_number + 1) // 2
                 grid.create_rail({Rail(x1, y1, x2, y2)})
             elif character == "\\":
-                x1, y1 = _coordinates(row_number - 1, column_number + 1)
-                x2, y2 = _coordinates(row_number + 1, column_number - 1)
+                y1, x1 = (row_number - 1) // 2, (column_number + 1) // 2
+                y2, x2 = (row_number + 1) // 2, (column_number - 1) // 2
                 grid.create_rail({Rail(x1, y1, x2, y2)})
             if character in "hv":
                 grid.create_signals_at_grid_position(abs(x1 + x2) / 2, abs(y1 + y2) / 2)
@@ -91,8 +84,8 @@ class StationCreator:
 
     @staticmethod
     def _is_adjacent(pos1: Vec2, pos2: Vec2) -> bool:
-        return (pos1.x == pos2.x and abs(pos1.y - pos2.y) == GRID_BOX_SIZE) or (
-            pos1.y == pos2.y and abs(pos1.x - pos2.x) == GRID_BOX_SIZE
+        return (pos1.x == pos2.x and abs(pos1.y - pos2.y) == 1) or (
+            pos1.y == pos2.y and abs(pos1.x - pos2.x) == 1
         )
 
 

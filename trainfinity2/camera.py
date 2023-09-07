@@ -1,5 +1,8 @@
+import math
 import arcade
 from pyglet.math import Vec2
+
+from trainfinity2.constants import GRID_BOX_SIZE_PIXELS
 
 
 class Camera:
@@ -74,9 +77,9 @@ class Camera:
         relative_x = x / (self.original_right - self.original_left)
         relative_y = y / (self.original_top - self.original_bottom)
         left, right, bottom, top = arcade.get_viewport()
-        return int(left + (right - left) * relative_x), int(
-            bottom + (top - bottom) * relative_y
-        )
+        return math.floor(
+            (left + (right - left) * relative_x) / GRID_BOX_SIZE_PIXELS
+        ), math.floor((bottom + (top - bottom) * relative_y) / GRID_BOX_SIZE_PIXELS)
 
     def set_viewport(self):
         arcade.set_viewport(self.left, self.right, self.bottom, self.top)

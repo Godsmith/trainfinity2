@@ -7,7 +7,11 @@ import arcade
 from pyglet.math import Vec2
 
 from .camera import Camera
-from .constants import GRID_HEIGHT, GRID_WIDTH, SECONDS_BETWEEN_IRON_CREATION
+from .constants import (
+    GRID_HEIGHT_PIXELS,
+    GRID_WIDTH_PIXELS,
+    SECONDS_BETWEEN_IRON_CREATION,
+)
 from .graphics.drawer import Drawer
 from .grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
 from .gui import Gui, Mode
@@ -189,7 +193,7 @@ class Game:
                     self._train_placer.stop_session()
         elif self.gui.mode == Mode.SELECT:
             for train in self.trains:
-                if train.is_at(world_x, world_y):
+                if train.is_close_enough_to_click(world_x, world_y):
                     train.selected = True
                     return
                 else:
@@ -230,10 +234,10 @@ class Game:
                 self.trains.remove(object)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        world_x, world_y = self.camera.to_world_coordinates(x, y)
         if self.is_mouse2_pressed:
             self._on_mouse_move_when_mouse_2_pressed(x, y)
         elif self.is_mouse1_pressed:
-            world_x, world_y = self.camera.to_world_coordinates(x, y)
             pressed_world_x, pressed_world_y = self.camera.to_world_coordinates(
                 self.mouse1_pressed_x, self.mouse1_pressed_y
             )
@@ -246,8 +250,7 @@ class Game:
             )
 
         elif self.gui.mode == Mode.TRAIN and self._train_placer.session:
-            x, y = self.camera.to_world_coordinates(x, y)
-            if station := self.grid.get_station(x, y):
+            if station := self.grid.get_station(world_x, world_y):
                 if rails := self.grid.find_route_between_stations(
                     self._train_placer.session.station, station
                 ):
@@ -259,7 +262,6 @@ class Game:
                 self.drawer.highlight(self._train_placer.session.station.positions)
 
         if self.gui.mode == Mode.DESTROY:
-            world_x, world_y = self.camera.to_world_coordinates(x, y)
             position = Vec2(*self.grid.snap_to(world_x, world_y))
             self.drawer.show_rails_to_be_destroyed(
                 self.grid.rails_at_position(position)
@@ -270,9 +272,9 @@ class Game:
         delta = delta.scale(self.camera.scale)
         new_position = self.camera_position_when_mouse2_pressed - delta
         min_x = -self.camera.viewport_width / 2
-        max_x = GRID_WIDTH + min_x
+        max_x = GRID_WIDTH_PIXELS + min_x
         min_y = -self.camera.viewport_height / 2
-        max_y = GRID_HEIGHT + min_y
+        max_y = GRID_HEIGHT_PIXELS + min_y
         new_position = Vec2(max(min_x, new_position.x), new_position.y)
         new_position = Vec2(min(max_x, new_position.x), new_position.y)
         new_position = Vec2(new_position.x, max(min_y, new_position.y))

@@ -1,10 +1,10 @@
+from typing import Any
 import arcade
 import pytest
 from pyglet.math import Vec2
 from pytest import approx
 from trainfinity2.constants import (
-    GRID_BOX_SIZE,
-    GRID_WIDTH,
+    GRID_WIDTH_CELLS,
     SECONDS_BETWEEN_IRON_CREATION,
 )
 from trainfinity2.game import Mode, Game
@@ -14,7 +14,7 @@ from tests.util import create_objects
 check_call_count = 0
 
 
-def check(statement: bool, count=[0]):
+def check(statement: Any, count=[0]):
     """Pretty hacky way to ensure that we don't get any infinite loops.
     Does not reset the count between function calls, except if one hangs."""
     count[0] += 1
@@ -115,27 +115,27 @@ class TestBuildingRail:
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=90, dx=30, dy=0)
 
-        assert game.grid.rails_being_built == {Rail(90, 90, 120, 90)}
+        assert game.grid.rails_being_built == {Rail(3, 3, 4, 3)}
 
     def test_vertical_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=90, y=120, dx=0, dy=30)
 
-        assert game.grid.rails_being_built == {Rail(90, 90, 90, 120)}
+        assert game.grid.rails_being_built == {Rail(3, 3, 3, 4)}
 
     def test_diagonal_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=120, dx=30, dy=30)
 
-        assert game.grid.rails_being_built == {Rail(90, 90, 120, 120)}
+        assert game.grid.rails_being_built == {Rail(3, 3, 4, 4)}
 
     def test_non_straight_rail_being_built(self, game: Game):
         game.on_mouse_press(x=90, y=90, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=120, y=150, dx=30, dy=60)
 
         assert game.grid.rails_being_built == {
-            Rail(x1=90, y1=90, x2=90, y2=120),
-            Rail(x1=90, y1=120, x2=120, y2=150),
+            Rail(x1=3, y1=3, x2=3, y2=4),
+            Rail(x1=3, y1=4, x2=4, y2=5),
         }
 
     def test_built_rail(self, game: Game):
@@ -161,7 +161,7 @@ class TestBuildingRail:
         assert len(game.drawer._rail_shapes_from_object_id) == 1
 
     def test_cannot_build_rail_in_illegal_position(self, game: Game):
-        game.grid.water = {Vec2(90, 90): Water(Vec2(90, 90))}
+        game.grid.water = {Vec2(3, 3): Water(Vec2(3, 3))}
 
         game.on_mouse_press(x=100, y=100, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=130, y=100, dx=30, dy=0)
@@ -199,15 +199,15 @@ class TestBuildingStations:
         .M...
         """
         game.gui.disable()
-        game.grid._create_mine(Vec2(30, 0))
+        game.grid._create_mine(Vec2(1, 0))
         game.gui.mode = Mode.STATION
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=105, y=45, dx=60, dy=0)
         game.on_mouse_release(x=105, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        positions = (Vec2(30, 30), Vec2(60, 30), Vec2(90, 30))
+        positions = (Vec2(1, 1), Vec2(2, 1), Vec2(3, 1))
 
-        assert game.grid.station_from_position[Vec2(30, 30)] == Station(
+        assert game.grid.station_from_position[Vec2(1, 1)] == Station(
             positions=positions, east_west=True
         )
 
@@ -223,14 +223,14 @@ class TestBuildingStations:
         """
         game.gui.disable()
         game.gui.mode = Mode.STATION
-        game.grid._create_factory(Vec2(0, 30))
+        game.grid._create_factory(Vec2(0, 1))
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=45, y=105, dx=0, dy=60)
         game.on_mouse_release(x=45, y=105, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
 
-        positions = (Vec2(30, 30), Vec2(30, 60), Vec2(30, 90))
+        positions = (Vec2(1, 1), Vec2(1, 2), Vec2(1, 3))
 
-        assert game.grid.station_from_position[Vec2(30, 30)] == Station(
+        assert game.grid.station_from_position[Vec2(1, 1)] == Station(
             positions=positions, east_west=False
         )
 
@@ -395,7 +395,7 @@ class TestCreateTrain:
         # Click next station
         game.on_left_click(90, 0)
 
-        while check(game.trains[0].x < 45.0):
+        while check(game.trains[0].x < 1.5):
             game.on_update(1 / 60)
 
     def test_clicking_two_connected_stations_of_size_2_creates_train_that_starts_moving(
@@ -416,7 +416,7 @@ class TestCreateTrain:
         # Click next station
         game.on_left_click(120, 0)
 
-        while check(game.trains[0].x < 90.0):
+        while check(game.trains[0].x < 3.0):
             game.on_update(1 / 60)
 
     def test_clicking_two_connected_stations_removes_highlight(self, game: Game):
@@ -533,7 +533,7 @@ class TestCreateTrain:
         )
         game._create_train(*game.grid.station_from_position.values())
         train = game.trains[0]
-        train.target_x = 30
+        train.target_x = 1
         game.grid.remove_rail(Vec2(60, 0))
         game.on_update(1 / 60)
 
@@ -553,10 +553,10 @@ class TestCreateTrain:
         # Click next station
         game.on_left_click(90, 0)
 
-        assert not game.signal_controller.reserver(Vec2(30, 0))
+        assert not game.signal_controller.reserver(Vec2(1, 0))
         while check(game.trains[0].speed == 0.0):
             game.on_update(1 / 60)
-        assert game.signal_controller.reserver(Vec2(30, 0))
+        assert game.signal_controller.reserver(Vec2(1, 0))
 
         game.gui.mode = Mode.TRAIN
         # Click first station
@@ -623,7 +623,7 @@ def test_iron_is_regularly_added_to_mines(game):
 
     game.on_update(1 / 60)
 
-    assert game.grid.mines[Vec2(30, 30)].iron == 1
+    assert game.grid.mines[Vec2(1, 1)].iron == 1
     assert (
         len(game.drawer.iron_shape_element_list) == 2
     )  # One for the interior, one for the frame
@@ -644,7 +644,7 @@ class TestTrainMoving:
         game.on_update(1 / 60)
 
     def test_train_speed_is_set_to_0_when_passing_corner(self, game: Game):
-        """The train starts at 30,0 and the corner is at 60,0"""
+        """The train starts at 1,0 and the corner is at 60,0"""
         create_objects(
             game.grid,
             """
@@ -659,7 +659,7 @@ class TestTrainMoving:
             game.on_update(1 / 60)
         while check(train.speed > 0):
             game.on_update(1 / 60)
-        assert 59.0 < train.x < 61.0
+        assert 1.9 < train.x < 2.1
 
 
 def test_fps_is_updated_every_second(game: Game):
@@ -679,12 +679,12 @@ def test_train_picks_up_iron_from_mine(game: Game):
         """,
     )
     game._create_train(*game.grid.station_from_position.values())
-    mine = game.grid.mines[Vec2(30, 30)]
+    mine = game.grid.mines[Vec2(1, 1)]
     train = game.trains[0]
     mine.add_iron()
-    train.x = 30
-    train.target_x = 30
-    train._target_station = game.grid.station_from_position[Vec2(30, 0)]
+    train.x = 1
+    train.target_x = 1
+    train._target_station = game.grid.station_from_position[Vec2(1, 0)]
     assert mine.iron == 1
     assert train.wagons[0].iron == 0
 
@@ -707,9 +707,9 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
     game._create_train(*game.grid.station_from_position.values())
     train = game.trains[0]
     train.wagons[0].iron = 1
-    train.x = 90
-    train.target_x = 90
-    train._target_station = game.grid.station_from_position[Vec2(90, 0)]
+    train.x = 3
+    train.target_x = 3
+    train._target_station = game.grid.station_from_position[Vec2(3, 0)]
 
     while check(train.wagons[0].iron):
         game.on_update(1 / 60)
@@ -758,7 +758,8 @@ class TestSelect:
         train = game.trains[0]
         train.selected = True
 
-        game.on_left_click(15, 15)
+        game.on_mouse_press(15, 15, arcade.MOUSE_BUTTON_LEFT, 0)
+        game.on_mouse_release(15, 15, arcade.MOUSE_BUTTON_LEFT, 0)
 
         assert not train.selected
 
@@ -791,10 +792,13 @@ class TestSignals:
             """,
         )
         game.create_signals_at_click_position(60, 15)
-        blocks = game.signal_controller._signal_blocks
+        # Sort the blocks so that the test becomes predictable
+        blocks = sorted(
+            game.signal_controller._signal_blocks, key=lambda b: sorted(b.positions)[0]
+        )
         assert len(blocks) == 2
-        assert blocks[0].positions == frozenset({Vec2(60, 0), Vec2(90, 0)})
-        assert blocks[1].positions == frozenset({Vec2(0, 0), Vec2(30, 0)})
+        assert blocks[0].positions == frozenset({Vec2(0, 0), Vec2(1, 0)})
+        assert blocks[1].positions == frozenset({Vec2(2, 0), Vec2(3, 0)})
 
     def test_clicking_grid_in_signal_mode_creates_signal(self, game: Game):
         create_objects(
@@ -843,8 +847,8 @@ class TestSignals:
         )
         train = game._create_train(*game.grid.station_from_position.values())
 
-        signal_to_the_west = game.grid.signals[(Vec2(120, 0), Rail(120, 0, 150, 0))]
-        signal_to_the_east = game.grid.signals[(Vec2(150, 0), Rail(120, 0, 150, 0))]
+        signal_to_the_west = game.grid.signals[(Vec2(4, 0), Rail(4, 0, 5, 0))]
+        signal_to_the_east = game.grid.signals[(Vec2(5, 0), Rail(4, 0, 5, 0))]
 
         assert signal_to_the_west.signal_color == SignalColor.GREEN
         assert signal_to_the_east.signal_color == SignalColor.GREEN
@@ -911,7 +915,7 @@ class TestSignals:
         )
         assert len(game.signal_controller._signal_blocks) == 2
 
-        game.grid.remove_rail(Vec2(60, 0))
+        game.grid.remove_rail(Vec2(2, 0))
 
         assert len(game.signal_controller._signal_blocks) == 3
 
@@ -927,11 +931,11 @@ class TestSignals:
             .-S-.-S-.h.-
             """,
         )
-        game.grid.remove_rail(Vec2(60, 0))
+        game.grid.remove_rail(Vec2(2, 0))
 
         assert len(game.signal_controller._signal_blocks) == 3
 
-        game.grid.create_rail({Rail(30, 0, 60, 0), Rail(60, 0, 90, 0)})
+        game.grid.create_rail({Rail(1, 0, 2, 0), Rail(2, 0, 3, 0)})
 
         assert len(game.signal_controller._signal_blocks) == 2
 
@@ -973,7 +977,7 @@ class TestTrainMovingAroundSignals:
         game.on_update(1 / 60)
 
         # Train chooses north route
-        assert train.y > 30
+        assert train.y > 1
 
     def test_if_a_train_is_destroyed_the_signals_become_green(self, game: Game):
         create_objects(
@@ -1034,10 +1038,10 @@ class TestReserveAndUnreserveRail:
         )
         game.on_update(1 / 60)
         left_signal_block = game.signal_controller._signal_block_from_position[
-            Vec2(30, 0)
+            Vec2(1, 0)
         ]
         right_signal_block = game.signal_controller._signal_block_from_position[
-            Vec2(120, 0)
+            Vec2(4, 0)
         ]
         assert left_signal_block.reserved_by == id(train)
         while check(not right_signal_block.reserved_by):
@@ -1061,10 +1065,10 @@ class TestReserveAndUnreserveRail:
         )
         game.on_update(1 / 60)
         left_signal_block = game.signal_controller._signal_block_from_position[
-            Vec2(30, 0)
+            Vec2(1, 0)
         ]
         right_signal_block = game.signal_controller._signal_block_from_position[
-            Vec2(120, 0)
+            Vec2(4, 0)
         ]
         while check(left_signal_block.reserved_by == id(train)):
             game.on_update(1 / 60)
@@ -1085,25 +1089,27 @@ class TestReserveAndUnreserveRail:
             *game.grid.station_from_position.values(), wagon_count=1
         )
 
+        # Sort signal blocks by x position, so that signal_blocks[0] is the western etc
+        signal_blocks = sorted(
+            game.signal_controller._signal_blocks,
+            key=lambda b: sorted(b.positions)[0].x,
+        )
+
         while check(train.speed == 0.0):
             game.on_update(1 / 60)
 
-        assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
+        assert signal_blocks[0].reserved_by == id(train)
 
-        while check(not game.signal_controller._signal_blocks[1].reserved_by):
+        while check(not signal_blocks[1].reserved_by):
             game.on_update(1 / 60)
 
-        assert (
-            game.signal_controller._signal_blocks[1].reserved_by
-            == game.signal_controller._signal_blocks[0].reserved_by
-            == id(train)
-        )
+        assert signal_blocks[1].reserved_by == signal_blocks[0].reserved_by == id(train)
 
 
 class TestPlayer:
     def test_grid_is_enlarged_when_leveling_up(self, game: Game):
         assert game.grid.left == 0
-        assert game.grid.right == GRID_WIDTH
+        assert game.grid.right == GRID_WIDTH_CELLS
         game.player.score = 10
-        assert game.grid.left == -GRID_BOX_SIZE
-        assert game.grid.right == GRID_WIDTH + GRID_BOX_SIZE
+        assert game.grid.left == -1
+        assert game.grid.right == GRID_WIDTH_CELLS + 1

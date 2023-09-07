@@ -2,7 +2,7 @@ import math
 import arcade
 from more_itertools import numeric_range
 from trainfinity2.constants import (
-    GRID_BOX_SIZE,
+    GRID_BOX_SIZE_PIXELS,
     RAIL_LINE_WIDTH,
 )
 from trainfinity2.model import Rail
@@ -15,14 +15,14 @@ def get_rail_shapes(rail: Rail, color: list[int]) -> list[arcade.Shape]:
 
 def _get_sleepers(rail: Rail, color: list[int]) -> list[arcade.Shape]:
     x1, y1, x2, y2 = [
-        coordinate + GRID_BOX_SIZE / 2
+        coordinate * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2
         for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
     ]
 
     x = x1
     y = y1
     sleeper_count = 10
-    sleeper_width = GRID_BOX_SIZE / 3
+    sleeper_width = GRID_BOX_SIZE_PIXELS / 3
     sleeper_shapes = []
     if x2 == x1:
         xs = [x1] * sleeper_count
@@ -53,10 +53,10 @@ def _get_sleepers(rail: Rail, color: list[int]) -> list[arcade.Shape]:
 
 def _get_metal_rail_shapes(rail: Rail, color: list[int]) -> list[arcade.Shape]:
     x1, y1, x2, y2 = [
-        coordinate + GRID_BOX_SIZE / 2
+        coordinate * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2
         for coordinate in (rail.x1, rail.y1, rail.x2, rail.y2)
     ]
-    train_track_width = GRID_BOX_SIZE / 6
+    train_track_width = GRID_BOX_SIZE_PIXELS / 6
     offset = _offset_multiplier(x1, x2, y1, y2).scale(train_track_width / 2)
     return [
         arcade.create_line(

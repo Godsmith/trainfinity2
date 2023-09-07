@@ -3,7 +3,7 @@ from itertools import product
 from perlin_noise import PerlinNoise
 from pyglet.math import Vec2
 
-from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH
+from trainfinity2.constants import GRID_HEIGHT_CELLS, GRID_WIDTH_CELLS
 
 
 class Terrain:
@@ -22,12 +22,18 @@ class Terrain:
             noise3 = PerlinNoise(octaves=12)
             PerlinNoise(octaves=24)
             for x, y in product(
-                range(-GRID_WIDTH * 2, GRID_WIDTH * 3 + 1, GRID_BOX_SIZE),
-                range(-GRID_HEIGHT * 2, GRID_HEIGHT * 3 + 1, GRID_BOX_SIZE),
+                range(
+                    -GRID_WIDTH_CELLS * 2,
+                    GRID_WIDTH_CELLS * 3 + 1,
+                ),
+                range(
+                    -GRID_HEIGHT_CELLS * 2,
+                    GRID_HEIGHT_CELLS * 3 + 1,
+                ),
             ):
-                noise_val = noise1([x / GRID_WIDTH, y / GRID_WIDTH])
-                noise_val += 0.5 * noise2([x / GRID_WIDTH, y / GRID_WIDTH])
-                noise_val += 0.25 * noise3([x / GRID_WIDTH, y / GRID_WIDTH])
+                noise_val = noise1([x / GRID_WIDTH_CELLS, y / GRID_WIDTH_CELLS])
+                noise_val += 0.5 * noise2([x / GRID_WIDTH_CELLS, y / GRID_WIDTH_CELLS])
+                noise_val += 0.25 * noise3([x / GRID_WIDTH_CELLS, y / GRID_WIDTH_CELLS])
                 # noise_val += 0.125 * noise4([x / GRID_WIDTH, y / GRID_WIDTH])
 
                 if noise_val < -0.1:

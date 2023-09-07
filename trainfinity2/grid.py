@@ -7,7 +7,8 @@ from typing import Any, Iterable, Type
 
 from pyglet.math import Vec2
 
-from .constants import GRID_BOX_SIZE, GRID_HEIGHT, GRID_WIDTH
+from trainfinity2.constants import GRID_HEIGHT_CELLS, GRID_WIDTH_CELLS
+
 from .gui import Mode
 from .model import (
     Factory,
@@ -43,8 +44,8 @@ def positions_between(start: Vec2, end: Vec2) -> list[Vec2]:
         abs_dy = abs(current.y - end.y)
         x_step = (end.x - current.x) // abs_dx if abs_dx else 0
         y_step = (end.y - current.y) // abs_dy if abs_dy else 0
-        new_x = current.x + GRID_BOX_SIZE * (abs_dx >= abs_dy) * x_step
-        new_y = current.y + GRID_BOX_SIZE * (abs_dy >= abs_dx) * y_step
+        new_x = current.x + (abs_dx >= abs_dy) * x_step
+        new_y = current.y + (abs_dy >= abs_dx) * y_step
         positions.append(Vec2(new_x, new_y))
     return positions
 
@@ -63,8 +64,8 @@ def station_between(start: Vec2, end: Vec2) -> Station:
 
 
 def get_random_position() -> Vec2:
-    x = random.randrange(0, GRID_WIDTH // GRID_BOX_SIZE) * GRID_BOX_SIZE
-    y = random.randrange(0, GRID_HEIGHT // GRID_BOX_SIZE) * GRID_BOX_SIZE
+    x = random.randrange(0, GRID_WIDTH_CELLS)
+    y = random.randrange(0, GRID_HEIGHT_CELLS)
     return Vec2(x, y)
 
 
@@ -84,8 +85,8 @@ class Grid(Subject):
 
         self.left = 0
         self.bottom = 0
-        self.right = GRID_WIDTH
-        self.top = GRID_HEIGHT
+        self.right = GRID_WIDTH_CELLS
+        self.top = GRID_HEIGHT_CELLS
         self._create_terrain(terrain)
 
     def create_buildings(self):
@@ -146,10 +147,10 @@ class Grid(Subject):
         return Vec2(self.snap_to_x(x), self.snap_to_y(y))
 
     def snap_to_x(self, x: float) -> int:
-        return math.floor(x / GRID_BOX_SIZE) * GRID_BOX_SIZE
+        return math.floor(x)
 
     def snap_to_y(self, y: float) -> int:
-        return math.floor(y / GRID_BOX_SIZE) * GRID_BOX_SIZE
+        return math.floor(y)
 
     def find_route_between_stations(
         self, station1: Station, station2: Station
@@ -238,12 +239,7 @@ class Grid(Subject):
     def _is_inside(self, x, y):
         return self.left <= x < self.right and self.bottom <= y < self.top
 
-    def click_and_drag(self, x, y, start_x, start_y, mode: Mode):
-        x = self.snap_to_x(x)
-        y = self.snap_to_y(y)
-        start_x = self.snap_to_x(start_x)
-        start_y = self.snap_to_y(start_y)
-
+    def click_and_drag(self, x: int, y: int, start_x: int, start_y: int, mode: Mode):
         if mode == Mode.RAIL:
             self._show_rails_being_built(Vec2(start_x, start_y), Vec2(x, y))
         elif mode == Mode.STATION:
@@ -269,7 +265,6 @@ class Grid(Subject):
         self.notify(RailsBeingBuiltEvent(self.rails_being_built))
 
     def remove_rail(self, position: Vec2):
-        position = self.snap_to(*position)
         for rail in self.rails_at_position(position):
             self._notify_about_other_object(rail, DestroyEvent())
             keys = [key for key, signal in self.signals.items() if signal.rail == rail]
@@ -323,12 +318,8 @@ class Grid(Subject):
     def _is_adjacent(self, position1: Vec2, position2: Vec2):
         dx = abs(position1.x - position2.x)
         dy = abs(position1.y - position2.y)
-        return (
-            GRID_BOX_SIZE * 3 / 4 < dx < GRID_BOX_SIZE * 5 / 4
-            and dy < GRID_BOX_SIZE / 4
-        ) or (
-            GRID_BOX_SIZE * 3 / 4 < dy < GRID_BOX_SIZE * 5 / 4
-            and dx < GRID_BOX_SIZE / 4
+        return (3 / 4 < dx < 5 / 4 and dy < 1 / 4) or (
+            3 / 4 < dy < 5 / 4 and dx < 1 / 4
         )
 
     def adjacent_mines(self, positions: Iterable[Vec2]) -> list[Mine]:
@@ -367,10 +358,10 @@ class Grid(Subject):
         self._notify_about_other_object(station, CreateEvent())
 
     def enlarge_grid(self):
-        self.left -= GRID_BOX_SIZE
-        self.bottom -= GRID_BOX_SIZE
-        self.right += GRID_BOX_SIZE
-        self.top += GRID_BOX_SIZE
+        self.left -= 1
+        self.bottom -= 1
+        self.right += 1
+        self.top += 1
         # self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
         self._create_in_random_unoccupied_location(Factory)
         self._create_in_random_unoccupied_location(Mine)
@@ -389,13 +380,13 @@ class Grid(Subject):
             (rail, distance_to_rail(rail, x, y)) for rail in self.rails
         ]
         closest_rail, distance = sorted(rails_and_distances, key=lambda x: x[1])[0]
-        return closest_rail if distance < GRID_BOX_SIZE else None
+        return closest_rail if distance < 1 else None
 
     def create_signals_at_click_position(self, click_x, click_y):
         # Transpose half a box since rail coordinates are in the bottom left
         # of each grid cell while they are visible in the middle
-        x = click_x - GRID_BOX_SIZE / 2
-        y = click_y - GRID_BOX_SIZE / 2
+        x = click_x - 0.5
+        y = click_y - 0.5
         return self.create_signals_at_grid_position(x, y)
 
     def create_signals_at_grid_position(self, x, y) -> list[Signal]:

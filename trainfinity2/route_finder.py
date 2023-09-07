@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from heapq import heappop, heappush
-from typing import Callable, Iterable
+from typing import Callable
 
 from pyglet.math import Vec2
 
@@ -21,7 +21,7 @@ class _RailVector:
 
 
 def find_route(
-    possible_next_rails_method: Callable[[Vec2, Rail | None], Iterable[Rail]],
+    possible_next_rails_method: Callable[[Vec2, Rail | None], set[Rail]],
     starting_rails: set[Rail],
     initial_position: Vec2,
     target_station: Station,

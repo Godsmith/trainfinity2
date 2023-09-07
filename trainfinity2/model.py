@@ -5,7 +5,6 @@ from typing import Callable
 
 from pyglet.math import Vec2
 
-from trainfinity2.constants import GRID_BOX_SIZE
 from itertools import pairwise
 
 from .gui import Gui
@@ -103,14 +102,14 @@ class Station:
         if self.east_west:
             positions = sorted(self.positions, key=lambda position: position.x)
             return (
-                Vec2(positions[0].x - GRID_BOX_SIZE, positions[0].y),
-                Vec2(positions[-1].x + GRID_BOX_SIZE, positions[-1].y),
+                Vec2(positions[0].x - 1, positions[0].y),
+                Vec2(positions[-1].x + 1, positions[-1].y),
             )
         else:
             positions = sorted(self.positions, key=lambda position: position.y)
             return (
-                Vec2(positions[0].x, positions[0].y - GRID_BOX_SIZE),
-                Vec2(positions[-1].x, positions[-1].y + GRID_BOX_SIZE),
+                Vec2(positions[0].x, positions[0].y - 1),
+                Vec2(positions[-1].x, positions[-1].y + 1),
             )
 
     @functools.cached_property
