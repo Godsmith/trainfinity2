@@ -20,23 +20,29 @@ def _create_buildings(
 def _create_rails(grid: Grid, lines: list[str]):
     for row_number, row in enumerate(lines):
         for column_number, character in enumerate(row):
-            # TODO: simplify assignments
-            x1 = y1 = x2 = y2 = 0  # To avoid unbound warning
+            x1_diff = y1_diff = x2_diff = y2_diff = 0
             if character in "-h":
-                y1, x1 = row_number // 2, (column_number - 1) // 2
-                y2, x2 = row_number // 2, (column_number + 1) // 2
-                grid.create_rail({Rail(x1, y1, x2, y2)})
+                x1_diff = -1
+                x2_diff = 1
             elif character in "|v":
-                y1, x1 = (row_number - 1) // 2, column_number // 2
-                y2, x2 = (row_number + 1) // 2, column_number // 2
-                grid.create_rail({Rail(x1, y1, x2, y2)})
+                y1_diff = -1
+                y2_diff = 1
             elif character == "/":
-                y1, x1 = (row_number - 1) // 2, (column_number - 1) // 2
-                y2, x2 = (row_number + 1) // 2, (column_number + 1) // 2
-                grid.create_rail({Rail(x1, y1, x2, y2)})
+                x1_diff = -1
+                y1_diff = -1
+                x2_diff = 1
+                y2_diff = 1
             elif character == "\\":
-                y1, x1 = (row_number - 1) // 2, (column_number + 1) // 2
-                y2, x2 = (row_number + 1) // 2, (column_number - 1) // 2
+                x1_diff = 1
+                y1_diff = -1
+                x2_diff = -1
+                y2_diff = 1
+            x1 = (column_number + x1_diff) // 2
+            y1 = (row_number + y1_diff) // 2
+            x2 = (column_number + x2_diff) // 2
+            y2 = (row_number + y2_diff) // 2
+
+            if character in "-h|v/\\":
                 grid.create_rail({Rail(x1, y1, x2, y2)})
             if character in "hv":
                 grid.create_signals_at_grid_position(abs(x1 + x2) / 2, abs(y1 + y2) / 2)
