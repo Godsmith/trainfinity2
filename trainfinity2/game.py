@@ -262,9 +262,8 @@ class Game:
                 self.drawer.highlight(self._train_placer.session.station.positions)
 
         if self.gui.mode == Mode.DESTROY:
-            position = Vec2(*self.grid.snap_to(world_x, world_y))
             self.drawer.show_rails_to_be_destroyed(
-                self.grid.rails_at_position(position)
+                self.grid.rails_at_position(Vec2(world_x, world_y))
             )
 
     def _on_mouse_move_when_mouse_2_pressed(self, x, y):

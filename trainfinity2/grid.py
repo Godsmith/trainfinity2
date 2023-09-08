@@ -1,4 +1,3 @@
-import math
 import random
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -142,15 +141,6 @@ class Grid(Subject):
 
     def _create_factories(self):
         self._create_factory_in_random_unoccupied_location()
-
-    def snap_to(self, x: float, y: float) -> Vec2:
-        return Vec2(self.snap_to_x(x), self.snap_to_y(y))
-
-    def snap_to_x(self, x: float) -> int:
-        return math.floor(x)
-
-    def snap_to_y(self, y: float) -> int:
-        return math.floor(y)
 
     def find_route_between_stations(
         self, station1: Station, station2: Station
@@ -312,7 +302,6 @@ class Grid(Subject):
         self.notify(StationBeingBuiltEvent(self.station_being_built))
 
     def get_station(self, x, y) -> Station | None:
-        x, y = self.snap_to(x, y)
         return self.station_from_position.get(Vec2(x, y))
 
     def _is_adjacent(self, position1: Vec2, position2: Vec2):
