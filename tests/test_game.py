@@ -5,10 +5,10 @@ from pyglet.math import Vec2
 from pytest import approx
 from trainfinity2.constants import (
     GRID_WIDTH_CELLS,
-    SECONDS_BETWEEN_IRON_CREATION,
+    SECONDS_BETWEEN_CARGO_CREATION,
 )
 from trainfinity2.game import Mode, Game
-from trainfinity2.model import Rail, SignalColor, Station, Water
+from trainfinity2.model import Rail, CargoType, SignalColor, Station, Water
 from tests.util import create_objects
 
 check_call_count = 0
@@ -35,7 +35,7 @@ def test_draw(game: Game):
     )
     game._create_train(*game.grid.station_from_position.values())
     # Mainly for code coverage
-    game.trains[0].wagons[0].iron = 1
+    game.trains[0].wagons[0].cargo_count = 1
     game.on_draw()
 
 
@@ -182,7 +182,7 @@ class TestBuildingRail:
         assert len(game.grid.rails) == 0
 
     def test_can_build_rail_outside_grid_when_grid_has_enlarged(self, game: Game):
-        game.grid.enlarge_grid()
+        game.grid.level_up(2)
         game.gui.disable()
         self.drag_one_tile_outside_grid(game)
 
@@ -199,7 +199,7 @@ class TestBuildingStations:
         .M...
         """
         game.gui.disable()
-        game.grid._create_mine(Vec2(1, 0))
+        game.grid._create_mine(Vec2(1, 0), cargo=CargoType.IRON)
         game.gui.mode = Mode.STATION
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=105, y=45, dx=60, dy=0)
@@ -609,7 +609,7 @@ def test_clicking_in_destroy_mode_destroys_rail(game: Game):
     assert len(game.grid.rails) == 1
 
 
-def test_iron_is_regularly_added_to_mines(game):
+def test_iron_is_regularly_added_to_mines(game: Game):
     create_objects(
         game.grid,
         """
@@ -619,13 +619,13 @@ def test_iron_is_regularly_added_to_mines(game):
         """,
     )
     # Start just before creating a new iron
-    game.iron_counter = SECONDS_BETWEEN_IRON_CREATION - 0.00001
+    game.cargo_counter = SECONDS_BETWEEN_CARGO_CREATION - 0.00001
 
     game.on_update(1 / 60)
 
-    assert game.grid.mines[Vec2(1, 1)].iron == 1
+    assert game.grid.mines[Vec2(1, 1)].cargo_count == 1
     assert (
-        len(game.drawer.iron_shape_element_list) == 2
+        len(game.drawer.cargo_shape_element_list) == 2
     )  # One for the interior, one for the frame
 
 
@@ -681,18 +681,18 @@ def test_train_picks_up_iron_from_mine(game: Game):
     game._create_train(*game.grid.station_from_position.values())
     mine = game.grid.mines[Vec2(1, 1)]
     train = game.trains[0]
-    mine.add_iron()
+    mine.add_cargo()
     train.x = 1
     train.target_x = 1
     train._target_station = game.grid.station_from_position[Vec2(1, 0)]
-    assert mine.iron == 1
-    assert train.wagons[0].iron == 0
+    assert mine.cargo_count == 1
+    assert train.wagons[0].cargo_count == 0
 
-    while check(train.wagons[0].iron == 0):
+    while check(train.wagons[0].cargo_count == 0):
         game.on_update(1 / 60)
 
-    assert mine.iron == 0
-    assert train.wagons[0].iron == 1
+    assert mine.cargo_count == 0
+    assert train.wagons[0].cargo_count == 1
 
 
 def test_train_delivers_iron_to_factory_gives_score(game: Game):
@@ -706,15 +706,15 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
     )
     game._create_train(*game.grid.station_from_position.values())
     train = game.trains[0]
-    train.wagons[0].iron = 1
+    train.wagons[0].cargo_count = 1
     train.x = 3
     train.target_x = 3
     train._target_station = game.grid.station_from_position[Vec2(3, 0)]
 
-    while check(train.wagons[0].iron):
+    while check(train.wagons[0].cargo_count):
         game.on_update(1 / 60)
 
-    assert train.wagons[0].iron == 0
+    assert train.wagons[0].cargo_count == 0
     assert game.player.score == 1
 
 

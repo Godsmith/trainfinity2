@@ -8,7 +8,7 @@ from pyglet.math import Vec2
 
 
 from .grid import Grid
-from .model import Player, Rail, Station
+from .model import Player, Rail, CargoType, Station
 from .wagon import Wagon
 from .observer import DestroyEvent, Subject
 from .route_finder import find_route, has_reached_end_of_target_station
@@ -177,15 +177,15 @@ class Train(Subject):
         # instantly be transported to the factory
         self.speed = 0
         is_finished = True
-        if self.grid.adjacent_factories(station.positions) and self._has_iron():
+        if self.grid.adjacent_factories(station.positions) and self._has_cargo():
             self.wait_timer = 1
-            self._run_after_wait = self._unload_iron
+            self._run_after_wait = self._unload_cargo
             is_finished = False
         for mine in self.grid.adjacent_mines(station.positions):
-            if self._has_space() and mine.iron > 0:
-                mine.remove_iron(1)
+            if self._has_space() and mine.cargo_count > 0:
+                mine.remove_cargo(1)
                 self.wait_timer = 1
-                self._run_after_wait = self._load_iron
+                self._run_after_wait = self._create_load_cargo_method(mine.cargo_type)
                 is_finished = False
                 break
         if is_finished:
@@ -194,24 +194,28 @@ class Train(Subject):
         # Otherwise it the train would prefer to continue forward and then reverse
         # self.current_rail = None
 
-    def _has_iron(self):
-        return any(wagon.iron for wagon in self.wagons)
+    def _has_cargo(self):
+        return any(wagon.cargo_count for wagon in self.wagons)
 
-    def _unload_iron(self):
+    def _unload_cargo(self):
         for wagon in reversed(self.wagons):
-            if wagon.iron:
-                self.player.score += wagon.iron
-                wagon.iron = 0
+            if wagon.cargo_count:
+                self.player.score += wagon.cargo_count
+                wagon.cargo_count = 0
                 return
 
     def _has_space(self):
-        return any(not wagon.iron for wagon in self.wagons)
+        return any(not wagon.cargo_count for wagon in self.wagons)
 
-    def _load_iron(self):
-        for wagon in self.wagons:
-            if not wagon.iron:
-                wagon.iron = 1
-                return
+    def _create_load_cargo_method(self, cargo_type: CargoType):
+        def inner():
+            for wagon in self.wagons:
+                if not wagon.cargo_count:
+                    wagon.cargo_type = cargo_type
+                    wagon.cargo_count = 1
+                    return
+
+        return inner
 
     def continue_to_next_station(self):
         self._target_station = (

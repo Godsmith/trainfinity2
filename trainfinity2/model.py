@@ -58,16 +58,22 @@ class Water:
     position: Vec2
 
 
-MAX_IRON_AT_MINE = 8
+MAX_CARGO_AT_MINE = 8
+
+
+class CargoType(Enum):
+    COAL = auto()
+    IRON = auto()
 
 
 @dataclass(frozen=True)
-class IronAddedEvent(Event):
+class CargoAddedEvent(Event):
     position: Vec2
+    type: CargoType
 
 
 @dataclass(frozen=True)
-class IronRemovedEvent(Event):
+class CargoRemovedEvent(Event):
     position: Vec2
     amount: int
 
@@ -75,20 +81,21 @@ class IronRemovedEvent(Event):
 @dataclass
 class Mine(Subject):
     position: Vec2
-    iron: int = 0
+    cargo_type: CargoType
+    cargo_count: int = 0
 
     def __post_init__(self):
         super().__init__()
 
-    def add_iron(self):
-        if self.iron < MAX_IRON_AT_MINE:
-            self.iron += 1
-            self.notify(IronAddedEvent(self.position))
+    def add_cargo(self):
+        if self.cargo_count < MAX_CARGO_AT_MINE:
+            self.cargo_count += 1
+            self.notify(CargoAddedEvent(self.position, self.cargo_type))
 
-    def remove_iron(self, amount) -> int:
-        amount_taken = amount if amount <= self.iron else self.iron
-        self.iron -= amount_taken
-        self.notify(IronRemovedEvent(self.position, amount_taken))
+    def remove_cargo(self, amount) -> int:
+        amount_taken = amount if amount <= self.cargo_count else self.cargo_count
+        self.cargo_count -= amount_taken
+        self.notify(CargoRemovedEvent(self.position, amount_taken))
         return amount_taken
 
 
@@ -151,7 +158,7 @@ def get_level_scores() -> list[int]:
 @dataclass
 class Player:
     gui: Gui
-    enlarge_grid: Callable[[], None]
+    level_up: Callable[[int], None]
     _score: int = 0
     _level = 0
 
@@ -169,7 +176,7 @@ class Player:
         self._score = value
         while self._score >= self.LEVELS[self._level + 1]:
             self._level += 1
-            self.enlarge_grid()
+            self.level_up(self._level)
         self.gui.update_score(value, self._level, self.score_to_grid_increase())
 
 

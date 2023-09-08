@@ -10,7 +10,7 @@ from .camera import Camera
 from .constants import (
     GRID_HEIGHT_PIXELS,
     GRID_WIDTH_PIXELS,
-    SECONDS_BETWEEN_IRON_CREATION,
+    SECONDS_BETWEEN_CARGO_CREATION,
 )
 from .graphics.drawer import Drawer
 from .grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
@@ -84,9 +84,9 @@ class Game:
         self.grid.add_observer(self.drawer, StationBeingBuiltEvent)
         self.grid.create_buildings()
 
-        self.player = Player(self.gui, self.enlarge_grid)
+        self.player = Player(self.gui, self.level_up)
 
-        self.iron_counter = 0
+        self.cargo_counter = 0.0
 
         self.drawer.upsert(self.grid)
         self.drawer.create_terrain(
@@ -96,11 +96,11 @@ class Game:
         self._train_placer = _TrainPlacer(self.drawer)
 
     def on_update(self, delta_time):
-        self.iron_counter += delta_time
-        if self.iron_counter > SECONDS_BETWEEN_IRON_CREATION:
+        self.cargo_counter += delta_time
+        if self.cargo_counter > SECONDS_BETWEEN_CARGO_CREATION:
             for mine in self.grid.mines.values():
-                mine.add_iron()
-            self.iron_counter = 0
+                mine.add_cargo()
+            self.cargo_counter = 0
         self._update_gui_figures(delta_time)
 
         for train in self.trains:
@@ -294,6 +294,6 @@ class Game:
         self.camera.set_viewport()
         self.gui.refresh_text()
 
-    def enlarge_grid(self):
-        self.grid.enlarge_grid()
+    def level_up(self, level: int):
+        self.grid.level_up(level)
         self.drawer.upsert(self.grid)

@@ -111,7 +111,8 @@ def create_objects(grid: Grid, map_: str):
     lines.reverse()  # Reverse to get row indices to match with coordinates
     lines = _remove_offset(lines)
 
-    _create_buildings(lines, "M", grid._create_mine)
+    _create_buildings(lines, "M", grid._create_iron_mine)
+    _create_buildings(lines, "C", grid._create_coal_mine)
     _create_buildings(lines, "F", grid._create_factory)
 
     east_west_station_creator = StationCreator(grid, east_west=True)

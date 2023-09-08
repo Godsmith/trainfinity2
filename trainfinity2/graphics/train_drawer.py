@@ -6,8 +6,8 @@ from arcade import Emitter, color
 from trainfinity2.constants import (
     GRID_BOX_SIZE_PIXELS,
     HIGHLIGHT_COLOR,
-    IRON_SIZE,
 )
+from trainfinity2.graphics.cargo import get_cargo_shape
 from trainfinity2.train import Train
 from trainfinity2.wagon import Wagon
 
@@ -115,20 +115,8 @@ class TrainDrawer:
             color=color.REDWOOD,
             tilt_angle=wagon.angle,
         )
-        if wagon.iron:
-            arcade.draw_rectangle_filled(
-                x,
-                y,
-                IRON_SIZE,
-                IRON_SIZE,
-                color=color.TROLLEY_GREY,
-                tilt_angle=wagon.angle,
-            )
-            arcade.draw_rectangle_outline(
-                x,
-                y,
-                IRON_SIZE,
-                IRON_SIZE,
-                color=color.BLACK,
-                tilt_angle=wagon.angle,
-            )
+        if wagon.cargo_count:
+            for shape in get_cargo_shape(
+                x, y, wagon.cargo_type, tilt_angle=wagon.angle
+            ):
+                shape.draw()

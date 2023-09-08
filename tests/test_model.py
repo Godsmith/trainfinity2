@@ -18,7 +18,7 @@ def mock_gui():
 
 @pytest.fixture
 def player(mock_gui):
-    return Player(mock_gui(), lambda: None)
+    return Player(mock_gui(), lambda level: None)
 
 
 @pytest.fixture

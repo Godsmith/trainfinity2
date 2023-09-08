@@ -5,6 +5,7 @@ from typing import Any, Collection, Iterable
 import arcade
 from arcade import Shape, color
 from pyglet.math import Vec2
+from trainfinity2.graphics.cargo import get_cargo_shape
 
 from trainfinity2.graphics.rail_shapes import get_rail_shapes
 from trainfinity2.graphics.train_drawer import TrainDrawer
@@ -17,16 +18,16 @@ from ..constants import (
     GRID_COLOR,
     GRID_LINE_WIDTH,
     HIGHLIGHT_COLOR,
-    IRON_SIZE,
-    PIXEL_OFFSET_PER_IRON,
+    PIXEL_OFFSET_PER_CARGO,
     RAIL_TO_BE_DESTROYED_COLOR,
 )
 from ..grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
 from ..model import (
     Building,
     Factory,
-    IronAddedEvent,
-    IronRemovedEvent,
+    CargoType,
+    CargoAddedEvent,
+    CargoRemovedEvent,
     Mine,
     Rail,
     Signal,
@@ -71,7 +72,7 @@ class Drawer:
         self._sprite_list = arcade.SpriteList()
 
         # Needed to easily remove sprites and shapes
-        self.iron_shapes_from_position = defaultdict(list)
+        self.cargo_shapes_from_position = defaultdict(list)
 
         self._sprites_from_object_id = defaultdict(list)
         self._shapes_from_object_id = defaultdict(list)
@@ -90,7 +91,7 @@ class Drawer:
         self._station_being_built: Station | None = None
         self.stations_being_built_shape_element_list = _ShapeElementList()
 
-        self.iron_shape_element_list = _ShapeElementList()
+        self.cargo_shape_element_list = _ShapeElementList()
 
         self.highlight_shape_element_list = _ShapeElementList()
 
@@ -300,16 +301,16 @@ class Drawer:
 
     def on_notify(self, object: Any, event: Event):
         match (object, event):
-            case Mine(), IronAddedEvent():
-                event = typing.cast(IronAddedEvent, event)
-                self._add_iron(event.position)
-            case Mine(), IronRemovedEvent():
-                event = typing.cast(IronRemovedEvent, event)
+            case Mine(), CargoAddedEvent():
+                event = typing.cast(CargoAddedEvent, event)
+                self._add_cargo(event.position, event.type)
+            case Mine(), CargoRemovedEvent():
+                event = typing.cast(CargoRemovedEvent, event)
                 self._remove_iron(event.position, event.amount)
             case Mine(), CreateEvent():
                 self.upsert(object)
-                object.add_observer(self, IronAddedEvent)
-                object.add_observer(self, IronRemovedEvent)
+                object.add_observer(self, CargoAddedEvent)
+                object.add_observer(self, CargoRemovedEvent)
             case Train(), DestroyEvent():
                 self._train_drawer.remove(object)
             case Rail(), DestroyEvent():
@@ -333,36 +334,21 @@ class Drawer:
                     f"Received unexpected combination {object} and {event}"
                 )
 
-    def _add_iron(self, position: Vec2):
+    def _add_cargo(self, position: Vec2, cargo_type: CargoType):
         x, y = position.x * GRID_BOX_SIZE_PIXELS, position.y * GRID_BOX_SIZE_PIXELS
-        x += len(self.iron_shapes_from_position[position]) * int(
-            PIXEL_OFFSET_PER_IRON / 2
+        x += len(self.cargo_shapes_from_position[position]) * int(
+            PIXEL_OFFSET_PER_CARGO / 2
         )
-        filled_rectangle = arcade.create_rectangle_filled(
-            x,
-            y,
-            IRON_SIZE,
-            IRON_SIZE,
-            color=color.TROLLEY_GREY,
-        )
-        rectangle_outline = arcade.create_rectangle_outline(
-            x,
-            y,
-            IRON_SIZE,
-            IRON_SIZE,
-            color=color.BLACK,
-        )
-        self.iron_shapes_from_position[position].append(filled_rectangle)
-        self.iron_shapes_from_position[position].append(rectangle_outline)
-        self.iron_shape_element_list.append(filled_rectangle)
-        self.iron_shape_element_list.append(rectangle_outline)
+        for shape in get_cargo_shape(x, y, cargo_type):
+            self.cargo_shapes_from_position[position].append(shape)
+            self.cargo_shape_element_list.append(shape)
 
     def _remove_iron(self, position: Vec2, amount: int):
         for _ in range(amount):
-            filled_rectangle = self.iron_shapes_from_position[position].pop()
-            rectangle_outline = self.iron_shapes_from_position[position].pop()
-            self.iron_shape_element_list.remove(filled_rectangle)
-            self.iron_shape_element_list.remove(rectangle_outline)
+            filled_rectangle = self.cargo_shapes_from_position[position].pop()
+            rectangle_outline = self.cargo_shapes_from_position[position].pop()
+            self.cargo_shape_element_list.remove(filled_rectangle)
+            self.cargo_shape_element_list.remove(rectangle_outline)
 
     def _show_rails_being_built(self, rails: set[Rail]):
         if rails != self._rails_being_built:
@@ -431,7 +417,7 @@ class Drawer:
 
         self.rails_being_built_shape_element_list.draw()
         self.stations_being_built_shape_element_list.draw()
-        self.iron_shape_element_list.draw()
+        self.cargo_shape_element_list.draw()
 
         self.highlight_shape_element_list.draw()
 

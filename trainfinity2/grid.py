@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import Any, Iterable, Type
+from typing import Any, Iterable
 
 from pyglet.math import Vec2
 
@@ -13,6 +13,7 @@ from .model import (
     Factory,
     Mine,
     Rail,
+    CargoType,
     Signal,
     Station,
     Water,
@@ -109,17 +110,23 @@ class Grid(Subject):
             if position not in illegal_positions:
                 return position
 
-    def _create_mine(self, position: Vec2):
-        mine = Mine(position)
+    def _create_coal_mine(self, position: Vec2):
+        return self._create_mine(position, CargoType.COAL)
+
+    def _create_iron_mine(self, position: Vec2):
+        return self._create_mine(position, CargoType.IRON)
+
+    def _create_mine(self, position: Vec2, cargo: CargoType):
+        mine = Mine(position, cargo_type=cargo)
         self.mines[position] = mine
         self._notify_about_other_object(mine, CreateEvent())
         return mine
 
-    def _create_mine_in_random_unoccupied_location(self):
-        self._create_mine(self._get_random_position_to_build_mine_or_factory())
+    def _create_mine_in_random_unoccupied_location(self, cargo: CargoType):
+        self._create_mine(self._get_random_position_to_build_mine_or_factory(), cargo)
 
     def _create_mines(self):
-        self._create_mine_in_random_unoccupied_location()
+        self._create_mine_in_random_unoccupied_location(CargoType.IRON)
 
     def _create_factory(self, position: Vec2):
         factory = Factory(position)
@@ -129,15 +136,6 @@ class Grid(Subject):
 
     def _create_factory_in_random_unoccupied_location(self):
         self._create_factory(self._get_random_position_to_build_mine_or_factory())
-
-    def _create_in_random_unoccupied_location(
-        self, building: Type[Factory] | Type[Mine]
-    ):
-        # TODO: pass the type all the way down to drawer
-        if building == Factory:
-            self._create_factory_in_random_unoccupied_location()
-        elif building == Mine:
-            self._create_mine_in_random_unoccupied_location()
 
     def _create_factories(self):
         self._create_factory_in_random_unoccupied_location()
@@ -346,14 +344,18 @@ class Grid(Subject):
             self.station_from_position[position] = station
         self._notify_about_other_object(station, CreateEvent())
 
-    def enlarge_grid(self):
+    def level_up(self, new_level: int):
         self.left -= 1
         self.bottom -= 1
         self.right += 1
         self.top += 1
-        # self.drawer.create_grid(self.left, self.bottom, self.right, self.top)
-        self._create_in_random_unoccupied_location(Factory)
-        self._create_in_random_unoccupied_location(Mine)
+
+        if new_level % 3 == 1:
+            self._create_mine_in_random_unoccupied_location(CargoType.COAL)
+        elif new_level % 3 == 2:
+            self._create_factory_in_random_unoccupied_location()
+        else:
+            self._create_mine_in_random_unoccupied_location(CargoType.IRON)
 
     def _closest_rail(self, x, y) -> Rail | None:
         """Return None if
