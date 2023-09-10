@@ -20,8 +20,8 @@ def check(statement: Any, count=[0]):
     count[0] += 1
     if count[0] < 10000:
         return statement
-    count[0] = 0
-    raise AssertionError("Max iterations reached")
+    count[0] = 0  # pragma: no cov
+    raise AssertionError("Max iterations reached")  # pragma: no cov
 
 
 def test_draw(game: Game):
@@ -568,45 +568,66 @@ class TestCreateTrain:
         assert len(game.trains) == 1
 
 
-def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
-    game: Game,
-):
-    create_objects(
-        game.grid,
-        """
-        . M . F .
+class TestDestroyMode:
+    def test_hovering_in_destroy_mode_highlights_rails_to_be_destroyed(
+        self,
+        game: Game,
+    ):
+        create_objects(
+            game.grid,
+            """
+            .-.
+            """,
+        )
+        game.gui.mode = Mode.DESTROY
+        game.gui.disable()
 
-        .-S-.-S-.
-        """,
-    )
-    game.gui.mode = Mode.DESTROY
-    game.gui.disable()
+        assert len(game.drawer.rail_to_be_destroyed_shape_list) == 0
 
-    assert len(game.grid.station_from_position) == 2
-    assert len(game.grid.rails) == 4
+        game.on_mouse_motion(x=15, y=15, dx=0, dy=0)
 
-    game.on_mouse_press(x=45, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-    game.on_mouse_motion(x=46, y=15, dx=1, dy=30)
+        # 12 is the number of shapes a rail consists of when writing this test
+        assert len(game.drawer.rail_to_be_destroyed_shape_list) == 12
 
-    assert len(game.grid.station_from_position) == 1
-    assert len(game.grid.rails) == 2
+    def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
+        self,
+        game: Game,
+    ):
+        create_objects(
+            game.grid,
+            """
+            . M . F .
 
+            .-S-.-S-.
+            """,
+        )
+        game.gui.mode = Mode.DESTROY
+        game.gui.disable()
 
-def test_clicking_in_destroy_mode_destroys_rail(game: Game):
-    create_objects(
-        game.grid,
-        """
-        .-.-.
-        """,
-    )
-    game.gui.mode = Mode.DESTROY
-    game.gui.disable()
+        assert len(game.grid.station_from_position) == 2
+        assert len(game.grid.rails) == 4
 
-    assert len(game.grid.rails) == 2
+        game.on_mouse_press(x=45, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=46, y=15, dx=1, dy=30)
 
-    game.on_left_click(15, 15)
+        assert len(game.grid.station_from_position) == 1
+        assert len(game.grid.rails) == 2
 
-    assert len(game.grid.rails) == 1
+    def test_clicking_in_destroy_mode_destroys_rail(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            .-.-.
+            """,
+        )
+        game.gui.mode = Mode.DESTROY
+        game.gui.disable()
+
+        assert len(game.grid.rails) == 2
+
+        game.on_left_click(15, 15)
+
+        assert len(game.grid.rails) == 1
 
 
 def test_iron_is_regularly_added_to_mines(game: Game):

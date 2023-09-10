@@ -87,7 +87,7 @@ class Drawer:
         self._signal_shape_list = _ShapeElementList()
 
         self._previous_rails_to_be_marked_as_to_be_destroyed: set[Rail] = set()
-        self._rail_to_be_destroyed_shape_list = _ShapeElementList()
+        self.rail_to_be_destroyed_shape_list = _ShapeElementList()
 
         self._rails_being_built: set[Rail] = set()
         self.rails_being_built_shape_element_list = _ShapeElementList()
@@ -429,10 +429,10 @@ class Drawer:
 
     def show_rails_to_be_destroyed(self, rails: set[Rail]):
         if rails != self._previous_rails_to_be_marked_as_to_be_destroyed:
-            self._rail_to_be_destroyed_shape_list.clear()
+            self.rail_to_be_destroyed_shape_list.clear()
             for rail in rails:
                 for shape in get_rail_shapes(rail, RAIL_TO_BE_DESTROYED_COLOR):
-                    self._rail_to_be_destroyed_shape_list.append(shape)
+                    self.rail_to_be_destroyed_shape_list.append(shape)
         self._previous_rails_to_be_marked_as_to_be_destroyed = rails
 
     def draw(self):
@@ -440,7 +440,7 @@ class Drawer:
         self._shape_list.draw()
         self._sprite_list.draw()
         self._rail_shape_list.draw()
-        self._rail_to_be_destroyed_shape_list.draw()
+        self.rail_to_be_destroyed_shape_list.draw()
         self._signal_shape_list.draw()
 
         self.rails_being_built_shape_element_list.draw()

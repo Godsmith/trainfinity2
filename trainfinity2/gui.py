@@ -79,11 +79,6 @@ class Gui:
             self._sprite_list.draw()
             self._text_sprite_list.draw()
 
-    def pan(self, dx, dy):
-        self._sprite_list.move(dx, dy)
-        self._text_sprite_list.move(dx, dy)
-        self._shape_element_list.move(dx, dy)
-
     def refresh(self):
         with self.camera:
             """Recreates the boxes. Necessary for example after zooming and after

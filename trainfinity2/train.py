@@ -20,10 +20,6 @@ def approx_equal(a: float, b: float):
     return abs(a - b) < 1.0
 
 
-def _is_close(pos1: Vec2, pos2: Vec2):
-    return abs(pos1.x - pos2.x) < 0.5 and abs(pos1.y - pos2.y) < 0.5
-
-
 class PointAndAngle(NamedTuple):
     point: Vec2
     angle: float

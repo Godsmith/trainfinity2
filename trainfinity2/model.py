@@ -28,12 +28,6 @@ class Rail:
     def __hash__(self) -> int:
         return hash(tuple(sorted(((self.x1, self.y1), (self.x2, self.y2)))))
 
-    def is_horizontal(self):
-        return self.y1 == self.y2
-
-    def is_vertical(self):
-        return self.x1 == self.x2
-
     def to_illegal(self):
         return replace(self, legal=False)
 
