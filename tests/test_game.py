@@ -784,6 +784,40 @@ class TestSelect:
 
 
 class TestSignals:
+    def test_hovering_over_rail_in_signal_mode_shows_signal_outline(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            .-.
+            """,
+        )
+        game.gui.mode = Mode.SIGNAL
+        game.gui.disable()
+
+        assert len(game.drawer.signals_being_built_shape_element_list) == 0
+
+        game.on_mouse_motion(30, 15, 0, 0)
+
+        assert len(game.drawer.signals_being_built_shape_element_list) == 2
+
+    def test_remove_signal_outline_when_hovering_elsewhere(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            .-.
+            """,
+        )
+        game.gui.mode = Mode.SIGNAL
+        game.gui.disable()
+
+        game.on_mouse_motion(30, 15, 0, 0)
+
+        assert len(game.drawer.signals_being_built_shape_element_list) == 2
+
+        game.on_mouse_motion(60, 15, 0, 0)
+
+        assert len(game.drawer.signals_being_built_shape_element_list) == 0
+
     def test_creating_signal_creates_two_signal_blocks(self, game: Game):
         create_objects(
             game.grid,

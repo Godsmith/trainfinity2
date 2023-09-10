@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Collection, Iterable
 
 import arcade
-from arcade import Shape, color
+from arcade import Color, Shape, color
 from pyglet.math import Vec2
 from trainfinity2.graphics.cargo import get_cargo_shape
 
@@ -21,7 +21,12 @@ from ..constants import (
     PIXEL_OFFSET_PER_CARGO,
     RAIL_TO_BE_DESTROYED_COLOR,
 )
-from ..grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
+from ..grid import (
+    Grid,
+    RailsBeingBuiltEvent,
+    SignalsBeingBuiltEvent,
+    StationBeingBuiltEvent,
+)
 from ..model import (
     Building,
     Factory,
@@ -89,6 +94,8 @@ class Drawer:
 
         self._station_being_built: Station | None = None
         self.stations_being_built_shape_element_list = _ShapeElementList()
+
+        self.signals_being_built_shape_element_list = _ShapeElementList()
 
         self.cargo_shape_element_list = _ShapeElementList()
 
@@ -237,8 +244,7 @@ class Drawer:
         for shape in self._get_station_shapes(station):
             self._add_shape(shape, station)
 
-    def _update_signal(self, signal: Signal):
-        self._remove(signal)
+    def _create_signal_shape(self, signal: Signal, is_being_built: bool = False):
         positions = list(signal.rail.positions)
         middle_of_rail = positions[0].lerp(positions[1], 0.5)
         position = middle_of_rail.lerp(signal.from_position, 0.5)
@@ -246,14 +252,23 @@ class Drawer:
             position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
             position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
         )
-        shape = arcade.create_ellipse_filled(
+        alpha = 128 if is_being_built else 255
+        color_: Color = (
+            color.RED
+            if signal.signal_color == SignalColor.RED
+            else color.GREEN + (alpha,)
+        )
+        return arcade.create_ellipse_filled(
             position.x,
             position.y,
             GRID_BOX_SIZE_PIXELS / 6,
             GRID_BOX_SIZE_PIXELS / 6,
-            color.RED if signal.signal_color == SignalColor.RED else color.GREEN,
+            color=color_,
         )
-        self._add_signal_shape(shape, signal)
+
+    def _update_signal(self, signal: Signal):
+        self._remove(signal)
+        self._add_signal_shape(self._create_signal_shape(signal), signal)
 
     def _add_sprite(self, sprite: arcade.Sprite, object: Any):
         self._sprite_list.append(sprite)
@@ -324,6 +339,9 @@ class Drawer:
             case Grid(), StationBeingBuiltEvent():
                 event = typing.cast(StationBeingBuiltEvent, event)
                 self._show_station_being_built(event.station, event.illegal_positions)
+            case Grid(), SignalsBeingBuiltEvent():
+                event = typing.cast(SignalsBeingBuiltEvent, event)
+                self._show_signals_being_built(event.signals)
             case Station(), CreateEvent():
                 self.upsert(object)
             case Factory(), CreateEvent():
@@ -386,6 +404,13 @@ class Drawer:
                 self.stations_being_built_shape_element_list.append(red_box_shape)
             self._station_being_built = station
 
+    def _show_signals_being_built(self, signals: set[Signal]):
+        self.signals_being_built_shape_element_list = _ShapeElementList()
+        for signal in signals:
+            self.signals_being_built_shape_element_list.append(
+                self._create_signal_shape(signal, is_being_built=True)
+            )
+
     def _create_rail(self, rail: Rail):
         for rail_shape in get_rail_shapes(rail, FINISHED_RAIL_COLOR):
             self._add_rail_shape(rail_shape, rail)
@@ -420,6 +445,8 @@ class Drawer:
 
         self.rails_being_built_shape_element_list.draw()
         self.stations_being_built_shape_element_list.draw()
+        self.signals_being_built_shape_element_list.draw()
+
         self.cargo_shape_element_list.draw()
 
         self.highlight_shape_element_list.draw()

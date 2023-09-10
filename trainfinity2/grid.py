@@ -25,6 +25,11 @@ from .terrain import Terrain
 from .route_finder import find_route
 
 
+@dataclass(frozen=True)
+class SignalsBeingBuiltEvent(Event):
+    signals: set[Signal]
+
+
 @dataclass
 class RailsBeingBuiltEvent(Event):
     rails: set[Rail]
@@ -390,3 +395,12 @@ class Grid(Subject):
                 signals.append(signal)
         self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
         return signals
+
+    def show_signal_outline(self, world_x: float, world_y: float):
+        x = world_x - 0.5
+        y = world_y - 0.5
+        if rail := self._closest_rail(x, y):
+            signals = {Signal(position, rail) for position in rail.positions}
+        else:
+            signals = set()
+        self.notify(SignalsBeingBuiltEvent(signals))

@@ -13,7 +13,12 @@ from .constants import (
     SECONDS_BETWEEN_CARGO_CREATION,
 )
 from .graphics.drawer import Drawer
-from .grid import Grid, RailsBeingBuiltEvent, StationBeingBuiltEvent
+from .grid import (
+    Grid,
+    RailsBeingBuiltEvent,
+    SignalsBeingBuiltEvent,
+    StationBeingBuiltEvent,
+)
 from .gui import Gui, Mode
 from .model import Player, Signal, Station
 from .observer import ChangeEvent, CreateEvent, DestroyEvent, Event
@@ -82,6 +87,7 @@ class Game:
         self.grid.add_observer(self.drawer, DestroyEvent)
         self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
         self.grid.add_observer(self.drawer, StationBeingBuiltEvent)
+        self.grid.add_observer(self.drawer, SignalsBeingBuiltEvent)
         self.grid.create_buildings()
 
         self.player = Player(self.gui, self.level_up)
@@ -266,7 +272,13 @@ class Game:
             else:
                 self.drawer.highlight(self._train_placer.session.station.positions)
 
-        if self.gui.mode == Mode.DESTROY:
+        elif self.gui.mode == Mode.SIGNAL:
+            world_x_float, world_y_float = self.camera.to_world_coordinates_no_rounding(
+                x, y
+            )
+            self.grid.show_signal_outline(world_x_float, world_y_float)
+
+        elif self.gui.mode == Mode.DESTROY:
             self.drawer.show_rails_to_be_destroyed(
                 self.grid.rails_at_position(Vec2(world_x, world_y))
             )
