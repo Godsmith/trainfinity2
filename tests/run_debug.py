@@ -12,27 +12,35 @@ from trainfinity2.terrain import Terrain
 
 def init(game: Game):
     game.setup(Terrain(water=[Vec2(0, 0)]))
-    game.grid._create_mine(Vec2(30, 30), CargoType.IRON)
-    game.grid._create_factory(Vec2(180, 30))
+    game.grid._create_mine(Vec2(2, 2), CargoType.IRON)
+    game.grid._create_mine(Vec2(7, 7), CargoType.COAL)
+    game.grid._create_factory(Vec2(7, 2))
     game.grid.create_rail(
         {
-            Rail(0, 60, 30, 60),
-            Rail(30, 60, 60, 60),
-            Rail(60, 60, 90, 60),
-            Rail(90, 60, 120, 60),
-            Rail(120, 60, 150, 60),
-            Rail(150, 60, 180, 60),
-            Rail(60, 60, 90, 90),
-            Rail(90, 90, 120, 90),
-            Rail(120, 90, 150, 60),
+            Rail(1, 3, 2, 3),
+            Rail(2, 3, 3, 3),
+            Rail(3, 3, 4, 3),
+            Rail(4, 3, 5, 3),
+            Rail(5, 3, 6, 3),
+            Rail(6, 3, 7, 3),
+            Rail(3, 3, 4, 4),
+            Rail(4, 4, 5, 4),
+            Rail(5, 4, 6, 3),
+            Rail(8, 7, 8, 6),
+            Rail(8, 6, 8, 5),
+            Rail(8, 5, 8, 4),
+            Rail(8, 4, 8, 3),
+            Rail(8, 3, 8, 2),
         }
     )
-    game.grid._create_station(Station((Vec2(30, 60),)))
-    game.grid._create_station(Station((Vec2(180, 60),)))
-    # game._create_signal(90, 60)
-    # game._create_signal(90, 90)
-    # game._create_signal(120, 60)
-    # game._create_signal(120, 90)
+    game.grid._create_station(Station((Vec2(8, 7),), east_west=False))
+    game.grid._create_station(Station((Vec2(8, 2),), east_west=False))
+    game.grid._create_station(Station((Vec2(2, 3),)))
+    game.grid._create_station(Station((Vec2(7, 3),)))
+    # game._create_signal(3, 2)
+    # game._create_signal(3, 3)
+    # game._create_signal(4, 2)
+    # game._create_signal(4, 3)
     # game._create_train(station1, station2)
     # game._create_train(station2, station1)
 

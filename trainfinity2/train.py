@@ -8,7 +8,7 @@ from pyglet.math import Vec2
 
 
 from .grid import Grid
-from .model import Player, Rail, CargoType, Station
+from .model import Factory, Player, Rail, CargoType, Station
 from .wagon import Wagon
 from .observer import DestroyEvent, Subject
 from .route_finder import find_route, has_reached_end_of_target_station
@@ -177,9 +177,11 @@ class Train(Subject):
         # instantly be transported to the factory
         self.speed = 0
         is_finished = True
-        if self.grid.adjacent_factories(station.positions) and self._has_cargo():
+        if (
+            factories := self.grid.adjacent_factories(station.positions)
+        ) and self._has_cargo():
             self.wait_timer = 1
-            self._run_after_wait = self._unload_cargo
+            self._run_after_wait = self._create_unload_cargo_method(factories[0])
             is_finished = False
         for mine in self.grid.adjacent_mines(station.positions):
             if self._has_space() and mine.cargo_count > 0:
@@ -197,12 +199,16 @@ class Train(Subject):
     def _has_cargo(self):
         return any(wagon.cargo_count for wagon in self.wagons)
 
-    def _unload_cargo(self):
-        for wagon in reversed(self.wagons):
-            if wagon.cargo_count:
-                self.player.score += wagon.cargo_count
-                wagon.cargo_count = 0
-                return
+    def _create_unload_cargo_method(self, factory: Factory):
+        def inner():
+            for wagon in reversed(self.wagons):
+                if wagon.cargo_count:
+                    self.player.score += wagon.cargo_count
+                    factory.cargo_count[wagon.cargo_type] += 1
+                    wagon.cargo_count = 0
+                    return
+
+        return inner()
 
     def _has_space(self):
         return any(not wagon.cargo_count for wagon in self.wagons)

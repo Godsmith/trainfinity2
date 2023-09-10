@@ -100,7 +100,9 @@ class Game:
         if self.cargo_counter > SECONDS_BETWEEN_CARGO_CREATION:
             for mine in self.grid.mines.values():
                 mine.add_cargo()
-            self.cargo_counter = 0
+            for factory in self.grid.factories.values():
+                factory.transform_cargo()
+            self.cargo_counter = 0.0
         self._update_gui_figures(delta_time)
 
         for train in self.trains:

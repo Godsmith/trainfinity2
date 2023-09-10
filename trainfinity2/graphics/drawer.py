@@ -66,7 +66,6 @@ class _ShapeElementList:
 
 class Drawer:
     def __init__(self):
-
         self._grid_shape_list = _ShapeElementList()
         self._shape_list = _ShapeElementList()
         self._sprite_list = arcade.SpriteList()
@@ -301,12 +300,12 @@ class Drawer:
 
     def on_notify(self, object: Any, event: Event):
         match (object, event):
-            case Mine(), CargoAddedEvent():
+            case Mine() | Factory(), CargoAddedEvent():
                 event = typing.cast(CargoAddedEvent, event)
                 self._add_cargo(event.position, event.type)
             case Mine(), CargoRemovedEvent():
                 event = typing.cast(CargoRemovedEvent, event)
-                self._remove_iron(event.position, event.amount)
+                self._remove_cargo(event.position, event.amount)
             case Mine(), CreateEvent():
                 self.upsert(object)
                 object.add_observer(self, CargoAddedEvent)
@@ -325,8 +324,12 @@ class Drawer:
             case Grid(), StationBeingBuiltEvent():
                 event = typing.cast(StationBeingBuiltEvent, event)
                 self._show_station_being_built(event.station, event.illegal_positions)
-            case Factory() | Station(), CreateEvent():
+            case Station(), CreateEvent():
                 self.upsert(object)
+            case Factory(), CreateEvent():
+                self.upsert(object)
+                object.add_observer(self, CargoAddedEvent)
+                object.add_observer(self, CargoRemovedEvent)
             case Signal(), CreateEvent() | ChangeEvent():
                 self.upsert(object)
             case _:
@@ -343,7 +346,7 @@ class Drawer:
             self.cargo_shapes_from_position[position].append(shape)
             self.cargo_shape_element_list.append(shape)
 
-    def _remove_iron(self, position: Vec2, amount: int):
+    def _remove_cargo(self, position: Vec2, amount: int):
         for _ in range(amount):
             filled_rectangle = self.cargo_shapes_from_position[position].pop()
             rectangle_outline = self.cargo_shapes_from_position[position].pop()

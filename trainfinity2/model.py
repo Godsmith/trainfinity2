@@ -1,4 +1,5 @@
-from dataclasses import dataclass, replace
+from collections import defaultdict
+from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 import functools
 from typing import Callable
@@ -49,11 +50,6 @@ class Rail:
 
 
 @dataclass
-class Factory:
-    position: Vec2
-
-
-@dataclass
 class Water:
     position: Vec2
 
@@ -64,6 +60,7 @@ MAX_CARGO_AT_MINE = 8
 class CargoType(Enum):
     COAL = auto()
     IRON = auto()
+    STEEL = auto()
 
 
 @dataclass(frozen=True)
@@ -76,6 +73,28 @@ class CargoAddedEvent(Event):
 class CargoRemovedEvent(Event):
     position: Vec2
     amount: int
+
+
+@dataclass
+class Factory(Subject):
+    position: Vec2
+    cargo_count: dict[CargoType, int] = field(default_factory=lambda: defaultdict(int))
+
+    def __post_init__(self):
+        super().__init__()
+
+    def add_cargo(self, type: CargoType):
+        self.cargo_count[type] += 1
+
+    def transform_cargo(self):
+        if (
+            self.cargo_count[CargoType.COAL] >= 1
+            and self.cargo_count[CargoType.IRON] >= 1
+        ):
+            self.cargo_count[CargoType.IRON] -= 1
+            self.cargo_count[CargoType.COAL] -= 1
+            self.cargo_count[CargoType.STEEL] += 1
+            self.notify(CargoAddedEvent(self.position, CargoType.STEEL))
 
 
 @dataclass
