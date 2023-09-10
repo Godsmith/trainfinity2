@@ -72,14 +72,20 @@ class Camera:
         self.top = self.top + dy
         self.set_viewport()
 
-    def to_world_coordinates(self, x, y) -> tuple[int, int]:
+    def to_world_coordinates(self, x: float, y: float) -> tuple[int, int]:
+        world_x, world_y = self.to_world_coordinates_no_rounding(x, y)
+        return math.floor(world_x), math.floor(world_y)
+
+    def to_world_coordinates_no_rounding(
+        self, x: float, y: float
+    ) -> tuple[float, float]:
         """Convert a position x, y in the current window to world coordinates."""
         relative_x = x / (self.original_right - self.original_left)
         relative_y = y / (self.original_top - self.original_bottom)
         left, right, bottom, top = arcade.get_viewport()
-        return math.floor(
-            (left + (right - left) * relative_x) / GRID_BOX_SIZE_PIXELS
-        ), math.floor((bottom + (top - bottom) * relative_y) / GRID_BOX_SIZE_PIXELS)
+        return (left + (right - left) * relative_x) / GRID_BOX_SIZE_PIXELS, (
+            bottom + (top - bottom) * relative_y
+        ) / GRID_BOX_SIZE_PIXELS
 
     def set_viewport(self):
         arcade.set_viewport(self.left, self.right, self.bottom, self.top)

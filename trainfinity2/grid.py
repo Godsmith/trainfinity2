@@ -373,14 +373,14 @@ class Grid(Subject):
         closest_rail, distance = sorted(rails_and_distances, key=lambda x: x[1])[0]
         return closest_rail if distance < 1 else None
 
-    def create_signals_at_click_position(self, click_x, click_y):
+    def create_signals_at_click_position(self, world_x: float, world_y: float):
         # Transpose half a box since rail coordinates are in the bottom left
         # of each grid cell while they are visible in the middle
-        x = click_x - 0.5
-        y = click_y - 0.5
+        x = world_x - 0.5
+        y = world_y - 0.5
         return self.create_signals_at_grid_position(x, y)
 
-    def create_signals_at_grid_position(self, x, y) -> list[Signal]:
+    def create_signals_at_grid_position(self, x: float, y: float) -> list[Signal]:
         signals = []
         if rail := self._closest_rail(x, y):
             for position in rail.positions:

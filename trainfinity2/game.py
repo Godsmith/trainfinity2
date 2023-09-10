@@ -201,12 +201,15 @@ class Game:
                 else:
                     train.selected = False
         elif self.gui.mode == Mode.SIGNAL:
-            self.create_signals_at_click_position(world_x, world_y)
+            world_x_float, world_y_float = self.camera.to_world_coordinates_no_rounding(
+                x, y
+            )
+            self.create_signals_at_click_position(world_x_float, world_y_float)
         elif self.gui.mode == Mode.DESTROY:
             self.grid.remove_rail(Vec2(world_x, world_y))
             self.drawer.show_rails_to_be_destroyed(set())
 
-    def create_signals_at_click_position(self, x, y) -> list[Signal]:
+    def create_signals_at_click_position(self, x: float, y: float) -> list[Signal]:
         signals = self.grid.create_signals_at_click_position(x, y)
         for signal in signals:
             signal.add_observer(self.drawer, ChangeEvent)
