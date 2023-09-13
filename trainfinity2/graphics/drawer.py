@@ -106,7 +106,7 @@ class Drawer:
         self._sprite_list.append(self._fps_sprite)
         self._sprite_list.append(self._score_sprite)
 
-    def handle_events(self, events: list[Event]):
+    def handle_events(self, events: Iterable[Event]):
         for event in events:
             match event:
                 case CreateEvent(Mine() as mine):

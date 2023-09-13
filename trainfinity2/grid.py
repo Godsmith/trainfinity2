@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from pyglet.math import Vec2
 
@@ -231,7 +231,7 @@ class Grid:
 
     def click_and_drag(
         self, x: int, y: int, start_x: int, start_y: int, mode: Mode
-    ) -> list[Event]:
+    ) -> Sequence[Event]:
         if mode == Mode.RAIL:
             return [self._show_rails_being_built(Vec2(start_x, start_y), Vec2(x, y))]
         elif mode == Mode.STATION:
@@ -259,7 +259,7 @@ class Grid:
         return RailsBeingBuiltEvent(self.rails_being_built)
 
     def remove_rail(self, position: Vec2) -> list[Event]:
-        events = []
+        events: list[Event] = []
         for rail in self.rails_at_position(position):
             events.append(DestroyEvent(rail))
             keys = [key for key, signal in self.signals.items() if signal.rail == rail]
@@ -292,7 +292,7 @@ class Grid:
         return events
 
     def release_mouse_button(self, mode: Mode) -> list[Event]:
-        events = []
+        events: list[Event] = []
         if all(rail.legal for rail in self.rails_being_built):
             if mode == mode.RAIL:
                 events.extend(self.create_rail(self.rails_being_built))
@@ -356,7 +356,7 @@ class Grid:
             self.station_from_position[position] = station
         return CreateEvent(station)
 
-    def level_up(self, new_level: int) -> list[Event]:
+    def level_up(self, new_level: int) -> Sequence[Event]:
         events = []
         self.left -= 1
         self.bottom -= 1
@@ -394,14 +394,14 @@ class Grid:
 
     def create_signals_at_click_position(
         self, world_x: float, world_y: float
-    ) -> list[Event]:
+    ) -> Sequence[Event]:
         # Transpose half a box since rail coordinates are in the bottom left
         # of each grid cell while they are visible in the middle
         x = world_x - 0.5
         y = world_y - 0.5
         return self.create_signals_at_grid_position(x, y)
 
-    def create_signals_at_grid_position(self, x: float, y: float) -> list[Event]:
+    def create_signals_at_grid_position(self, x: float, y: float) -> Sequence[Event]:
         events = []
         if rail := self._closest_rail(x, y):
             for position in rail.positions:

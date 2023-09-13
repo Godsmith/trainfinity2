@@ -5,6 +5,8 @@ from itertools import combinations
 import arcade
 from pyglet.math import Vec2
 
+from trainfinity2.events import Event
+
 from .camera import Camera
 from .constants import (
     GRID_HEIGHT_PIXELS,
@@ -231,7 +233,7 @@ class Game:
         return train
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        events = []
+        events: list[Event] = []
         world_x, world_y = self.camera.to_world_coordinates(x, y)
         if self.is_mouse2_pressed:
             self._on_mouse_move_when_mouse_2_pressed(x, y)
