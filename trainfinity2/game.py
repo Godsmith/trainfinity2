@@ -1,7 +1,6 @@
 from collections import deque
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Any
 
 import arcade
 from pyglet.math import Vec2
@@ -15,13 +14,9 @@ from .constants import (
 from .graphics.drawer import Drawer
 from .grid import (
     Grid,
-    RailsBeingBuiltEvent,
-    SignalsBeingBuiltEvent,
-    StationBeingBuiltEvent,
 )
 from .gui import Gui, Mode
-from .model import Player, Signal, Station
-from .observer import ChangeEvent, CreateEvent, DestroyEvent, Event
+from .model import Player, Station
 from .signal_controller import SignalController
 from .terrain import Terrain
 from .train import Train
@@ -83,18 +78,14 @@ class Game:
         self.signal_controller = SignalController()
         self.grid = Grid(terrain, self.signal_controller)
         self.drawer = Drawer()
-        self.grid.add_observer(self.drawer, CreateEvent)
-        self.grid.add_observer(self.drawer, DestroyEvent)
-        self.grid.add_observer(self.drawer, RailsBeingBuiltEvent)
-        self.grid.add_observer(self.drawer, StationBeingBuiltEvent)
-        self.grid.add_observer(self.drawer, SignalsBeingBuiltEvent)
-        self.grid.create_buildings()
+        events = self.grid.create_buildings()
+        self.drawer.handle_events(events)
 
         self.player = Player(self.gui, self.level_up)
 
         self.cargo_counter = 0.0
 
-        self.drawer.upsert(self.grid)
+        self.drawer.create_grid(self.grid)
         self.drawer.create_terrain(
             water=terrain.water, sand=terrain.sand, mountains=terrain.mountains
         )
@@ -105,20 +96,25 @@ class Game:
         self.cargo_counter += delta_time
         if self.cargo_counter > SECONDS_BETWEEN_CARGO_CREATION:
             for mine in self.grid.mines.values():
-                mine.add_cargo()
+                self.drawer.handle_events([mine.add_cargo()])
             for factory in self.grid.factories.values():
-                factory.transform_cargo()
+                self.drawer.handle_events([factory.transform_cargo()])
             self.cargo_counter = 0.0
         self._update_gui_figures(delta_time)
 
         for train in self.trains:
-            train.move(delta_time)
+            self.drawer.handle_events(train.move(delta_time))
 
         for train1, train2 in combinations(self.trains, 2):
             if train1.is_colliding_with(train2):
-                train1.destroy()
-                train2.destroy()
+                self._destroy_train(train1)
+                self._destroy_train(train2)
         self.drawer.update()
+
+    def _destroy_train(self, train: Train):
+        train.destroy()
+        self.drawer.destroy_train(train)
+        self.trains.remove(train)
 
     def _update_gui_figures(self, delta_time):
         self.frame_count += 1
@@ -183,7 +179,7 @@ class Game:
                 y,
             ):
                 self.on_left_click(x, y)
-            self.grid.release_mouse_button(self.gui.mode)
+            self.drawer.handle_events(self.grid.release_mouse_button(self.gui.mode))
 
     def on_left_click(self, x, y):
         world_x, world_y = self.camera.to_world_coordinates(x, y)
@@ -195,7 +191,7 @@ class Game:
                     first_station = self._train_placer.session.station
                     # If signal block for first station is reserved, do not create train
                     if self.signal_controller.reserver(first_station.positions[0]):
-                        return
+                        return []
                     if self.grid.find_route_between_stations(first_station, station):
                         self._create_train(self._train_placer.session.station, station)
                     self._train_placer.stop_session()
@@ -210,16 +206,12 @@ class Game:
             world_x_float, world_y_float = self.camera.to_world_coordinates_no_rounding(
                 x, y
             )
-            self.create_signals_at_click_position(world_x_float, world_y_float)
+            self.drawer.handle_events(
+                self.grid.create_signals_at_click_position(world_x_float, world_y_float)
+            )
         elif self.gui.mode == Mode.DESTROY:
             self.grid.remove_rail(Vec2(world_x, world_y))
             self.drawer.show_rails_to_be_destroyed(set())
-
-    def create_signals_at_click_position(self, x: float, y: float) -> list[Signal]:
-        signals = self.grid.create_signals_at_click_position(x, y)
-        for signal in signals:
-            signal.add_observer(self.drawer, ChangeEvent)
-        return signals
 
     def _create_train(
         self, station1: Station, station2: Station, *, wagon_count: int = 3
@@ -233,18 +225,13 @@ class Game:
             wagon_count=wagon_count,
         )
         self.trains.append(train)
-        train.add_observer(self, DestroyEvent)
         self.drawer.create_train(train)
         self.gui.mode = Mode.SELECT
         train.selected = True
         return train
 
-    def on_notify(self, object: Any, event: Event):
-        match object, event:
-            case Train(), DestroyEvent():
-                self.trains.remove(object)
-
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        events = []
         world_x, world_y = self.camera.to_world_coordinates(x, y)
         if self.is_mouse2_pressed:
             self._on_mouse_move_when_mouse_2_pressed(x, y)
@@ -252,12 +239,14 @@ class Game:
             pressed_world_x, pressed_world_y = self.camera.to_world_coordinates(
                 self.mouse1_pressed_x, self.mouse1_pressed_y
             )
-            self.grid.click_and_drag(
-                world_x,
-                world_y,
-                pressed_world_x,
-                pressed_world_y,
-                self.gui.mode,
+            events.extend(
+                self.grid.click_and_drag(
+                    world_x,
+                    world_y,
+                    pressed_world_x,
+                    pressed_world_y,
+                    self.gui.mode,
+                )
             )
 
         elif self.gui.mode == Mode.TRAIN and self._train_placer.session:
@@ -276,12 +265,14 @@ class Game:
             world_x_float, world_y_float = self.camera.to_world_coordinates_no_rounding(
                 x, y
             )
-            self.grid.show_signal_outline(world_x_float, world_y_float)
+            events.append(self.grid.show_signal_outline(world_x_float, world_y_float))
 
         elif self.gui.mode == Mode.DESTROY:
             self.drawer.show_rails_to_be_destroyed(
                 self.grid.rails_at_position(Vec2(world_x, world_y))
             )
+
+        self.drawer.handle_events(events)
 
     def _on_mouse_move_when_mouse_2_pressed(self, x, y):
         delta = Vec2(x - self.mouse2_pressed_x, y - self.mouse2_pressed_y)
@@ -313,4 +304,4 @@ class Game:
 
     def level_up(self, level: int):
         self.grid.level_up(level)
-        self.drawer.upsert(self.grid)
+        self.drawer.create_grid(self.grid)

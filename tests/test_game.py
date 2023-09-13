@@ -846,7 +846,7 @@ class TestSignals:
             .-.h.-.
             """,
         )
-        game.create_signals_at_click_position(60, 15)
+        game.grid.create_signals_at_click_position(60, 15)
         # Sort the blocks so that the test becomes predictable
         blocks = sorted(
             game.signal_controller._signal_blocks, key=lambda b: sorted(b.positions)[0]

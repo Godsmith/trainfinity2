@@ -1,4 +1,3 @@
-import typing
 from collections import defaultdict
 from typing import Any, Collection, Iterable
 
@@ -28,7 +27,6 @@ from ..grid import (
     StationBeingBuiltEvent,
 )
 from ..model import (
-    Building,
     Factory,
     CargoType,
     CargoAddedEvent,
@@ -39,7 +37,7 @@ from ..model import (
     SignalColor,
     Station,
 )
-from ..observer import ChangeEvent, CreateEvent, DestroyEvent, Event
+from ..events import CreateEvent, DestroyEvent, Event, NullEvent
 from ..train import Train
 
 
@@ -108,18 +106,37 @@ class Drawer:
         self._sprite_list.append(self._fps_sprite)
         self._sprite_list.append(self._score_sprite)
 
-    def upsert(self, object: Any):
-        match object:
-            case Grid():
-                self._create_grid(object)
-            case Mine() | Factory() | Station():
-                self._create_building(object)
-            case Rail():
-                self._create_rail(object)
-            case Signal():
-                self._update_signal(object)
-            case _:
-                raise ValueError(f"Received unknown object {object}")
+    def handle_events(self, events: list[Event]):
+        for event in events:
+            match event:
+                case CreateEvent(Mine() as mine):
+                    self._create_mine(mine)
+                case CreateEvent(Factory() as factory):
+                    self._create_factory(factory)
+                case CreateEvent(Station() as station):
+                    self._create_station(station)
+                case CreateEvent(Rail() as rail):
+                    self._create_rail(rail)
+                case CreateEvent(Signal() as signal):
+                    self._update_signal(signal)
+                case StationBeingBuiltEvent():
+                    self._show_station_being_built(
+                        event.station, event.illegal_positions
+                    )
+                case RailsBeingBuiltEvent():
+                    self._show_rails_being_built(event.rails)
+                case SignalsBeingBuiltEvent():
+                    self._show_signals_being_built(event.signals)
+                case CargoAddedEvent():
+                    self._add_cargo(event.position, event.type)
+                case CargoRemovedEvent():
+                    self._remove_cargo(event.position, event.amount)
+                case DestroyEvent():
+                    self._remove(event.object)
+                case NullEvent():
+                    pass
+                case _:
+                    raise ValueError(f"Event not being handled: {event}")
 
     def _remove(self, object: Any):
         for sprite in self._sprites_from_object_id[id(object)]:
@@ -135,7 +152,7 @@ class Drawer:
             self._signal_shape_list.remove(signal_shape)
         del self._signal_shapes_from_object_id[id(object)]
 
-    def _create_grid(self, grid: Grid):
+    def create_grid(self, grid: Grid):
         self._grid_shape_list = _ShapeElementList()
         for x in range(
             grid.left * GRID_BOX_SIZE_PIXELS,
@@ -169,30 +186,25 @@ class Drawer:
                 )
             )
 
-    def _create_building(self, building: Building):
-        match building:
-            case Factory():
-                sprite = arcade.Sprite(
-                    "images/factory.png",
-                    0.75,
-                    center_x=building.position.x * GRID_BOX_SIZE_PIXELS
-                    + GRID_BOX_SIZE_PIXELS / 2,
-                    center_y=building.position.y * GRID_BOX_SIZE_PIXELS
-                    + GRID_BOX_SIZE_PIXELS / 2,
-                )
-                self._add_sprite(sprite, building)
-            case Mine():
-                sprite = arcade.Sprite(
-                    "images/mine.png",
-                    0.75,
-                    center_x=building.position.x * GRID_BOX_SIZE_PIXELS
-                    + GRID_BOX_SIZE_PIXELS / 2,
-                    center_y=building.position.y * GRID_BOX_SIZE_PIXELS
-                    + GRID_BOX_SIZE_PIXELS / 2,
-                )
-                self._add_sprite(sprite, building)
-            case Station():
-                self._add_station(building)
+    def _create_factory(self, factory: Factory):
+        sprite = arcade.Sprite(
+            "images/factory.png",
+            0.75,
+            center_x=factory.position.x * GRID_BOX_SIZE_PIXELS
+            + GRID_BOX_SIZE_PIXELS / 2,
+            center_y=factory.position.y * GRID_BOX_SIZE_PIXELS
+            + GRID_BOX_SIZE_PIXELS / 2,
+        )
+        self._add_sprite(sprite, factory)
+
+    def _create_mine(self, mine: Mine):
+        sprite = arcade.Sprite(
+            "images/mine.png",
+            0.75,
+            center_x=mine.position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+            center_y=mine.position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
+        )
+        self._add_sprite(sprite, mine)
 
     def _get_station_shapes(self, station: Station, is_building: bool = False):
         def set_alpha(color_: tuple[int, int, int]) -> tuple[int, int, int, int]:
@@ -240,7 +252,7 @@ class Drawer:
         shapes.append(house_shape)
         return shapes
 
-    def _add_station(self, station: Station):
+    def _create_station(self, station: Station):
         for shape in self._get_station_shapes(station):
             self._add_shape(shape, station)
 
@@ -311,49 +323,9 @@ class Drawer:
 
     def create_train(self, train: Train):
         self._train_drawer.add(train)
-        train.add_observer(self, DestroyEvent)
 
-    def on_notify(self, object: Any, event: Event):
-        match (object, event):
-            case Mine() | Factory(), CargoAddedEvent():
-                event = typing.cast(CargoAddedEvent, event)
-                self._add_cargo(event.position, event.type)
-            case Mine(), CargoRemovedEvent():
-                event = typing.cast(CargoRemovedEvent, event)
-                self._remove_cargo(event.position, event.amount)
-            case Mine(), CreateEvent():
-                self.upsert(object)
-                object.add_observer(self, CargoAddedEvent)
-                object.add_observer(self, CargoRemovedEvent)
-            case Train(), DestroyEvent():
-                self._train_drawer.remove(object)
-            case Rail(), DestroyEvent():
-                self._remove(object)
-            case Mine() | Station() | Factory() | Signal(), DestroyEvent():
-                self._remove(object)
-            case Rail(), CreateEvent():
-                self.upsert(object)
-            case Grid(), RailsBeingBuiltEvent():
-                event = typing.cast(RailsBeingBuiltEvent, event)
-                self._show_rails_being_built(event.rails)
-            case Grid(), StationBeingBuiltEvent():
-                event = typing.cast(StationBeingBuiltEvent, event)
-                self._show_station_being_built(event.station, event.illegal_positions)
-            case Grid(), SignalsBeingBuiltEvent():
-                event = typing.cast(SignalsBeingBuiltEvent, event)
-                self._show_signals_being_built(event.signals)
-            case Station(), CreateEvent():
-                self.upsert(object)
-            case Factory(), CreateEvent():
-                self.upsert(object)
-                object.add_observer(self, CargoAddedEvent)
-                object.add_observer(self, CargoRemovedEvent)
-            case Signal(), CreateEvent() | ChangeEvent():
-                self.upsert(object)
-            case _:
-                raise ValueError(
-                    f"Received unexpected combination {object} and {event}"
-                )
+    def destroy_train(self, train: Train):
+        self._train_drawer.remove(train)
 
     def _add_cargo(self, position: Vec2, cargo_type: CargoType):
         x, y = position.x * GRID_BOX_SIZE_PIXELS, position.y * GRID_BOX_SIZE_PIXELS

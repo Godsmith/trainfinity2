@@ -4,6 +4,8 @@ from typing import Iterable
 
 from pyglet.math import Vec2
 
+from trainfinity2.events import Event
+
 from .model import Signal, SignalColor
 from .protocols import RailCollection
 
@@ -44,9 +46,8 @@ class SignalBlock:
     def _color(self):
         return SignalColor.RED if self.reserved_by else SignalColor.GREEN
 
-    def update_signals(self):
-        for signal in self.signals:
-            signal.signal_color = self._color
+    def update_signals(self) -> list[Event]:
+        return [signal.set_signal_color(self._color) for signal in self.signals]
 
 
 class SignalController:
@@ -115,7 +116,7 @@ class SignalController:
         self,
         rail_collection: RailCollection,
         signals: list[Signal],
-    ):
+    ) -> list[Event]:
         """Recreate all the signal blocks. Needed if something has been updated that can affect them,
         such as rail having been created or deleted.
 
@@ -146,24 +147,26 @@ class SignalController:
             for position in signal_block.positions
         }
 
-        self._update_signal_block_reservations()
+        return self._update_signal_block_reservations()
 
     def reserver(self, position: Vec2) -> int | None:
         return self._signal_block_from_position[position].reserved_by
 
-    def reserve(self, reserver_id: int, positions: Iterable[Vec2]):
+    def reserve(self, reserver_id: int, positions: Iterable[Vec2]) -> list[Event]:
         """Called by trains when they enter a new rail, or when they are destroyed."""
         self._reserved_positions_from_reserver_id[reserver_id] = set(positions)
-        self._update_signal_block_reservations()
+        return self._update_signal_block_reservations()
 
-    def _update_signal_block_reservations(self):
+    def _update_signal_block_reservations(self) -> list[Event]:
         for signal_block in self._signal_blocks:
             signal_block.reserved_by = None
             for id_, positions in self._reserved_positions_from_reserver_id.items():
                 if positions & signal_block.positions:
                     signal_block.reserved_by = id_
-        self._update_signals()
+        return self._update_signals()
 
-    def _update_signals(self):
-        for signal_block in self._signal_blocks:
-            signal_block.update_signals()
+    def _update_signals(self) -> list[Event]:
+        return sum(
+            (signal_block.update_signals() for signal_block in self._signal_blocks),
+            start=[],
+        )

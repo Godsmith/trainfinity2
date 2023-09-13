@@ -6,11 +6,12 @@ import math
 from typing import Callable, Sequence
 from pyglet.math import Vec2
 
+from trainfinity2.events import Event
+
 
 from .grid import Grid
 from .model import Factory, Player, Rail, CargoType, Station
 from .wagon import Wagon
-from .observer import DestroyEvent, Subject
 from .route_finder import find_route, has_reached_end_of_target_station
 from .signal_controller import SignalController
 from typing import NamedTuple
@@ -63,7 +64,7 @@ def _find_equidistant_points_and_angles_along_line(
 
 
 @dataclass
-class Train(Subject):
+class Train:
     player: Player
     first_station: Station
     second_station: Station
@@ -106,10 +107,10 @@ class Train(Subject):
     def rails_on_route(self):
         return self._rails_on_route
 
-    def move(self, delta_time):
+    def move(self, delta_time) -> list[Event]:
         if self.wait_timer > 0:
             self.wait_timer -= delta_time
-            return
+            return []
 
         if self._run_after_wait:
             self._run_after_wait()
@@ -153,14 +154,14 @@ class Train(Subject):
             abs(self.x - self.target_x) < pixels_to_move
             and abs(self.y - self.target_y) < pixels_to_move
         ):
-            self._on_reached_target()
+            return self._on_reached_target()
+        return []
 
     def is_close_enough_to_click(self, x, y):
         return self.x - 1 <= x <= self.x + 1 and self.y - 1 <= y <= self.y + 1
 
     def destroy(self):
         self.signal_controller.reserve(id(self), set())
-        self.notify(DestroyEvent())
 
     def is_colliding_with(self, train):
         return abs(self.x - train.x) < 0.25 and abs(self.y - train.y) < 0.25
@@ -226,7 +227,7 @@ class Train(Subject):
             else self.first_station
         )
 
-    def _on_reached_target(self):
+    def _on_reached_target(self) -> list[Event]:
         current_position = Vec2(self.target_x, self.target_y)
 
         starting_rails = {
@@ -240,14 +241,13 @@ class Train(Subject):
         if not starting_rails:
             self.speed = 0
             self.wait_timer = 1
-            return
+            return []
 
         if has_reached_end_of_target_station(
             current_position, self.current_rail, self._target_station
         ):
-            self._reserve(current_position)
             self._stop_at_station(self._target_station)
-            return
+            return self._reserve(current_position)
 
         self._rails_on_route = find_route(
             self.grid.possible_next_rails_ignore_red_lights,
@@ -261,13 +261,11 @@ class Train(Subject):
         if not self._rails_on_route:
             self.speed = 0
             self.wait_timer = 1
-            return
+            return []
 
         next_rail = self._rails_on_route[0]
         next_position = next_rail.other_end(*current_position)
         self._position_history.appendleft(Vec2(self.target_x, self.target_y))
-
-        self._reserve(next_position)
 
         self._update_current_rail_and_target_xy(next_rail, self.target_x, self.target_y)
 
@@ -279,8 +277,12 @@ class Train(Subject):
         ):
             self.speed /= 2
 
-    def _reserve(self, position: Vec2):
-        self.signal_controller.reserve(id(self), [*self._position_history, position])
+        return self._reserve(next_position)
+
+    def _reserve(self, position: Vec2) -> list[Event]:
+        return self.signal_controller.reserve(
+            id(self), [*self._position_history, position]
+        )
 
     def _is_sharp_corner(self, middle: Vec2, point1: Vec2, point2: Vec2):
         angle = math.atan2(point2.y - middle.y, point2.x - middle.x) - math.atan2(

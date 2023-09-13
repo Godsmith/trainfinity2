@@ -9,7 +9,7 @@ from pyglet.math import Vec2
 from itertools import pairwise
 
 from .gui import Gui
-from .observer import ChangeEvent, Event, Subject
+from .events import CreateEvent, Event, NullEvent
 
 
 @dataclass(frozen=True)
@@ -70,7 +70,7 @@ class CargoRemovedEvent(Event):
 
 
 @dataclass
-class Factory(Subject):
+class Factory:
     position: Vec2
     cargo_count: dict[CargoType, int] = field(default_factory=lambda: defaultdict(int))
 
@@ -80,7 +80,7 @@ class Factory(Subject):
     def add_cargo(self, type: CargoType):
         self.cargo_count[type] += 1
 
-    def transform_cargo(self):
+    def transform_cargo(self) -> Event:
         if (
             self.cargo_count[CargoType.COAL] >= 1
             and self.cargo_count[CargoType.IRON] >= 1
@@ -88,11 +88,12 @@ class Factory(Subject):
             self.cargo_count[CargoType.IRON] -= 1
             self.cargo_count[CargoType.COAL] -= 1
             self.cargo_count[CargoType.STEEL] += 1
-            self.notify(CargoAddedEvent(self.position, CargoType.STEEL))
+            return CargoAddedEvent(self.position, CargoType.STEEL)
+        return NullEvent()
 
 
 @dataclass
-class Mine(Subject):
+class Mine:
     position: Vec2
     cargo_type: CargoType
     cargo_count: int = 0
@@ -100,16 +101,16 @@ class Mine(Subject):
     def __post_init__(self):
         super().__init__()
 
-    def add_cargo(self):
+    def add_cargo(self) -> Event:
         if self.cargo_count < MAX_CARGO_AT_MINE:
             self.cargo_count += 1
-            self.notify(CargoAddedEvent(self.position, self.cargo_type))
+            return CargoAddedEvent(self.position, self.cargo_type)
+        return NullEvent()
 
-    def remove_cargo(self, amount) -> int:
+    def remove_cargo(self, amount) -> CargoRemovedEvent:
         amount_taken = amount if amount <= self.cargo_count else self.cargo_count
         self.cargo_count -= amount_taken
-        self.notify(CargoRemovedEvent(self.position, amount_taken))
-        return amount_taken
+        return CargoRemovedEvent(self.position, amount_taken)
 
 
 @dataclass(frozen=True)
@@ -206,7 +207,7 @@ class SignalConnection:
 
 
 @dataclass(unsafe_hash=True)
-class Signal(Subject):
+class Signal:
     from_position: Vec2
     rail: Rail
     _signal_color: SignalColor = SignalColor.GREEN
@@ -223,7 +224,6 @@ class Signal(Subject):
     def signal_color(self) -> SignalColor:
         return self._signal_color
 
-    @signal_color.setter
-    def signal_color(self, value: SignalColor):
+    def set_signal_color(self, value: SignalColor) -> CreateEvent:
         self._signal_color = value
-        self.notify(ChangeEvent())
+        return CreateEvent(self)

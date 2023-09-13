@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import Any, Iterable
+from typing import Iterable
 
 from pyglet.math import Vec2
 
@@ -18,14 +18,14 @@ from .model import (
     Station,
     Water,
 )
-from .observer import CreateEvent, DestroyEvent, Event, Subject
+from .events import CreateEvent, DestroyEvent, Event
 from .signal_controller import SignalController
 from .terrain import Terrain
 
 from .route_finder import find_route
 
 
-@dataclass(frozen=True)
+@dataclass
 class SignalsBeingBuiltEvent(Event):
     signals: set[Signal]
 
@@ -74,7 +74,7 @@ def get_random_position() -> Vec2:
     return Vec2(x, y)
 
 
-class Grid(Subject):
+class Grid:
     def __init__(self, terrain: Terrain, signal_controller: SignalController) -> None:
         super().__init__()
         self._signal_controller = signal_controller
@@ -94,9 +94,8 @@ class Grid(Subject):
         self.top = GRID_HEIGHT_CELLS
         self._create_terrain(terrain)
 
-    def create_buildings(self):
-        self._create_mines()
-        self._create_factories()
+    def create_buildings(self) -> list[Event]:
+        return self._create_mines() + self._create_factories()
 
     def _create_terrain(self, terrain: Terrain):
         for position in terrain.water:
@@ -115,35 +114,39 @@ class Grid(Subject):
             if position not in illegal_positions:
                 return position
 
-    def _create_coal_mine(self, position: Vec2):
+    def _create_coal_mine(self, position: Vec2) -> CreateEvent:
         return self._create_mine(position, CargoType.COAL)
 
-    def _create_iron_mine(self, position: Vec2):
+    def _create_iron_mine(self, position: Vec2) -> CreateEvent:
         return self._create_mine(position, CargoType.IRON)
 
-    def _create_mine(self, position: Vec2, cargo: CargoType):
+    def _create_mine(self, position: Vec2, cargo: CargoType) -> CreateEvent:
         mine = Mine(position, cargo_type=cargo)
         self.mines[position] = mine
-        self._notify_about_other_object(mine, CreateEvent())
-        return mine
+        return CreateEvent(mine)
 
-    def _create_mine_in_random_unoccupied_location(self, cargo: CargoType):
-        self._create_mine(self._get_random_position_to_build_mine_or_factory(), cargo)
+    def _create_mine_in_random_unoccupied_location(
+        self, cargo: CargoType
+    ) -> CreateEvent:
+        return self._create_mine(
+            self._get_random_position_to_build_mine_or_factory(), cargo
+        )
 
-    def _create_mines(self):
-        self._create_mine_in_random_unoccupied_location(CargoType.IRON)
+    def _create_mines(self) -> list[Event]:
+        return [self._create_mine_in_random_unoccupied_location(CargoType.IRON)]
 
-    def _create_factory(self, position: Vec2):
+    def _create_factory(self, position: Vec2) -> CreateEvent:
         factory = Factory(position)
         self.factories[position] = factory
-        self._notify_about_other_object(factory, CreateEvent())
-        return factory
+        return CreateEvent(factory)
 
-    def _create_factory_in_random_unoccupied_location(self):
-        self._create_factory(self._get_random_position_to_build_mine_or_factory())
+    def _create_factory_in_random_unoccupied_location(self) -> CreateEvent:
+        return self._create_factory(
+            self._get_random_position_to_build_mine_or_factory()
+        )
 
-    def _create_factories(self):
-        self._create_factory_in_random_unoccupied_location()
+    def _create_factories(self) -> list[Event]:
+        return [self._create_factory_in_random_unoccupied_location()]
 
     def find_route_between_stations(
         self, station1: Station, station2: Station
@@ -232,77 +235,87 @@ class Grid(Subject):
     def _is_inside(self, x, y):
         return self.left <= x < self.right and self.bottom <= y < self.top
 
-    def click_and_drag(self, x: int, y: int, start_x: int, start_y: int, mode: Mode):
+    def click_and_drag(
+        self, x: int, y: int, start_x: int, start_y: int, mode: Mode
+    ) -> list[Event]:
         if mode == Mode.RAIL:
-            self._show_rails_being_built(Vec2(start_x, start_y), Vec2(x, y))
+            return [self._show_rails_being_built(Vec2(start_x, start_y), Vec2(x, y))]
         elif mode == Mode.STATION:
             self.station_being_built = station_between(
                 Vec2(start_x, start_y), Vec2(x, y)
             )
-            self.notify(
+            return [
                 StationBeingBuiltEvent(
                     self.station_being_built,
                     self._illegal_station_positions(self.station_being_built),
-                )
-            )
-            self._show_rails_being_built(
-                *self.station_being_built.positions_before_and_after
-            )
+                ),
+                self._show_rails_being_built(
+                    *self.station_being_built.positions_before_and_after
+                ),
+            ]
 
         elif mode == Mode.DESTROY:
-            self.remove_rail(Vec2(x, y))
+            return self.remove_rail(Vec2(x, y))
 
-    def _show_rails_being_built(self, start: Vec2, stop: Vec2):
+        return []
+
+    def _show_rails_being_built(self, start: Vec2, stop: Vec2) -> RailsBeingBuiltEvent:
         rails_being_built = rails_between(start, stop)
         self.rails_being_built = self._mark_illegal_rail(rails_being_built)
-        self.notify(RailsBeingBuiltEvent(self.rails_being_built))
+        return RailsBeingBuiltEvent(self.rails_being_built)
 
-    def remove_rail(self, position: Vec2):
+    def remove_rail(self, position: Vec2) -> list[Event]:
+        events = []
         for rail in self.rails_at_position(position):
-            self._notify_about_other_object(rail, DestroyEvent())
+            events.append(DestroyEvent(rail))
             keys = [key for key, signal in self.signals.items() if signal.rail == rail]
             for key in keys:
-                self._notify_about_other_object(self.signals[key], DestroyEvent())
+                events.append(DestroyEvent(self.signals[key]))
                 del self.signals[key]
             self.rails.remove(rail)
             for station in set(self.station_from_position.values()):
                 if rail in station.internal_and_external_rail:
-                    self._notify_about_other_object(station, DestroyEvent())
+                    events.append(DestroyEvent(station))
                     for position in station.positions:
                         del self.station_from_position[position]
 
-        self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
+        events.extend(
+            self._signal_controller.create_signal_blocks(
+                self, list(self.signals.values())
+            )
+        )
+        return events
 
-    def _notify_about_other_object(self, other_object: Any, event: Event):
-        for observer in self._observers[type(event)]:
-            observer.on_notify(other_object, event)
-
-    def create_rail(self, rails: set[Rail]):
+    def create_rail(self, rails: set[Rail]) -> list[Event]:
+        self.rails.update(rails)
+        events = self._signal_controller.create_signal_blocks(
+            self, list(self.signals.values())
+        )
         # Objects might change id when they are put into a set. Since Drawer uses
         # the object id as key, we need to first put the object in the set and then
         # use the object from the set.
-        self.rails.update(rails)
-        for rail in self.rails:
-            if rail in rails:
-                self._notify_about_other_object(rail, CreateEvent())
-        self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
+        events.extend(CreateEvent(rail) for rail in self.rails if rail in rails)
+        return events
 
-    def release_mouse_button(self, mode: Mode):
+    def release_mouse_button(self, mode: Mode) -> list[Event]:
+        events = []
         if all(rail.legal for rail in self.rails_being_built):
             if mode == mode.RAIL:
-                self.create_rail(self.rails_being_built)
+                events.extend(self.create_rail(self.rails_being_built))
             elif (
                 mode == mode.STATION
                 and self.station_being_built
                 and not (self._illegal_station_positions(self.station_being_built))
             ):
-                self.create_rail(self.rails_being_built)
-                self._create_station(self.station_being_built)
+                events.extend(self.create_rail(self.rails_being_built))
+                events.append(self._create_station(self.station_being_built))
 
         self.rails_being_built.clear()
-        self.notify(RailsBeingBuiltEvent(self.rails_being_built))
+        events.append(RailsBeingBuiltEvent(self.rails_being_built))
         self.station_being_built = None
-        self.notify(StationBeingBuiltEvent(self.station_being_built))
+        events.append(StationBeingBuiltEvent(self.station_being_built))
+
+        return events
 
     def get_station(self, x, y) -> Station | None:
         return self.station_from_position.get(Vec2(x, y))
@@ -339,7 +352,7 @@ class Grid(Subject):
                 return factory
         return None
 
-    def _create_station(self, station: Station) -> None:
+    def _create_station(self, station: Station) -> CreateEvent:
         """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError.
 
         East-west if east_west == True, otherwise north-south."""
@@ -347,20 +360,27 @@ class Grid(Subject):
         # assert mine_or_factory
         for position in station.positions:
             self.station_from_position[position] = station
-        self._notify_about_other_object(station, CreateEvent())
+        return CreateEvent(station)
 
-    def level_up(self, new_level: int):
+    def level_up(self, new_level: int) -> list[Event]:
+        events = []
         self.left -= 1
         self.bottom -= 1
         self.right += 1
         self.top += 1
 
         if new_level % 3 == 1:
-            self._create_mine_in_random_unoccupied_location(CargoType.COAL)
+            events.append(
+                self._create_mine_in_random_unoccupied_location(CargoType.COAL)
+            )
         elif new_level % 3 == 2:
-            self._create_factory_in_random_unoccupied_location()
+            events.append(self._create_factory_in_random_unoccupied_location())
         else:
-            self._create_mine_in_random_unoccupied_location(CargoType.IRON)
+            events.append(
+                self._create_mine_in_random_unoccupied_location(CargoType.IRON)
+            )
+
+        return events
 
     def _closest_rail(self, x, y) -> Rail | None:
         """Return None if
@@ -378,29 +398,32 @@ class Grid(Subject):
         closest_rail, distance = sorted(rails_and_distances, key=lambda x: x[1])[0]
         return closest_rail if distance < 1 else None
 
-    def create_signals_at_click_position(self, world_x: float, world_y: float):
+    def create_signals_at_click_position(
+        self, world_x: float, world_y: float
+    ) -> list[Event]:
         # Transpose half a box since rail coordinates are in the bottom left
         # of each grid cell while they are visible in the middle
         x = world_x - 0.5
         y = world_y - 0.5
         return self.create_signals_at_grid_position(x, y)
 
-    def create_signals_at_grid_position(self, x: float, y: float) -> list[Signal]:
-        signals = []
+    def create_signals_at_grid_position(self, x: float, y: float) -> list[Event]:
+        events = []
         if rail := self._closest_rail(x, y):
             for position in rail.positions:
                 signal = Signal(position, rail)
                 self.signals[(position, rail)] = signal
-                self._notify_about_other_object(signal, CreateEvent())
-                signals.append(signal)
+                events.append(CreateEvent(signal))
         self._signal_controller.create_signal_blocks(self, list(self.signals.values()))
-        return signals
+        return events
 
-    def show_signal_outline(self, world_x: float, world_y: float):
+    def show_signal_outline(
+        self, world_x: float, world_y: float
+    ) -> SignalsBeingBuiltEvent:
         x = world_x - 0.5
         y = world_y - 0.5
         if rail := self._closest_rail(x, y):
             signals = {Signal(position, rail) for position in rail.positions}
         else:
             signals = set()
-        self.notify(SignalsBeingBuiltEvent(signals))
+        return SignalsBeingBuiltEvent(signals)
