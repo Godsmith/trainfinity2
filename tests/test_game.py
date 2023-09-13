@@ -199,7 +199,7 @@ class TestBuildingStations:
         .M...
         """
         game.gui.disable()
-        game.grid._create_mine(Vec2(1, 0), cargo=CargoType.IRON)
+        game.grid.create_mine(Vec2(1, 0), cargo=CargoType.IRON)
         game.gui.mode = Mode.STATION
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=105, y=45, dx=60, dy=0)

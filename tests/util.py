@@ -1,20 +1,24 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 from trainfinity2.grid import Grid
-from trainfinity2.model import Rail, Station
+from trainfinity2.model import CargoType, Rail, Station
 from pyglet.math import Vec2
 
 
 def _create_buildings(
     lines: list[str],
     building_character: str,
-    create_method: Callable[[Vec2], Any],
+    create_method: Callable[..., Any],
+    extra_args: list[Any] | None = None,
 ):
+    if not extra_args:
+        extra_args = []
     for row_number, row in enumerate(lines):
         for column_number, character in enumerate(row):
             if character == building_character:
                 if column_number % 2 == 0 and row_number % 2 == 0:
-                    create_method(Vec2(column_number / 2, row_number / 2))
+                    args = [Vec2(column_number / 2, row_number / 2)] + extra_args
+                    create_method(*args)
 
 
 def _create_rails(grid: Grid, lines: list[str]):
@@ -111,8 +115,8 @@ def create_objects(grid: Grid, map_: str):
     lines.reverse()  # Reverse to get row indices to match with coordinates
     lines = _remove_offset(lines)
 
-    _create_buildings(lines, "M", grid._create_iron_mine)
-    _create_buildings(lines, "C", grid._create_coal_mine)
+    _create_buildings(lines, "M", grid.create_mine, [CargoType.IRON])
+    _create_buildings(lines, "C", grid.create_mine, [CargoType.COAL])
     _create_buildings(lines, "F", grid._create_factory)
 
     east_west_station_creator = StationCreator(grid, east_west=True)

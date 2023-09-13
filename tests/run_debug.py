@@ -16,8 +16,8 @@ def init(game: Game):
     game.setup(Terrain(water=[Vec2(0, 0)]))
     events.extend(
         (
-            game.grid._create_mine(Vec2(2, 2), CargoType.IRON),
-            game.grid._create_mine(Vec2(7, 7), CargoType.COAL),
+            game.grid.create_mine(Vec2(2, 2), CargoType.IRON),
+            game.grid.create_mine(Vec2(7, 7), CargoType.COAL),
             game.grid._create_factory(Vec2(7, 2)),
         )
     )

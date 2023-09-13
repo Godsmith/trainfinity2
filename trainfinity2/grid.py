@@ -114,13 +114,7 @@ class Grid:
             if position not in illegal_positions:
                 return position
 
-    def _create_coal_mine(self, position: Vec2) -> CreateEvent:
-        return self._create_mine(position, CargoType.COAL)
-
-    def _create_iron_mine(self, position: Vec2) -> CreateEvent:
-        return self._create_mine(position, CargoType.IRON)
-
-    def _create_mine(self, position: Vec2, cargo: CargoType) -> CreateEvent:
+    def create_mine(self, position: Vec2, cargo: CargoType) -> CreateEvent:
         mine = Mine(position, cargo_type=cargo)
         self.mines[position] = mine
         return CreateEvent(mine)
@@ -128,7 +122,7 @@ class Grid:
     def _create_mine_in_random_unoccupied_location(
         self, cargo: CargoType
     ) -> CreateEvent:
-        return self._create_mine(
+        return self.create_mine(
             self._get_random_position_to_build_mine_or_factory(), cargo
         )
 
