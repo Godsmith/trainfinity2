@@ -11,14 +11,12 @@ def _create_buildings(
     create_method: Callable[..., Any],
     extra_args: list[Any] | None = None,
 ):
-    if not extra_args:
-        extra_args = []
-    for row_number, row in enumerate(lines):
-        for column_number, character in enumerate(row):
+    extra_args = extra_args or []
+    for row_number, row in list(enumerate(lines))[::2]:
+        for column_number, character in list(enumerate(row))[::2]:
             if character == building_character:
-                if column_number % 2 == 0 and row_number % 2 == 0:
-                    args = [Vec2(column_number / 2, row_number / 2)] + extra_args
-                    create_method(*args)
+                args = [Vec2(column_number / 2, row_number / 2), *extra_args]
+                create_method(*args)
 
 
 def _create_rails(grid: Grid, lines: list[str]):
