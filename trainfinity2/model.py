@@ -156,13 +156,13 @@ Building = Mine | Factory | Station
 def get_level_scores() -> list[int]:
     """
     The number of points required to reach a certain level.
-    - Level 0: 0 points
-    - Level 1: 10 points
-    - Level 2: 30 points
+    - Level 1: 0 points
+    - Level 2: 10 points
+    - Level 3: 30 points
     - ...
     """
     score_increase = 10
-    scores = [0]
+    scores = [0, 0]
     for _ in range(1000):
         scores.append(scores[-1] + score_increase)
         score_increase += 10
@@ -172,7 +172,7 @@ def get_level_scores() -> list[int]:
 @dataclass
 class Player:
     gui: Gui
-    level_up: Callable[[int], None]
+    level_up_callback: Callable[[int], None]
     _score: int = 0
     _level = 0
 
@@ -189,9 +189,15 @@ class Player:
     def score(self, value):
         self._score = value
         while self._score >= self.LEVELS[self._level + 1]:
-            self._level += 1
-            self.level_up(self._level)
-        self.gui.update_score(value, self._level, self.score_to_grid_increase())
+            self.level_up()
+        self.update_score_in_gui()
+
+    def level_up(self):
+        self._level += 1
+        self.level_up_callback(self._level)
+
+    def update_score_in_gui(self):
+        self.gui.update_score(self._score, self._level, self.score_to_grid_increase())
 
 
 class SignalColor(Enum):

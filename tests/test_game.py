@@ -1163,8 +1163,8 @@ class TestReserveAndUnreserveRail:
 
 class TestPlayer:
     def test_grid_is_enlarged_when_leveling_up(self, game: Game):
-        assert game.grid.left == 0
-        assert game.grid.right == GRID_WIDTH_CELLS
-        game.player.score = 10
         assert game.grid.left == -1
         assert game.grid.right == GRID_WIDTH_CELLS + 1
+        game.player.score = 10
+        assert game.grid.left == -2
+        assert game.grid.right == GRID_WIDTH_CELLS + 2

@@ -30,7 +30,7 @@ class TestPlayer:
     def test_level_is_increased_when_score_passes_threshold(self, player):
         player.score = 10
 
-        assert player._level == 1
+        assert player._level == 2
 
 
 class TestRail:

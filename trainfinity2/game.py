@@ -80,10 +80,10 @@ class Game:
         self.signal_controller = SignalController()
         self.grid = Grid(terrain, self.signal_controller)
         self.drawer = Drawer()
-        events = self.grid.create_buildings()
-        self.drawer.handle_events(events)
 
         self.player = Player(self.gui, self.level_up)
+        self.player.level_up()
+        self.player.update_score_in_gui()
 
         self.cargo_counter = 0.0
 
@@ -305,5 +305,5 @@ class Game:
         self.gui.refresh_text()
 
     def level_up(self, level: int):
-        self.grid.level_up(level)
+        self.drawer.handle_events(self.grid.level_up(level))
         self.drawer.create_grid(self.grid)

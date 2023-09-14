@@ -94,9 +94,6 @@ class Grid:
         self.top = GRID_HEIGHT_CELLS
         self._create_terrain(terrain)
 
-    def create_buildings(self) -> list[Event]:
-        return self._create_mines() + self._create_factories()
-
     def _create_terrain(self, terrain: Terrain):
         for position in terrain.water:
             self.water[position] = Water(position)
@@ -126,9 +123,6 @@ class Grid:
             self._get_random_position_to_build_mine_or_factory(), cargo
         )
 
-    def _create_mines(self) -> list[Event]:
-        return [self._create_mine_in_random_unoccupied_location(CargoType.IRON)]
-
     def _create_factory(self, position: Vec2) -> CreateEvent:
         factory = Factory(position)
         self.factories[position] = factory
@@ -138,9 +132,6 @@ class Grid:
         return self._create_factory(
             self._get_random_position_to_build_mine_or_factory()
         )
-
-    def _create_factories(self) -> list[Event]:
-        return [self._create_factory_in_random_unoccupied_location()]
 
     def find_route_between_stations(
         self, station1: Station, station2: Station
@@ -363,11 +354,16 @@ class Grid:
         self.right += 1
         self.top += 1
 
-        if new_level % 3 == 1:
+        if new_level == 1:
+            events.append(
+                self._create_mine_in_random_unoccupied_location(CargoType.IRON)
+            )
+            events.append(self._create_factory_in_random_unoccupied_location())
+        elif new_level % 3 == 2:
             events.append(
                 self._create_mine_in_random_unoccupied_location(CargoType.COAL)
             )
-        elif new_level % 3 == 2:
+        elif new_level % 3 == 0:
             events.append(self._create_factory_in_random_unoccupied_location())
         else:
             events.append(
