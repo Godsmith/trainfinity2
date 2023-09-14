@@ -94,11 +94,14 @@ class Game:
 
         self._train_placer = _TrainPlacer(self.drawer)
 
+    def add_cargo_to_all_mines(self):
+        for mine in self.grid.mines.values():
+            self.drawer.handle_events([mine.add_cargo()])
+
     def on_update(self, delta_time):
         self.cargo_counter += delta_time
         if self.cargo_counter > SECONDS_BETWEEN_CARGO_CREATION:
-            for mine in self.grid.mines.values():
-                self.drawer.handle_events([mine.add_cargo()])
+            self.add_cargo_to_all_mines()
             for factory in self.grid.factories.values():
                 self.drawer.handle_events([factory.transform_cargo()])
             self.cargo_counter = 0.0

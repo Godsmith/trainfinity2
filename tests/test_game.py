@@ -701,18 +701,20 @@ def test_train_picks_up_iron_from_mine(game: Game):
     game._create_train(*game.grid.station_from_position.values())
     mine = game.grid.mines[Vec2(1, 1)]
     train = game.trains[0]
-    mine.add_cargo()
+    game.add_cargo_to_all_mines()
     train.x = 1
     train.target_x = 1
     train._target_station = game.grid.station_from_position[Vec2(1, 0)]
     assert mine.cargo_count == 1
     assert train.wagons[0].cargo_count == 0
+    assert len(game.drawer.cargo_shape_element_list) == 2
 
     while check(train.wagons[0].cargo_count == 0):
         game.on_update(1 / 60)
 
     assert mine.cargo_count == 0
     assert train.wagons[0].cargo_count == 1
+    assert len(game.drawer.cargo_shape_element_list) == 0
 
 
 def test_train_delivers_iron_to_factory_gives_score(game: Game):

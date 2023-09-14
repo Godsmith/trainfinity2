@@ -169,7 +169,8 @@ class Train:
     def _can_reserve_position(self, position: Vec2) -> bool:
         return self.signal_controller.reserver(position) in {id(self), None}
 
-    def _stop_at_station(self, station: Station):
+    def _stop_at_station(self, station: Station) -> list[Event]:
+        events = []
         # Check factories before mines, or a the iron will
         # instantly be transported to the factory
         self.speed = 0
@@ -182,7 +183,7 @@ class Train:
             is_finished = False
         for mine in self.grid.adjacent_mines(station.positions):
             if self._has_space() and mine.cargo_count > 0:
-                mine.remove_cargo(1)
+                events.append(mine.remove_cargo(1))
                 self.wait_timer = 1
                 self._run_after_wait = self._create_load_cargo_method(mine.cargo_type)
                 is_finished = False
@@ -192,6 +193,7 @@ class Train:
         # This ensures that the train can immediately reverse at the station
         # Otherwise it the train would prefer to continue forward and then reverse
         # self.current_rail = None
+        return events
 
     def _has_cargo(self):
         return any(wagon.cargo_count for wagon in self.wagons)
@@ -246,8 +248,9 @@ class Train:
         if has_reached_end_of_target_station(
             current_position, self.current_rail, self._target_station
         ):
-            self._stop_at_station(self._target_station)
-            return self._reserve(current_position)
+            events = self._stop_at_station(self._target_station)
+            events.extend(self._reserve(current_position))
+            return events
 
         self._rails_on_route = find_route(
             self.grid.possible_next_rails_ignore_red_lights,
