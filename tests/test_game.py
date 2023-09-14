@@ -589,7 +589,7 @@ class TestDestroyMode:
         # 12 is the number of shapes a rail consists of when writing this test
         assert len(game.drawer.rail_to_be_destroyed_shape_list) == 12
 
-    def test_clicking_and_dragging_in_destroy_mode_destroys_station_and_rail(
+    def test_clicking_in_destroy_mode_destroys_station_and_rail(
         self,
         game: Game,
     ):
@@ -607,8 +607,7 @@ class TestDestroyMode:
         assert len(game.grid.station_from_position) == 2
         assert len(game.grid.rails) == 4
 
-        game.on_mouse_press(x=45, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        game.on_mouse_motion(x=46, y=15, dx=1, dy=30)
+        game.on_left_click(x=45, y=15)
 
         assert len(game.grid.station_from_position) == 1
         assert len(game.grid.rails) == 2
@@ -951,7 +950,7 @@ class TestSignals:
         assert len(game.grid.signals) == 2
 
         game.on_mouse_press(x=60, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        game.on_mouse_motion(x=61, y=1, dx=1, dy=1)
+        game.on_left_click(x=61, y=1)
 
         assert len(game.grid.signals) == 0
 
@@ -973,6 +972,23 @@ class TestSignals:
         game.grid.remove_rail(Vec2(2, 0))
 
         assert len(game.signal_controller._signal_blocks) == 3
+
+    def test_destroying_rail_removes_rail_from_drawer(
+        self,
+        game: Game,
+    ):
+        game.gui.disable()
+        game.gui.mode = Mode.RAIL
+        game.on_mouse_press(15, 15, arcade.MOUSE_BUTTON_LEFT, 0)
+        game.on_mouse_motion(45, 15, 30, 0)
+        game.on_mouse_release(15, 15, arcade.MOUSE_BUTTON_LEFT, 0)
+
+        assert len(game.drawer._rail_shape_list) == 12
+
+        game.gui.mode = Mode.DESTROY
+        game.on_left_click(15, 15)
+
+        assert len(game.drawer._rail_shape_list) == 0
 
     def test_adding_rail_resets_signal_blocks(
         self,

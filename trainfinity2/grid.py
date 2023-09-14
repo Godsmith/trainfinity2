@@ -239,9 +239,6 @@ class Grid:
                 ),
             ]
 
-        elif mode == Mode.DESTROY:
-            return self.remove_rail(Vec2(x, y))
-
         return []
 
     def _show_rails_being_built(self, start: Vec2, stop: Vec2) -> RailsBeingBuiltEvent:
