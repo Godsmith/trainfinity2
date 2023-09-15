@@ -209,7 +209,7 @@ class Game:
                 x, y
             )
             self.drawer.handle_events(
-                self.grid.create_signals_at_click_position(world_x_float, world_y_float)
+                self.grid.toggle_signals_at_click_position(world_x_float, world_y_float)
             )
         elif self.gui.mode == Mode.DESTROY:
             self.grid.remove_rail(Vec2(world_x, world_y))

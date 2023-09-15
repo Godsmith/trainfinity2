@@ -846,7 +846,7 @@ class TestSignals:
             .-.h.-.
             """,
         )
-        game.grid.create_signals_at_click_position(60, 15)
+        game.grid.toggle_signals_at_click_position(60, 15)
         # Sort the blocks so that the test becomes predictable
         blocks = sorted(
             game.signal_controller._signal_blocks, key=lambda b: sorted(b.positions)[0]
@@ -869,6 +869,22 @@ class TestSignals:
         game.gui.mode = Mode.SIGNAL
         game.on_left_click(61, 1)
         assert len(game.grid.signals) == 2
+
+    def test_clicking_signal_in_signal_mode_removes_signal(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+        .h.
+        """,
+        )
+        game.gui.disable()
+        game.gui.mode = Mode.SIGNAL
+
+        assert len(game.grid.signals) == 2
+
+        game.on_left_click(45, 15)
+
+        assert len(game.grid.signals) == 0
 
     def test_clicking_grid_in_signal_mode_when_no_rail_does_nothing(self, game: Game):
         """For code coverage."""

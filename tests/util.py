@@ -47,7 +47,7 @@ def _create_rails(grid: Grid, lines: list[str]):
             if character in "-h|v/\\":
                 grid.create_rail({Rail(x1, y1, x2, y2)})
             if character in "hv":
-                grid.create_signals_at_grid_position(abs(x1 + x2) / 2, abs(y1 + y2) / 2)
+                grid.toggle_signals_at_grid_position(abs(x1 + x2) / 2, abs(y1 + y2) / 2)
 
 
 def _remove_offset(lines: Iterable[str]):
