@@ -1,5 +1,5 @@
 from pyglet.math import Vec2
-from trainfinity2.model import Factory, Mine, Rail, CargoType, SignalColor, Station
+from trainfinity2.model import Mine, Rail, CargoType, SignalColor, Station, SteelWorks
 from trainfinity2.__main__ import Game
 
 from tests.util import create_objects
@@ -85,7 +85,7 @@ def test_create_objects(game: Game):
     )
 
     assert game.grid.mines == {Vec2(1, 1): Mine(Vec2(1, 1), cargo_type=CargoType.IRON)}
-    assert game.grid.factories == {Vec2(3, 1): Factory(Vec2(3, 1))}
+    assert game.grid.factories == {Vec2(3, 1): SteelWorks(Vec2(3, 1))}
     assert game.grid.station_from_position == {
         Vec2(3, 0): Station((Vec2(3, 0),)),
         Vec2(1, 0): Station((Vec2(1, 0),)),

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
@@ -70,15 +71,23 @@ class CargoRemovedEvent(Event):
 
 
 @dataclass
-class Factory:
+class Factory(ABC):
     position: Vec2
     cargo_count: dict[CargoType, int] = field(default_factory=lambda: defaultdict(int))
-
-    def __post_init__(self):
-        super().__init__()
+    accepts: set[CargoType] = field(init=False)
 
     def add_cargo(self, type: CargoType):
         self.cargo_count[type] += 1
+
+    @abstractmethod
+    def transform_cargo(self):
+        raise NotImplementedError
+
+
+@dataclass
+class SteelWorks(Factory):
+    def __post_init__(self):
+        self.accepts = {CargoType.COAL, CargoType.IRON}
 
     def transform_cargo(self) -> Event:
         if (
@@ -97,9 +106,6 @@ class Mine:
     position: Vec2
     cargo_type: CargoType
     cargo_count: int = 0
-
-    def __post_init__(self):
-        super().__init__()
 
     def add_cargo(self) -> Event:
         if self.cargo_count < MAX_CARGO_AT_MINE:

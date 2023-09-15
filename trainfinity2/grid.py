@@ -16,6 +16,7 @@ from .model import (
     CargoType,
     Signal,
     Station,
+    SteelWorks,
     Water,
 )
 from .events import CreateEvent, DestroyEvent, Event
@@ -130,7 +131,7 @@ class Grid:
         return [self._create_mine_in_random_unoccupied_location(CargoType.IRON)]
 
     def _create_factory(self, position: Vec2) -> CreateEvent:
-        factory = Factory(position)
+        factory = SteelWorks(position)
         self.factories[position] = factory
         return CreateEvent(factory)
 
