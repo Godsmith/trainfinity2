@@ -1,5 +1,12 @@
 from pyglet.math import Vec2
-from trainfinity2.model import Mine, Rail, CargoType, SignalColor, Station, SteelWorks
+from trainfinity2.model import (
+    IronMine,
+    Rail,
+    SignalColor,
+    Station,
+    Building,
+    SteelWorks,
+)
 from trainfinity2.__main__ import Game
 
 from tests.util import create_objects
@@ -84,8 +91,10 @@ def test_create_objects(game: Game):
     .-S-.hS-.""",
     )
 
-    assert game.grid.mines == {Vec2(1, 1): Mine(Vec2(1, 1), cargo_type=CargoType.IRON)}
-    assert game.grid.factories == {Vec2(3, 1): SteelWorks(Vec2(3, 1))}
+    assert game.grid.buildings == {
+        Vec2(1, 1): IronMine(Vec2(1, 1)),
+        Vec2(3, 1): SteelWorks(Vec2(3, 1)),
+    }
     assert game.grid.station_from_position == {
         Vec2(3, 0): Station((Vec2(3, 0),)),
         Vec2(1, 0): Station((Vec2(1, 0),)),
@@ -105,7 +114,7 @@ def test_create_with_offset(game: Game):
 
         . .""",
     )
-    assert game.grid.mines == {Vec2(1, 1): Mine(Vec2(1, 1), cargo_type=CargoType.IRON)}
+    assert game.grid.buildings == {Vec2(1, 1): IronMine(Vec2(1, 1))}
 
 
 def test_create_with_offset_and_last_line(game: Game):
@@ -117,4 +126,4 @@ def test_create_with_offset_and_last_line(game: Game):
         . .
         """,
     )
-    assert game.grid.mines == {Vec2(1, 1): Mine(Vec2(1, 1), cargo_type=CargoType.IRON)}
+    assert game.grid.buildings == {Vec2(1, 1): IronMine(Vec2(1, 1))}

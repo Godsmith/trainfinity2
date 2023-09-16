@@ -97,10 +97,8 @@ class Game:
     def on_update(self, delta_time):
         self.cargo_counter += delta_time
         if self.cargo_counter > SECONDS_BETWEEN_CARGO_CREATION:
-            for mine in self.grid.mines.values():
-                self.drawer.handle_events([mine.add_cargo()])
-            for factory in self.grid.factories.values():
-                self.drawer.handle_events([factory.transform_cargo()])
+            for building in self.grid.buildings.values():
+                self.drawer.handle_events([building.try_create_cargo()])
             self.cargo_counter = 0.0
         self._update_gui_figures(delta_time)
 

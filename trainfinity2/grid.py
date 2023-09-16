@@ -10,12 +10,14 @@ from trainfinity2.constants import GRID_HEIGHT_CELLS, GRID_WIDTH_CELLS
 
 from .gui import Mode
 from .model import (
-    Factory,
-    Mine,
+    Building,
+    CoalMine,
+    IronMine,
     Rail,
     CargoType,
     Signal,
     Station,
+    Building,
     SteelWorks,
     Water,
 )
@@ -81,8 +83,7 @@ class Grid:
         self._signal_controller = signal_controller
 
         self.water: dict[Vec2, Water] = {}
-        self.mines: dict[Vec2, Mine] = {}
-        self.factories: dict[Vec2, Factory] = {}
+        self.buildings: dict[Vec2, Building] = {}
         self.station_from_position: dict[Vec2, Station] = {}
         self.signals: dict[tuple[Vec2, Rail], Signal] = {}
         self.rails_being_built: set[Rail] = set()
@@ -102,11 +103,10 @@ class Grid:
         for position in terrain.water:
             self.water[position] = Water(position)
 
-    def _get_random_position_to_build_mine_or_factory(self) -> Vec2:
+    def _get_random_position_to_build_building(self) -> Vec2:
         illegal_positions = (
             self.water.keys()
-            | self.mines.keys()
-            | self.factories.keys()
+            | self.buildings.keys()
             | self.station_from_position.keys()
             | {position for rail in self.rails for position in rail.positions}
         )
@@ -116,29 +116,27 @@ class Grid:
                 return position
 
     def create_mine(self, position: Vec2, cargo: CargoType) -> CreateEvent:
-        mine = Mine(position, cargo_type=cargo)
-        self.mines[position] = mine
+        mine = {CargoType.COAL: CoalMine(position), CargoType.IRON: IronMine(position)}[
+            cargo
+        ]
+        self.buildings[position] = mine
         return CreateEvent(mine)
 
     def _create_mine_in_random_unoccupied_location(
         self, cargo: CargoType
     ) -> CreateEvent:
-        return self.create_mine(
-            self._get_random_position_to_build_mine_or_factory(), cargo
-        )
+        return self.create_mine(self._get_random_position_to_build_building(), cargo)
 
     def _create_mines(self) -> list[Event]:
         return [self._create_mine_in_random_unoccupied_location(CargoType.IRON)]
 
     def _create_factory(self, position: Vec2) -> CreateEvent:
         factory = SteelWorks(position)
-        self.factories[position] = factory
+        self.buildings[position] = factory
         return CreateEvent(factory)
 
     def _create_factory_in_random_unoccupied_location(self) -> CreateEvent:
-        return self._create_factory(
-            self._get_random_position_to_build_mine_or_factory()
-        )
+        return self._create_factory(self._get_random_position_to_build_building())
 
     def _create_factories(self) -> list[Event]:
         return [self._create_factory_in_random_unoccupied_location()]
@@ -186,9 +184,7 @@ class Grid:
         return False
 
     def _mark_illegal_rail(self, rails: Iterable[Rail]) -> set[Rail]:
-        illegal_positions = (
-            self.water.keys() | self.mines.keys() | self.factories.keys()
-        )
+        illegal_positions = self.water.keys() | self.buildings.keys()
         return {
             (
                 rail.to_illegal()
@@ -201,9 +197,7 @@ class Grid:
         }
 
     def _illegal_station_positions(self, station: Station) -> set[Vec2]:
-        if not any(
-            self._adjacent_mine_or_factory(position) for position in station.positions
-        ):
+        if not self.adjacent_buildings(station.positions):
             return set(station.positions)
 
         overlapping_positions_with_rail_in_wrong_direction = {
@@ -217,8 +211,7 @@ class Grid:
         }
         illegal_positions = (
             self.water.keys()
-            | self.mines.keys()
-            | self.factories.keys()
+            | self.buildings.keys()
             | self.station_from_position.keys()
         )
         return (
@@ -322,30 +315,13 @@ class Grid:
             3 / 4 < dy < 5 / 4 and dx < 1 / 4
         )
 
-    def adjacent_mines(self, positions: Iterable[Vec2]) -> list[Mine]:
+    def adjacent_buildings(self, positions: Iterable[Vec2]) -> list[Building]:
         return [
-            mine
-            for mine in self.mines.values()
+            building
+            for building in self.buildings.values()
             for position in positions
-            if self._is_adjacent(position, mine.position)
+            if self._is_adjacent(position, building.position)
         ]
-
-    def adjacent_factories(self, positions: Iterable[Vec2]) -> list[Factory]:
-        return [
-            factory
-            for factory in self.factories.values()
-            for position in positions
-            if self._is_adjacent(position, factory.position)
-        ]
-
-    def _adjacent_mine_or_factory(self, position: Vec2) -> Mine | Factory | None:
-        for mine in self.mines.values():
-            if self._is_adjacent(position, mine.position):
-                return mine
-        for factory in self.factories.values():
-            if self._is_adjacent(position, factory.position):
-                return factory
-        return None
 
     def _create_station(self, station: Station) -> CreateEvent:
         """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError.
@@ -403,7 +379,7 @@ class Grid:
         return self.toggle_signals_at_grid_position(x, y)
 
     def toggle_signals_at_grid_position(self, x: float, y: float) -> Sequence[Event]:
-        events = []
+        events: list[Event] = []
         if rail := self._closest_rail(x, y):
             for position in rail.positions:
                 signal = self.signals.get((position, rail))

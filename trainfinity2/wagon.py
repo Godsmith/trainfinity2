@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import dataclass, field
 
 from trainfinity2.model import CargoType
 
@@ -7,6 +8,10 @@ from trainfinity2.model import CargoType
 class Wagon:
     x: float
     y: float
-    cargo_type: CargoType = CargoType.IRON
-    cargo_count: int = 0
+    cargo_types: set[CargoType] = field(init=False)
+    cargo_count: dict[CargoType, int] = field(init=False)
     angle: float = 0
+
+    def __post_init__(self):
+        self.cargo_types = {CargoType.IRON, CargoType.COAL}
+        self.cargo_count = defaultdict(int)

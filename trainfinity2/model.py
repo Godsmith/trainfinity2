@@ -49,7 +49,7 @@ class Water:
     position: Vec2
 
 
-MAX_CARGO_AT_MINE = 8
+MAX_CARGO_AT_BUILDING = 8
 
 
 class CargoType(Enum):
@@ -71,52 +71,60 @@ class CargoRemovedEvent(Event):
 
 
 @dataclass
-class Factory(ABC):
+class Recipe:
+    output: CargoType
+    input: set[CargoType] = field(default_factory=set)
+
+
+@dataclass
+class Building(ABC):
     position: Vec2
     cargo_count: dict[CargoType, int] = field(default_factory=lambda: defaultdict(int))
-    accepts: set[CargoType] = field(init=False)
+    recipe: Recipe = field(init=False)
 
-    def add_cargo(self, type: CargoType):
-        self.cargo_count[type] += 1
+    @property
+    def accepts(self) -> set[CargoType]:
+        return self.recipe.input
 
-    @abstractmethod
-    def transform_cargo(self):
-        raise NotImplementedError
+    @property
+    def produces(self) -> set[CargoType]:
+        return {self.recipe.output}
 
-
-@dataclass
-class SteelWorks(Factory):
-    def __post_init__(self):
-        self.accepts = {CargoType.COAL, CargoType.IRON}
-
-    def transform_cargo(self) -> Event:
+    def try_create_cargo(self) -> Event:
         if (
-            self.cargo_count[CargoType.COAL] >= 1
-            and self.cargo_count[CargoType.IRON] >= 1
+            all(self.cargo_count[input_cargo] for input_cargo in self.recipe.input)
+            and self.cargo_count[self.recipe.output] <= MAX_CARGO_AT_BUILDING
         ):
-            self.cargo_count[CargoType.IRON] -= 1
-            self.cargo_count[CargoType.COAL] -= 1
-            self.cargo_count[CargoType.STEEL] += 1
-            return CargoAddedEvent(self.position, CargoType.STEEL)
+            for input_cargo in self.recipe.input:
+                self.cargo_count[input_cargo] -= 1
+            self.cargo_count[self.recipe.output] += 1
+            return CargoAddedEvent(self.position, self.recipe.output)
         return NullEvent()
+
+    def remove_cargo(self, type: CargoType, amount: int) -> CargoRemovedEvent:
+        assert self.cargo_count[type] >= amount
+        self.cargo_count[type] -= amount
+        return CargoRemovedEvent(self.position, amount)
 
 
 @dataclass
-class Mine:
-    position: Vec2
-    cargo_type: CargoType
-    cargo_count: int = 0
+class SteelWorks(Building):
+    def __post_init__(self):
+        self.recipe = Recipe(
+            input={CargoType.COAL, CargoType.IRON}, output=CargoType.STEEL
+        )
 
-    def add_cargo(self) -> Event:
-        if self.cargo_count < MAX_CARGO_AT_MINE:
-            self.cargo_count += 1
-            return CargoAddedEvent(self.position, self.cargo_type)
-        return NullEvent()
 
-    def remove_cargo(self, amount) -> CargoRemovedEvent:
-        amount_taken = amount if amount <= self.cargo_count else self.cargo_count
-        self.cargo_count -= amount_taken
-        return CargoRemovedEvent(self.position, amount_taken)
+@dataclass
+class CoalMine(Building):
+    def __post_init__(self):
+        self.recipe = Recipe(output=CargoType.COAL)
+
+
+@dataclass
+class IronMine(Building):
+    def __post_init__(self):
+        self.recipe = Recipe(output=CargoType.IRON)
 
 
 @dataclass(frozen=True)
@@ -154,9 +162,6 @@ class Station:
         pos2 = self.positions_before_and_after[1]
         rail2 = Rail(positions[-1].x, positions[-1].y, pos2.x, pos2.y)
         return {rail1, rail2}.union(self.internal_rail)
-
-
-Building = Mine | Factory | Station
 
 
 def get_level_scores() -> list[int]:

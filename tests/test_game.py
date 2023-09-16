@@ -35,7 +35,7 @@ def test_draw(game: Game):
     )
     game._create_train(*game.grid.station_from_position.values())
     # Mainly for code coverage
-    game.trains[0].wagons[0].cargo_count = 1
+    game.trains[0].wagons[0].cargo_count[CargoType.IRON] == 1
     game.on_draw()
 
 
@@ -644,7 +644,7 @@ def test_iron_is_regularly_added_to_mines(game: Game):
 
     game.on_update(1 / 60)
 
-    assert game.grid.mines[Vec2(1, 1)].cargo_count == 1
+    assert game.grid.buildings[Vec2(1, 1)].cargo_count[CargoType.IRON] == 1
     assert (
         len(game.drawer.cargo_shape_element_list) == 2
     )  # One for the interior, one for the frame
@@ -700,20 +700,20 @@ def test_train_picks_up_iron_from_mine(game: Game):
         """,
     )
     game._create_train(*game.grid.station_from_position.values())
-    mine = game.grid.mines[Vec2(1, 1)]
+    mine = game.grid.buildings[Vec2(1, 1)]
     train = game.trains[0]
-    mine.add_cargo()
+    mine.try_create_cargo()
     train.x = 1
     train.target_x = 1
     train._target_station = game.grid.station_from_position[Vec2(1, 0)]
-    assert mine.cargo_count == 1
-    assert train.wagons[0].cargo_count == 0
+    assert mine.cargo_count[CargoType.IRON] == 1
+    assert train.wagons[0].cargo_count[CargoType.IRON] == 0
 
-    while check(train.wagons[0].cargo_count == 0):
+    while check(train.wagons[0].cargo_count[CargoType.IRON] == 0):
         game.on_update(1 / 60)
 
-    assert mine.cargo_count == 0
-    assert train.wagons[0].cargo_count == 1
+    assert mine.cargo_count[CargoType.IRON] == 0
+    assert train.wagons[0].cargo_count[CargoType.IRON] == 1
 
 
 def test_train_delivers_iron_to_factory_gives_score(game: Game):
@@ -727,15 +727,15 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
     )
     game._create_train(*game.grid.station_from_position.values())
     train = game.trains[0]
-    train.wagons[0].cargo_count = 1
+    train.wagons[0].cargo_count[CargoType.IRON] = 1
     train.x = 3
     train.target_x = 3
     train._target_station = game.grid.station_from_position[Vec2(3, 0)]
 
-    while check(train.wagons[0].cargo_count):
+    while check(train.wagons[0].cargo_count[CargoType.IRON]):
         game.on_update(1 / 60)
 
-    assert train.wagons[0].cargo_count == 0
+    assert train.wagons[0].cargo_count[CargoType.IRON] == 0
     assert game.player.score == 1
 
 

@@ -115,8 +115,8 @@ class TrainDrawer:
             color=color.REDWOOD,
             tilt_angle=wagon.angle,
         )
-        if wagon.cargo_count:
-            for shape in get_cargo_shape(
-                x, y, wagon.cargo_type, tilt_angle=wagon.angle
-            ):
-                shape.draw()
+        for cargo_type in wagon.cargo_count:
+            if wagon.cargo_count[cargo_type]:
+                for shape in get_cargo_shape(x, y, cargo_type, tilt_angle=wagon.angle):
+                    shape.draw()
+                break
