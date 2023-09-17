@@ -27,15 +27,17 @@ from ..grid import (
     StationBeingBuiltEvent,
 )
 from ..model import (
-    Factory,
+    Building,
     CargoType,
     CargoAddedEvent,
     CargoRemovedEvent,
-    Mine,
+    CoalMine,
+    IronMine,
     Rail,
     Signal,
     SignalColor,
     Station,
+    SteelWorks,
 )
 from ..events import CreateEvent, DestroyEvent, Event, NullEvent
 from ..train import Train
@@ -109,10 +111,12 @@ class Drawer:
     def handle_events(self, events: Iterable[Event]):
         for event in events:
             match event:
-                case CreateEvent(Mine() as mine):
+                case CreateEvent(CoalMine() as mine):
                     self._create_mine(mine)
-                case CreateEvent(Factory() as factory):
-                    self._create_factory(factory)
+                case CreateEvent(IronMine() as mine):
+                    self._create_mine(mine)
+                case CreateEvent(SteelWorks() as steelworks):
+                    self._create_steelworks(steelworks)
                 case CreateEvent(Station() as station):
                     self._create_station(station)
                 case CreateEvent(Rail() as rail):
@@ -186,18 +190,18 @@ class Drawer:
                 )
             )
 
-    def _create_factory(self, factory: Factory):
+    def _create_steelworks(self, steelworks: SteelWorks):
         sprite = arcade.Sprite(
             "images/factory.png",
             0.75,
-            center_x=factory.position.x * GRID_BOX_SIZE_PIXELS
+            center_x=steelworks.position.x * GRID_BOX_SIZE_PIXELS
             + GRID_BOX_SIZE_PIXELS / 2,
-            center_y=factory.position.y * GRID_BOX_SIZE_PIXELS
+            center_y=steelworks.position.y * GRID_BOX_SIZE_PIXELS
             + GRID_BOX_SIZE_PIXELS / 2,
         )
-        self._add_sprite(sprite, factory)
+        self._add_sprite(sprite, steelworks)
 
-    def _create_mine(self, mine: Mine):
+    def _create_mine(self, mine: IronMine | CoalMine):
         sprite = arcade.Sprite(
             "images/mine.png",
             0.75,

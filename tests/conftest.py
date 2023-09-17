@@ -98,6 +98,5 @@ def game(monkeypatch: pytest.MonkeyPatch) -> Game:
     # Add a single water tile for code coverage
     game = Game()
     game.setup(terrain=Terrain(water=[Vec2(210, 210)]))
-    game.grid.mines = {}
-    game.grid.factories = {}
+    game.grid.buildings = {}
     return game

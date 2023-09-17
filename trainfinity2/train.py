@@ -10,7 +10,7 @@ from trainfinity2.events import Event
 
 
 from .grid import Grid
-from .model import Factory, Player, Rail, CargoType, Station
+from .model import Building, Player, Rail, CargoType, Station
 from .wagon import Wagon
 from .route_finder import find_route, has_reached_end_of_target_station
 from .signal_controller import SignalController
@@ -170,54 +170,56 @@ class Train:
         return self.signal_controller.reserver(position) in {id(self), None}
 
     def _stop_at_station(self, station: Station) -> list[Event]:
-        events = []
         # Check factories before mines, or a the iron will
         # instantly be transported to the factory
         self.speed = 0
-        is_finished = True
-        if (
-            factories := self.grid.adjacent_factories(station.positions)
-        ) and self._has_cargo():
-            self.wait_timer = 1
-            self._run_after_wait = self._create_unload_cargo_method(factories[0])
-            is_finished = False
-        for mine in self.grid.adjacent_mines(station.positions):
-            if self._has_space() and mine.cargo_count > 0:
-                events.append(mine.remove_cargo(1))
-                self.wait_timer = 1
-                self._run_after_wait = self._create_load_cargo_method(mine.cargo_type)
-                is_finished = False
-                break
-        if is_finished:
-            self.continue_to_next_station()
+        for building in self.grid.adjacent_buildings(station.positions):
+            for cargo_type in building.accepts:
+                if self._has_cargo(cargo_type):
+                    self.wait_timer = 1
+                    self._run_after_wait = self._create_unload_cargo_method(
+                        building, cargo_type
+                    )
+                    return []
+            for cargo_type in building.produces:
+                if building.cargo_count[cargo_type] > 0 and self._has_space(cargo_type):
+                    self.wait_timer = 1
+                    self._run_after_wait = self._create_load_cargo_method(cargo_type)
+                    return [building.remove_cargo(cargo_type, 1)]
+        self.continue_to_next_station()
         # This ensures that the train can immediately reverse at the station
         # Otherwise it the train would prefer to continue forward and then reverse
         # self.current_rail = None
-        return events
+        return []
 
-    def _has_cargo(self):
-        return any(wagon.cargo_count for wagon in self.wagons)
-
-    def _create_unload_cargo_method(self, factory: Factory):
+    def _create_unload_cargo_method(self, factory: Building, cargo_type: CargoType):
         def inner():
             for wagon in reversed(self.wagons):
-                if wagon.cargo_count:
-                    self.player.score += wagon.cargo_count
-                    factory.cargo_count[wagon.cargo_type] += 1
-                    wagon.cargo_count = 0
+                if wagon.cargo_count[cargo_type]:
+                    self.player.score += wagon.cargo_count[cargo_type]
+                    factory.cargo_count[cargo_type] += wagon.cargo_count[cargo_type]
+                    wagon.cargo_count[cargo_type] = 0
                     return
 
         return inner()
 
-    def _has_space(self):
-        return any(not wagon.cargo_count for wagon in self.wagons)
+    def _has_space(self, cargo_type: CargoType):
+        for wagon in self.wagons:
+            if cargo_type in wagon.cargo_types and not wagon.cargo_count[cargo_type]:
+                return True
+        return False
+
+    def _has_cargo(self, cargo_type: CargoType):
+        return any(wagon.cargo_count[cargo_type] for wagon in self.wagons)
 
     def _create_load_cargo_method(self, cargo_type: CargoType):
         def inner():
             for wagon in self.wagons:
-                if not wagon.cargo_count:
-                    wagon.cargo_type = cargo_type
-                    wagon.cargo_count = 1
+                if (
+                    cargo_type in wagon.cargo_types
+                    and not wagon.cargo_count[cargo_type]
+                ):
+                    wagon.cargo_count[cargo_type] = 1
                     return
 
         return inner

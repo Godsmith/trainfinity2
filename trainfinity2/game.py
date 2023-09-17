@@ -94,16 +94,14 @@ class Game:
 
         self._train_placer = _TrainPlacer(self.drawer)
 
-    def add_cargo_to_all_mines(self):
-        for mine in self.grid.mines.values():
-            self.drawer.handle_events([mine.add_cargo()])
+    def try_create_cargo_in_all_buildings(self):
+        for building in self.grid.buildings.values():
+            self.drawer.handle_events([building.try_create_cargo()])
 
     def on_update(self, delta_time):
         self.cargo_counter += delta_time
         if self.cargo_counter > SECONDS_BETWEEN_CARGO_CREATION:
-            self.add_cargo_to_all_mines()
-            for factory in self.grid.factories.values():
-                self.drawer.handle_events([factory.transform_cargo()])
+            self.try_create_cargo_in_all_buildings()
             self.cargo_counter = 0.0
         self._update_gui_figures(delta_time)
 
@@ -212,7 +210,7 @@ class Game:
                 x, y
             )
             self.drawer.handle_events(
-                self.grid.create_signals_at_click_position(world_x_float, world_y_float)
+                self.grid.toggle_signals_at_click_position(world_x_float, world_y_float)
             )
         elif self.gui.mode == Mode.DESTROY:
             self.drawer.handle_events(self.grid.remove_rail(Vec2(world_x, world_y)))
