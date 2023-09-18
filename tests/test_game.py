@@ -8,7 +8,15 @@ from trainfinity2.constants import (
     SECONDS_BETWEEN_CARGO_CREATION,
 )
 from trainfinity2.game import Mode, Game
-from trainfinity2.model import Rail, CargoType, SignalColor, Station, Water
+from trainfinity2.model import (
+    IronMine,
+    Rail,
+    CargoType,
+    SignalColor,
+    Station,
+    SteelWorks,
+    Water,
+)
 from tests.util import create_objects
 
 check_call_count = 0
@@ -199,7 +207,7 @@ class TestBuildingStations:
         .M...
         """
         game.gui.disable()
-        game.grid.create_mine(Vec2(1, 0), cargo=CargoType.IRON)
+        game.grid.create_building(IronMine(Vec2(1, 0)))
         game.gui.mode = Mode.STATION
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=105, y=45, dx=60, dy=0)
@@ -223,7 +231,7 @@ class TestBuildingStations:
         """
         game.gui.disable()
         game.gui.mode = Mode.STATION
-        game.grid._create_factory(Vec2(0, 1))
+        game.grid.create_building(SteelWorks(Vec2(0, 1)))
         game.on_mouse_press(x=45, y=45, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
         game.on_mouse_motion(x=45, y=105, dx=0, dy=60)
         game.on_mouse_release(x=45, y=105, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)

@@ -1,7 +1,14 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 from trainfinity2.grid import Grid
-from trainfinity2.model import CargoType, Rail, Station
+from trainfinity2.model import (
+    Building,
+    CoalMine,
+    IronMine,
+    Rail,
+    Station,
+    SteelWorks,
+)
 from pyglet.math import Vec2
 
 
@@ -9,14 +16,11 @@ def _create_buildings(
     lines: list[str],
     building_character: str,
     create_method: Callable[..., Any],
-    extra_args: list[Any] | None = None,
 ):
-    extra_args = extra_args or []
     for row_number, row in list(enumerate(lines))[::2]:
         for column_number, character in list(enumerate(row))[::2]:
             if character == building_character:
-                args = [Vec2(column_number / 2, row_number / 2), *extra_args]
-                create_method(*args)
+                create_method(Vec2(column_number / 2, row_number / 2))
 
 
 def _create_rails(grid: Grid, lines: list[str]):
@@ -97,6 +101,14 @@ class StationCreator:
         )
 
 
+def create_create_building_method(grid: Grid, building_type: type[Building]):
+    def inner(position):
+        building = building_type(position)
+        grid.create_building(building)
+
+    return inner
+
+
 def create_objects(grid: Grid, map_: str):
     """Create objects in game from a map string
 
@@ -113,9 +125,9 @@ def create_objects(grid: Grid, map_: str):
     lines.reverse()  # Reverse to get row indices to match with coordinates
     lines = _remove_offset(lines)
 
-    _create_buildings(lines, "M", grid.create_mine, [CargoType.IRON])
-    _create_buildings(lines, "C", grid.create_mine, [CargoType.COAL])
-    _create_buildings(lines, "F", grid._create_factory)
+    _create_buildings(lines, "M", create_create_building_method(grid, IronMine))
+    _create_buildings(lines, "C", create_create_building_method(grid, CoalMine))
+    _create_buildings(lines, "F", create_create_building_method(grid, SteelWorks))
 
     east_west_station_creator = StationCreator(grid, east_west=True)
     north_south_station_creator = StationCreator(grid, east_west=False)

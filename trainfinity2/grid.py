@@ -111,25 +111,20 @@ class Grid:
             if position not in illegal_positions:
                 return position
 
-    def create_mine(self, position: Vec2, cargo: CargoType) -> CreateEvent:
-        mine = {CargoType.COAL: CoalMine(position), CargoType.IRON: IronMine(position)}[
-            cargo
-        ]
-        self.buildings[position] = mine
-        return CreateEvent(mine)
+    def create_building(self, building: Building):
+        self.buildings[building.position] = building
+        return CreateEvent(building)
 
     def _create_mine_in_random_unoccupied_location(
         self, cargo: CargoType
     ) -> CreateEvent:
-        return self.create_mine(self._get_random_position_to_build_building(), cargo)
-
-    def _create_factory(self, position: Vec2) -> CreateEvent:
-        factory = SteelWorks(position)
-        self.buildings[position] = factory
-        return CreateEvent(factory)
+        building_type = {CargoType.COAL: CoalMine, CargoType.IRON: IronMine}[cargo]
+        building = building_type(self._get_random_position_to_build_building())
+        return self.create_building(building)
 
     def _create_factory_in_random_unoccupied_location(self) -> CreateEvent:
-        return self._create_factory(self._get_random_position_to_build_building())
+        building = SteelWorks(self._get_random_position_to_build_building())
+        return self.create_building(building)
 
     def find_route_between_stations(
         self, station1: Station, station2: Station
