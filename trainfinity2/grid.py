@@ -199,6 +199,9 @@ class Grid:
             | self.buildings.keys()
             | self.station_from_position.keys()
         )
+        # Prohibit creating stations with length 1
+        if len(station.positions) == 1:
+            illegal_positions.add(station.positions[0])
         return (
             overlapping_positions_with_rail_in_wrong_direction
             | positions_outside
