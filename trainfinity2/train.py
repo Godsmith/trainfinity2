@@ -70,7 +70,6 @@ class Train:
     second_station: Station
     grid: Grid
     signal_controller: SignalController
-    wagon_count: int
     x: float = field(init=False)
     y: float = field(init=False)
     target_x: float = field(init=False)
@@ -94,13 +93,16 @@ class Train:
         self.target_y = self.y
         self._target_station = self.first_station
         self._rails_on_route: list[Rail] | None = []
+        self._previous_targets_y = []
+
         # The position history needs to be approximately as long as the train,
         # since it is used for reserving positions. As long as one wagon is
         # approximately as long as a block, this will do.
-        self._position_history: deque[Vec2] = deque(maxlen=self.wagon_count + 1)
-        self._previous_targets_y = []
-        # TODO: wagons are now created on top of train
-        self.wagons = [Wagon(self.x, self.y) for _ in range(self.wagon_count)]
+        self._position_history: deque[Vec2] = deque(maxlen=1)
+        self.wagons = []
+        # add_wagon also extends the position history
+        self.add_wagon()
+
         self._run_after_wait: Callable[[], None] | None = None
 
     @property
@@ -283,6 +285,13 @@ class Train:
             self.speed /= 2
 
         return self._reserve(next_position)
+
+    def add_wagon(self):
+        self.wagons.append(Wagon(self.x, self.y))
+        self._position_history = deque(
+            self._position_history, maxlen=len(self.wagons) + 1
+        )
+        # TODO: wagons are now created on top of train
 
     def _reserve(self, position: Vec2) -> list[Event]:
         return self.signal_controller.reserve(

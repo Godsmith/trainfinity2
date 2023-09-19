@@ -1,10 +1,10 @@
-from collections import namedtuple
-from enum import Enum, auto
+from .mode import Mode
 
 import arcade
 from arcade import color
 
 from trainfinity2.camera import Camera
+from .box import Box
 
 SELECTED_BOX_BACKGROUND_COLOR = color.LIGHT_GRAY
 PRESSED_BOX_BACKGROUND_COLOR = color.WHITE
@@ -14,31 +14,11 @@ BOX_OUTLINE_COLOR = color.BLACK
 BOX_SIZE_PIXELS = 60
 
 
-Box = namedtuple("Box", "text mode")
-
-
-class Mode(Enum):
-    SELECT = auto()
-    RAIL = auto()
-    STATION = auto()
-    TRAIN = auto()
-    SIGNAL = auto()
-    DESTROY = auto()
-
-
 class Gui:
-    def __init__(self, camera: Camera) -> None:
+    def __init__(self, camera: Camera, boxes: list[Box]) -> None:
         self.camera = camera
-        self.boxes = [
-            Box("SELECT", Mode.SELECT),
-            Box("RAIL", Mode.RAIL),
-            Box("STATION", Mode.STATION),
-            Box("TRAIN", Mode.TRAIN),
-            Box("SIGNAL", Mode.SIGNAL),
-            Box("DESTROY", Mode.DESTROY),
-        ]
-        self._mode = Mode.RAIL
-        self.mouse_press_mode: Mode | None = None
+        self._boxes = boxes
+        self.mouse_press_box: Box | None = None
         self._enabled = True
         self._shape_element_list: arcade.ShapeElementList = arcade.ShapeElementList()
         self._sprite_list = arcade.SpriteList()
@@ -55,6 +35,7 @@ class Gui:
         self._score = 0
         self._level = 0
         self._score_to_next_level = 10  # TODO: should not be hardcoded here
+        self._mode = Mode.RAIL
         self.refresh()
 
     def disable(self):
@@ -85,7 +66,7 @@ class Gui:
             changing color of the boxes when switching active mode."""
             self._shape_element_list = arcade.ShapeElementList()
             self._sprite_list = arcade.SpriteList()
-            for i, box in enumerate(self.boxes):
+            for i, box in enumerate(self._boxes):
                 self._create_box(box, i)
 
             self.refresh_text()
@@ -106,9 +87,9 @@ class Gui:
     def on_mouse_press(self, x, y) -> bool:
         if self._enabled:
             with self.camera:
-                for i, box in enumerate(self.boxes):
+                for i, box in enumerate(self._boxes):
                     if self._is_inside(x, y, i):
-                        self.mouse_press_mode = box.mode
+                        self.mouse_press_box = box
                         self.refresh()
                         return True
         return False
@@ -116,24 +97,23 @@ class Gui:
     def on_mouse_release(self, x, y) -> None:
         if self._enabled:
             with self.camera:
-                for i, box in enumerate(self.boxes):
+                for i, box in enumerate(self._boxes):
                     if self._is_inside(x, y, i):
-                        if self.mouse_press_mode == box.mode:
-                            self.mode = box.mode
-        self.mouse_press_mode = None
+                        if self.mouse_press_box == box:
+                            box.callback(*box.callback_args)
+        self.mouse_press_box = None
         self.refresh()
 
     def _create_box(self, box: Box, index: int):
         left, _, bottom, _ = arcade.get_viewport()
         left += index * BOX_SIZE_PIXELS
 
-        match box.mode:
-            case self.mouse_press_mode:
-                background_color = PRESSED_BOX_BACKGROUND_COLOR
-            case self.mode:
-                background_color = SELECTED_BOX_BACKGROUND_COLOR
-            case _:
-                background_color = DESELECTED_BOX_BACKGROUND_COLOR
+        if self.mouse_press_box == box:
+            background_color = PRESSED_BOX_BACKGROUND_COLOR
+        elif box.mode == self.mode:
+            background_color = SELECTED_BOX_BACKGROUND_COLOR
+        else:
+            background_color = DESELECTED_BOX_BACKGROUND_COLOR
 
         center_x = left + BOX_SIZE_PIXELS / 2
         center_y = bottom + BOX_SIZE_PIXELS / 2

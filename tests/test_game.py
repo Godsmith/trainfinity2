@@ -257,7 +257,8 @@ class TestGui:
         self, game: Game
     ):
         game.on_mouse_press(15, 15, arcade.MOUSE_BUTTON_LEFT, modifiers=0)
-        assert game.gui.mouse_press_mode == Mode.SELECT
+        assert game.gui.mouse_press_box
+        assert game.gui.mouse_press_box.mode == Mode.SELECT
 
 
 class TestCreateTrain:
@@ -1120,7 +1121,9 @@ class TestReserveAndUnreserveRail:
 
         assert game.signal_controller._signal_blocks[0].reserved_by == id(train)
 
-    def test_a_train_without_wagons_reserves_both_blocks_when_leaving(self, game: Game):
+    def test_a_train_with_a_single_wagon_reserves_both_blocks_when_leaving(
+        self, game: Game
+    ):
         """Sends a train right and asserts that eventually it reserves both blocks"""
         create_objects(
             game.grid,
@@ -1130,9 +1133,7 @@ class TestReserveAndUnreserveRail:
             .-S-.hS-.
             """,
         )
-        train = game._create_train(
-            *game.grid.station_from_position.values(), wagon_count=0
-        )
+        train = game._create_train(*game.grid.station_from_position.values())
         game.on_update(1 / 60)
         left_signal_block = game.signal_controller._signal_block_from_position[
             Vec2(1, 0)
@@ -1147,19 +1148,16 @@ class TestReserveAndUnreserveRail:
         assert left_signal_block.reserved_by == id(train)
         assert right_signal_block.reserved_by == id(train)
 
-    def test_a_train_without_wagons_eventually_unreserves_first_block(self, game: Game):
-        """Sends a train right and asserts that eventually it reserves both blocks"""
+    def test_a_train_with_one_wagon_eventually_unreserves_first_block(self, game: Game):
         create_objects(
             game.grid,
             """
-            . M . F .
+            . M . . F .
 
-            .-Sh.-S-.
+            .-Sh.-.-S-.
             """,
         )
-        train = game._create_train(
-            *game.grid.station_from_position.values(), wagon_count=0
-        )
+        train = game._create_train(*game.grid.station_from_position.values())
         game.on_update(1 / 60)
         left_signal_block = game.signal_controller._signal_block_from_position[
             Vec2(1, 0)
@@ -1182,9 +1180,7 @@ class TestReserveAndUnreserveRail:
             .-S-.hS-.
             """,
         )
-        train = game._create_train(
-            *game.grid.station_from_position.values(), wagon_count=1
-        )
+        train = game._create_train(*game.grid.station_from_position.values())
 
         # Sort signal blocks by x position, so that signal_blocks[0] is the western etc
         signal_blocks = sorted(
@@ -1210,3 +1206,20 @@ class TestPlayer:
         game.player.score = 10
         assert game.grid.left == -2
         assert game.grid.right == GRID_WIDTH_CELLS + 2
+
+
+def test_create_wagon(game: Game):
+    create_objects(
+        game.grid,
+        """
+        . M . F .
+
+        .-S-.-S-.
+        """,
+    )
+    train = game._create_train(*game.grid.station_from_position.values())
+    train.selected = True
+
+    assert len(train.wagons) == 1
+    game._create_wagon_for_selected_train()
+    assert len(train.wagons) == 2

@@ -22,6 +22,7 @@ from .model import Player, Station
 from .signal_controller import SignalController
 from .terrain import Terrain
 from .train import Train
+from .box import Box
 
 MAX_PIXELS_BETWEEN_CLICK_AND_RELEASE_FOR_CLICK = 5
 # Min zoom = 1/MAX_CAMERA_SCALE, i.e. 25%
@@ -72,8 +73,18 @@ class Game:
         self.camera = Camera()
         self.camera_position_when_mouse2_pressed = self.camera.position
 
+        boxes = [
+            Box("SELECT", self._set_mode, [Mode.SELECT], Mode.SELECT),
+            Box("RAIL", self._set_mode, [Mode.RAIL], Mode.RAIL),
+            Box("STATION", self._set_mode, [Mode.STATION], Mode.STATION),
+            Box("TRAIN", self._set_mode, [Mode.TRAIN], Mode.TRAIN),
+            Box("SIGNAL", self._set_mode, [Mode.SIGNAL], Mode.SIGNAL),
+            Box("DESTROY", self._set_mode, [Mode.DESTROY], Mode.DESTROY),
+            Box("+WAGON", self._create_wagon_for_selected_train, []),
+        ]
+
         self.gui_camera = Camera()
-        self.gui = Gui(self.gui_camera)
+        self.gui = Gui(self.gui_camera, boxes)
 
         self.trains: list[Train] = []
 
@@ -93,6 +104,11 @@ class Game:
         )
 
         self._train_placer = _TrainPlacer(self.drawer)
+
+    def _set_mode(self, mode: Mode):
+        self.gui.mode = mode
+        for train in self.trains:
+            train.selected = False
 
     def try_create_cargo_in_all_buildings(self):
         for building in self.grid.buildings.values():
@@ -169,11 +185,9 @@ class Game:
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.is_mouse2_pressed = False
         elif button == arcade.MOUSE_BUTTON_LEFT:
-            if self.gui.mouse_press_mode:
+            if self.gui.mouse_press_box:
                 self._train_placer.stop_session()
-                for train in self.trains:
-                    train.selected = False
-                return self.gui.on_mouse_release(x, y)
+                self.gui.on_mouse_release(x, y)
             self.is_mouse1_pressed = False
             if self._is_click(
                 self.mouse1_pressed_x,
@@ -216,22 +230,24 @@ class Game:
             self.drawer.handle_events(self.grid.remove_rail(Vec2(world_x, world_y)))
             self.drawer.show_rails_to_be_destroyed(set())
 
-    def _create_train(
-        self, station1: Station, station2: Station, *, wagon_count: int = 3
-    ):
+    def _create_train(self, station1: Station, station2: Station):
         train = Train(
             self.player,
             station1,
             station2,
             self.grid,
             self.signal_controller,
-            wagon_count=wagon_count,
         )
         self.trains.append(train)
         self.drawer.create_train(train)
         self.gui.mode = Mode.SELECT
         train.selected = True
         return train
+
+    def _create_wagon_for_selected_train(self):
+        for train in self.trains:
+            if train.selected:
+                train.add_wagon()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         events: list[Event] = []
