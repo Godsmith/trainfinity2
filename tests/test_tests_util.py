@@ -4,7 +4,6 @@ from trainfinity2.model import (
     Rail,
     SignalColor,
     Station,
-    Building,
     SteelWorks,
 )
 from trainfinity2.__main__ import Game

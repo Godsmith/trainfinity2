@@ -36,6 +36,8 @@ class Gui:
         self._level = 0
         self._score_to_next_level = 10  # TODO: should not be hardcoded here
         self._mode = Mode.RAIL
+        self._toast_sprite: arcade.Sprite = arcade.Sprite()
+        self._toast_time_left: float = 0.0
         self.refresh()
 
     def disable(self):
@@ -59,6 +61,12 @@ class Gui:
             self._shape_element_list.draw()
             self._sprite_list.draw()
             self._text_sprite_list.draw()
+
+    def on_update(self, delta_time):
+        if self._toast_time_left > 0.0:
+            self._toast_time_left -= delta_time
+            if self._toast_time_left <= 0.0:
+                self._text_sprite_list.remove(self._toast_sprite)
 
     def refresh(self):
         with self.camera:
@@ -195,3 +203,17 @@ class Gui:
         self._text_sprite_list.remove(self._score_sprite)
         self._score_sprite = sprite
         self._text_sprite_list.append(sprite)
+
+    def toast(self, text: str):
+        with self.camera:
+            self._toast_sprite = arcade.create_text_sprite(
+                text,
+                self.camera.viewport_width / 2,
+                self.camera.viewport_height / 2,
+                color=color.WHITE,
+                font_size=12,
+                font_name="Arial",
+                anchor_x="center",
+            )
+            self._text_sprite_list.append(self._toast_sprite)
+            self._toast_time_left = 3.0

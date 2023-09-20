@@ -1208,18 +1208,39 @@ class TestPlayer:
         assert game.grid.right == GRID_WIDTH_CELLS + 2
 
 
-def test_create_wagon(game: Game):
-    create_objects(
-        game.grid,
-        """
-        . M . F .
+class TestCreateWagon:
+    def test_failure_shows_toast(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            . M . F .
 
-        .-S-.-S-.
-        """,
-    )
-    train = game._create_train(*game.grid.station_from_position.values())
-    train.selected = True
+            .-S-.-S-.
+            """,
+        )
+        train = game._create_train(*game.grid.station_from_position.values())
+        train.selected = True
 
-    assert len(train.wagons) == 1
-    game._create_wagon_for_selected_train()
-    assert len(train.wagons) == 2
+        assert game.gui._toast_time_left == 0.0
+        game._create_wagon_for_selected_train()
+        assert game.gui._toast_time_left == 3.0
+
+    def test_success(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            . M . . . F . .
+
+            .-S-S-S-.-S-S-S-.
+            """,
+        )
+        station1 = game.grid.get_station(1, 0)
+        station2 = game.grid.get_station(5, 0)
+        assert station1
+        assert station2
+        train = game._create_train(station1, station2)
+        train.selected = True
+
+        assert len(train.wagons) == 1
+        game._create_wagon_for_selected_train()
+        assert len(train.wagons) == 2

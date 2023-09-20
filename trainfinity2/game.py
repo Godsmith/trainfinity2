@@ -129,6 +129,7 @@ class Game:
                 self._destroy_train(train1)
                 self._destroy_train(train2)
         self.drawer.update()
+        self.gui.on_update(delta_time)
 
     def _destroy_train(self, train: Train):
         train.destroy()
@@ -247,7 +248,16 @@ class Game:
     def _create_wagon_for_selected_train(self):
         for train in self.trains:
             if train.selected:
-                train.add_wagon()
+                shortest_station_length = min(
+                    len(train.first_station.positions),
+                    len(train.second_station.positions),
+                )
+                if shortest_station_length > len(train.wagons) + 1:
+                    train.add_wagon()
+                else:
+                    self.gui.toast(
+                        f"Wagon count ({len(train.wagons)}) must be less than shortest station length ({shortest_station_length})"
+                    )
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         events: list[Event] = []
