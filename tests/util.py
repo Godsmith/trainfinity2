@@ -20,7 +20,7 @@ def _create_buildings(
     for row_number, row in list(enumerate(lines))[::2]:
         for column_number, character in list(enumerate(row))[::2]:
             if character == building_character:
-                create_method(Vec2(column_number / 2, row_number / 2))
+                create_method(Vec2(column_number // 2, row_number // 2))
 
 
 def _create_rails(grid: Grid, lines: list[str]):
@@ -77,7 +77,9 @@ class StationCreator:
 
     def create_stations(self):
         self._sets_of_positions = []
-        for position in self._positions:
+        # Sort positions so that we don't have to care about the case where
+        # the new position connects two already existing sets of positions.
+        for position in sorted(self._positions):
             self._add_to_set_of_positions(position)
         for set_of_positions in self._sets_of_positions:
             self.grid._create_station(

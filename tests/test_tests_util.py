@@ -127,3 +127,43 @@ def test_create_with_offset_and_last_line(game: Game):
         """,
     )
     assert game.grid.buildings == {Vec2(1, 1): IronMine(Vec2(1, 1))}
+
+
+class TestCreateStations:
+    def test_size_2(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            .-S-S-.
+            """,
+        )
+        assert set(game.grid.station_from_position.values()) == {
+            Station(positions=(Vec2(1.0, 0.0), Vec2(2.0, 0.0)))
+        }
+
+    def test_size_3(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            . . . . .
+
+            .-S-S-S-.
+            """,
+        )
+        assert set(game.grid.station_from_position.values()) == {
+            Station(positions=(Vec2(1.0, 0.0), Vec2(2.0, 0.0), Vec2(3.0, 0.0)))
+        }
+
+    def test_size_3_times_2(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            . . . . . . . .
+
+            .-S-S-S-.-S-S-S-.
+            """,
+        )
+        assert set(game.grid.station_from_position.values()) == {
+            Station(positions=(Vec2(1.0, 0.0), Vec2(2.0, 0.0), Vec2(3.0, 0.0))),
+            Station(positions=(Vec2(5.0, 0.0), Vec2(6.0, 0.0), Vec2(7.0, 0.0))),
+        }
