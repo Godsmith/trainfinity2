@@ -17,7 +17,7 @@ BOX_SIZE_PIXELS = 60
 class Gui:
     def __init__(self, camera: Camera, boxes: list[Box]) -> None:
         self.camera = camera
-        self._boxes = boxes
+        self.boxes = {box.text: box for box in boxes}
         self.mouse_press_box: Box | None = None
         self._enabled = True
         self._shape_element_list: arcade.ShapeElementList = arcade.ShapeElementList()
@@ -74,7 +74,7 @@ class Gui:
             changing color of the boxes when switching active mode."""
             self._shape_element_list = arcade.ShapeElementList()
             self._sprite_list = arcade.SpriteList()
-            for i, box in enumerate(self._boxes):
+            for i, box in enumerate(self.boxes.values()):
                 self._create_box(box, i)
 
             self.refresh_text()
@@ -95,7 +95,7 @@ class Gui:
     def on_mouse_press(self, x, y) -> bool:
         if self._enabled:
             with self.camera:
-                for i, box in enumerate(self._boxes):
+                for i, box in enumerate(self.boxes.values()):
                     if self._is_inside(x, y, i):
                         self.mouse_press_box = box
                         self.refresh()
@@ -105,10 +105,10 @@ class Gui:
     def on_mouse_release(self, x, y) -> None:
         if self._enabled:
             with self.camera:
-                for i, box in enumerate(self._boxes):
+                for i, box in enumerate(self.boxes.values()):
                     if self._is_inside(x, y, i):
                         if self.mouse_press_box == box:
-                            box.callback(*box.callback_args)
+                            box.click()
         self.mouse_press_box = None
         self.refresh()
 
@@ -143,6 +143,7 @@ class Gui:
                 color=BOX_TEXT_COLOR,
                 width=int(BOX_SIZE_PIXELS),
                 align="center",
+                anchor_y="center",
             )
         )
 

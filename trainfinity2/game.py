@@ -81,6 +81,7 @@ class Game:
             Box("SIGNAL", self._set_mode, [Mode.SIGNAL], Mode.SIGNAL),
             Box("DESTROY", self._set_mode, [Mode.DESTROY], Mode.DESTROY),
             Box("+WAGON", self._create_wagon_for_selected_train, []),
+            Box("DESTROY\nTRAIN", self._destroy_selected_train, []),
         ]
 
         self.gui_camera = Camera()
@@ -245,23 +246,28 @@ class Game:
         train.selected = True
         return train
 
+    @property
+    def _selected_train(self) -> Train | None:
+        return next((train for train in self.trains if train.selected), None)
+
+    def _destroy_selected_train(self):
+        if train := self._selected_train:
+            self._destroy_train(train)
+
     def _create_wagon_for_selected_train(self):
-        for train in self.trains:
-            if train.selected:
-                station1 = self.grid.station_from_position[train.first_station_position]
-                station2 = self.grid.station_from_position[
-                    train.second_station_position
-                ]
-                shortest_station_length = min(
-                    len(station1.positions),
-                    len(station2.positions),
+        if train := self._selected_train:
+            station1 = self.grid.station_from_position[train.first_station_position]
+            station2 = self.grid.station_from_position[train.second_station_position]
+            shortest_station_length = min(
+                len(station1.positions),
+                len(station2.positions),
+            )
+            if shortest_station_length > len(train.wagons) + 1:
+                train.add_wagon()
+            else:
+                self.gui.toast(
+                    f"Wagon count ({len(train.wagons)}) must be less than shortest station length ({shortest_station_length})"
                 )
-                if shortest_station_length > len(train.wagons) + 1:
-                    train.add_wagon()
-                else:
-                    self.gui.toast(
-                        f"Wagon count ({len(train.wagons)}) must be less than shortest station length ({shortest_station_length})"
-                    )
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         events: list[Event] = []

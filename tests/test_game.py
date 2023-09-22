@@ -1265,3 +1265,20 @@ class TestCreateWagon:
         assert len(train.wagons) == 1
         game._create_wagon_for_selected_train()
         assert len(train.wagons) == 2
+
+
+def test_destroy_train_button(game: Game):
+    create_objects(
+        game.grid,
+        """
+        . M . F .
+
+        .-S-.-S-.
+        """,
+    )
+    train = game._create_train(*game.grid.station_from_position.values())
+    train.selected = True
+
+    assert len(game.trains) == 1
+    game.gui.boxes["DESTROY\nTRAIN"].click()
+    assert len(game.trains) == 0
