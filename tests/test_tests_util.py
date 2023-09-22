@@ -136,7 +136,7 @@ class TestCreateStations:
             .-S-S-.
             """,
         )
-        assert set(game.grid.station_from_position.values()) == {
+        assert game.grid.stations == {
             Station(positions=(Vec2(1.0, 0.0), Vec2(2.0, 0.0)))
         }
 

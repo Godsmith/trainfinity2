@@ -82,7 +82,7 @@ class StationCreator:
         for position in sorted(self._positions):
             self._add_to_set_of_positions(position)
         for set_of_positions in self._sets_of_positions:
-            self.grid._create_station(
+            self.grid.create_station(
                 Station(
                     positions=tuple(sorted(set_of_positions)), east_west=self.east_west
                 )

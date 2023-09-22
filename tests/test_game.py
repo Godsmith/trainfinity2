@@ -242,6 +242,27 @@ class TestBuildingStations:
             positions=positions, east_west=False
         )
 
+    def test_extending_station_removes_old_station(self, game: Game):
+        create_objects(
+            game.grid,
+            """
+            .-.-M-.-.
+
+            .-.-S-S-.
+            """,
+        )
+        game.gui.disable()
+        game.gui.mode = Mode.STATION
+
+        assert len(game.grid.stations) == 1
+        assert len(list(game.grid.stations)[0].positions) == 2
+        game.on_mouse_press(x=45, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+        game.on_mouse_motion(x=75, y=15, dx=30, dy=0)
+        game.on_mouse_release(x=75, y=15, button=arcade.MOUSE_BUTTON_LEFT, modifiers=0)
+
+        assert len(game.grid.stations) == 1
+        assert len(list(game.grid.stations)[0].positions) == 3
+
 
 class TestGui:
     def test_game_starts_in_rail_mode(self, game: Game):

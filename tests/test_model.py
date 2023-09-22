@@ -23,7 +23,10 @@ def player(mock_gui):
 
 @pytest.fixture
 def mock_grid():
-    return Grid(Terrain(water=[Vec2(0, 0)]), SignalController())
+    grid = Grid(Terrain(water=[Vec2(0, 0)]), SignalController())
+    grid.create_station(Station((Vec2(0, 0),)))
+    grid.create_station(Station((Vec2(30, 0),)))
+    return grid
 
 
 class TestPlayer:
@@ -49,10 +52,8 @@ class TestRail:
 
 @pytest.fixture
 def train(player, mock_grid: Grid):
-    station1 = Station((Vec2(0, 0),))
-    station2 = Station((Vec2(30, 0),))
     mock_grid.create_rail({Rail(0, 0, 30, 0)})
-    return Train(player, station1, station2, mock_grid, SignalController())
+    return Train(player, Vec2(0, 0), Vec2(30, 0), mock_grid, SignalController())
 
 
 class TestTrain:

@@ -234,8 +234,8 @@ class Game:
     def _create_train(self, station1: Station, station2: Station):
         train = Train(
             self.player,
-            station1,
-            station2,
+            station1.positions[0],
+            station2.positions[0],
             self.grid,
             self.signal_controller,
         )
@@ -248,9 +248,13 @@ class Game:
     def _create_wagon_for_selected_train(self):
         for train in self.trains:
             if train.selected:
+                station1 = self.grid.station_from_position[train.first_station_position]
+                station2 = self.grid.station_from_position[
+                    train.second_station_position
+                ]
                 shortest_station_length = min(
-                    len(train.first_station.positions),
-                    len(train.second_station.positions),
+                    len(station1.positions),
+                    len(station2.positions),
                 )
                 if shortest_station_length > len(train.wagons) + 1:
                     train.add_wagon()

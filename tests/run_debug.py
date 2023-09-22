@@ -43,10 +43,10 @@ def init(game: Game):
     )
     events.extend(
         (
-            game.grid._create_station(Station((Vec2(8, 7),), east_west=False)),
-            game.grid._create_station(Station((Vec2(8, 2),), east_west=False)),
-            game.grid._create_station(Station((Vec2(2, 3),))),
-            game.grid._create_station(Station((Vec2(7, 3),))),
+            game.grid.create_station(Station((Vec2(8, 7),), east_west=False)),
+            game.grid.create_station(Station((Vec2(8, 2),), east_west=False)),
+            game.grid.create_station(Station((Vec2(2, 3),))),
+            game.grid.create_station(Station((Vec2(7, 3),))),
         )
     )
     game.drawer.handle_events(events)

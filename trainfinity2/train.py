@@ -66,8 +66,8 @@ def _find_equidistant_points_and_angles_along_line(
 @dataclass
 class Train:
     player: Player
-    first_station: Station
-    second_station: Station
+    first_station_position: Vec2
+    second_station_position: Vec2
     grid: Grid
     signal_controller: SignalController
     x: float = field(init=False)
@@ -86,12 +86,13 @@ class Train:
 
     def __post_init__(self):
         super().__init__()
-        # TODO: probably not [0] here
-        self.x = self.first_station.positions[0].x
-        self.y = self.first_station.positions[0].y
+        self.x = self.first_station_position.x
+        self.y = self.first_station_position.y
         self.target_x = self.x
         self.target_y = self.y
-        self._target_station = self.first_station
+        self._target_station = self.grid.station_from_position[
+            self.first_station_position
+        ]
         self._rails_on_route: list[Rail] | None = []
         self._previous_targets_y = []
 
@@ -228,9 +229,9 @@ class Train:
 
     def continue_to_next_station(self):
         self._target_station = (
-            self.second_station
-            if self._target_station == self.first_station
-            else self.first_station
+            self.grid.station_from_position[self.second_station_position]
+            if self.first_station_position in self._target_station.positions
+            else self.grid.station_from_position[self.first_station_position]
         )
 
     def _on_reached_target(self) -> list[Event]:

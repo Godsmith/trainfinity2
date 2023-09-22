@@ -7,6 +7,8 @@ from typing import Iterable, Sequence
 from pyglet.math import Vec2
 
 from trainfinity2.constants import GRID_HEIGHT_CELLS, GRID_WIDTH_CELLS
+from trainfinity2.station_builder import StationBuilder
+from trainfinity2.util import positions_between
 
 from .gui import Mode
 from .model import (
@@ -43,31 +45,11 @@ class StationBeingBuiltEvent(Event):
     illegal_positions: set[Vec2] = field(default_factory=set)
 
 
-def positions_between(start: Vec2, end: Vec2) -> list[Vec2]:
-    positions = [start]
-    while positions[-1] != end:
-        current = positions[-1]
-        abs_dx = abs(current.x - end.x)
-        abs_dy = abs(current.y - end.y)
-        x_step = (end.x - current.x) // abs_dx if abs_dx else 0
-        y_step = (end.y - current.y) // abs_dy if abs_dy else 0
-        new_x = current.x + (abs_dx >= abs_dy) * x_step
-        new_y = current.y + (abs_dy >= abs_dx) * y_step
-        positions.append(Vec2(new_x, new_y))
-    return positions
-
-
 def rails_between(start: Vec2, end: Vec2) -> list[Rail]:
     return [
         Rail(x1, y1, x2, y2)
         for (x1, y1), (x2, y2) in pairwise(positions_between(start, end))
     ]
-
-
-def station_between(start: Vec2, end: Vec2) -> Station:
-    is_east_west = abs(start.x - end.x) >= abs(start.y - end.y)
-    new_end = Vec2(end.x, start.y) if is_east_west else Vec2(start.x, end.y)
-    return Station(tuple(positions_between(start, new_end)), east_west=is_east_west)
 
 
 def get_random_position() -> Vec2:
@@ -86,7 +68,6 @@ class Grid:
         self.station_from_position: dict[Vec2, Station] = {}
         self.signals: dict[tuple[Vec2, Rail], Signal] = {}
         self.rails_being_built: set[Rail] = set()
-        self.station_being_built: Station | None = None
         self.rails: set[Rail] = set()
 
         self.left = 0
@@ -94,6 +75,9 @@ class Grid:
         self.right = GRID_WIDTH_CELLS
         self.top = GRID_HEIGHT_CELLS
         self._create_terrain(terrain)
+        self.station_builder = StationBuilder()
+        self.station_being_built: Station | None = None
+        self.station_being_replaced: Station | None = None
 
     def _create_terrain(self, terrain: Terrain):
         for position in terrain.water:
@@ -145,6 +129,10 @@ class Grid:
             station2,
         )
 
+    @property
+    def stations(self) -> set[Station]:
+        return set(self.station_from_position.values())
+
     def rails_at_position(self, position: Vec2) -> set[Rail]:
         return {rail for rail in self.rails if position in rail.positions}
 
@@ -168,18 +156,16 @@ class Grid:
                 return True
         return False
 
-    def _mark_illegal_rail(self, rails: Iterable[Rail]) -> set[Rail]:
+    def _is_illegal(self, rail: Rail) -> bool:
         illegal_positions = self.water.keys() | self.buildings.keys()
-        return {
-            (
-                rail.to_illegal()
-                if (rail.positions & illegal_positions)
-                or not self._rail_is_inside_grid(rail)
-                or self._is_inside_station_in_wrong_direction(rail)
-                else rail
-            )
-            for rail in rails
-        }
+        return (
+            not rail.positions.isdisjoint(illegal_positions)
+            or not self._rail_is_inside_grid(rail)
+            or self._is_inside_station_in_wrong_direction(rail)
+        )
+
+    def _mark_illegal_rail(self, rails: Iterable[Rail]) -> set[Rail]:
+        return {rail.to_illegal() if self._is_illegal(rail) else rail for rail in rails}
 
     def _illegal_station_positions(self, station: Station) -> set[Vec2]:
         if not self.adjacent_buildings(station.positions):
@@ -194,10 +180,15 @@ class Grid:
         positions_outside = {
             position for position in station.positions if not self._is_inside(*position)
         }
+        overlapping_station_positions = (
+            set(self.station_being_replaced.positions)
+            if self.station_being_replaced
+            else set()
+        )
         illegal_positions = (
             self.water.keys()
             | self.buildings.keys()
-            | self.station_from_position.keys()
+            | self.station_from_position.keys() - overlapping_station_positions
         )
         # Prohibit creating stations with length 1
         if len(station.positions) == 1:
@@ -217,8 +208,11 @@ class Grid:
         if mode == Mode.RAIL:
             return [self._show_rails_being_built(Vec2(start_x, start_y), Vec2(x, y))]
         elif mode == Mode.STATION:
-            self.station_being_built = station_between(
-                Vec2(start_x, start_y), Vec2(x, y)
+            (
+                self.station_being_built,
+                self.station_being_replaced,
+            ) = self.station_builder.get_station_being_built_and_replaced(
+                self.stations, x, y, start_x, start_y
             )
             return [
                 StationBeingBuiltEvent(
@@ -280,8 +274,10 @@ class Grid:
                 and self.station_being_built
                 and not (self._illegal_station_positions(self.station_being_built))
             ):
+                if self.station_being_replaced:
+                    events.append(DestroyEvent(self.station_being_replaced))
                 events.extend(self.create_rail(self.rails_being_built))
-                events.append(self._create_station(self.station_being_built))
+                events.append(self.create_station(self.station_being_built))
 
         self.rails_being_built.clear()
         events.append(RailsBeingBuiltEvent(self.rails_being_built))
@@ -308,7 +304,7 @@ class Grid:
             if self._is_adjacent(position, building.position)
         ]
 
-    def _create_station(self, station: Station) -> CreateEvent:
+    def create_station(self, station: Station) -> CreateEvent:
         """Creates a station in a location. Must be next to a mine or a factory, or it raises AssertionError.
 
         East-west if east_west == True, otherwise north-south."""
