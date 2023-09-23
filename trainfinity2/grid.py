@@ -16,7 +16,6 @@ from .model import (
     CoalMine,
     IronMine,
     Rail,
-    CargoType,
     Signal,
     Station,
     SteelWorks,
@@ -99,15 +98,10 @@ class Grid:
         self.buildings[building.position] = building
         return CreateEvent(building)
 
-    def _create_mine_in_random_unoccupied_location(
-        self, cargo: CargoType
-    ) -> CreateEvent:
-        building_type = {CargoType.COAL: CoalMine, CargoType.IRON: IronMine}[cargo]
+    def _create_building_in_random_unoccupied_location(
+        self, building_type: type[Building]
+    ):
         building = building_type(self._get_random_position_to_build_building())
-        return self.create_building(building)
-
-    def _create_factory_in_random_unoccupied_location(self) -> CreateEvent:
-        building = SteelWorks(self._get_random_position_to_build_building())
         return self.create_building(building)
 
     def find_route_between_stations(
@@ -315,29 +309,25 @@ class Grid:
         return CreateEvent(station)
 
     def level_up(self, new_level: int) -> Sequence[Event]:
-        events = []
         self.left -= 1
         self.bottom -= 1
         self.right += 1
         self.top += 1
 
+        new_buildings = []
         if new_level == 1:
-            events.append(
-                self._create_mine_in_random_unoccupied_location(CargoType.IRON)
-            )
-            events.append(self._create_factory_in_random_unoccupied_location())
+            new_buildings = [IronMine, SteelWorks]
         elif new_level % 3 == 2:
-            events.append(
-                self._create_mine_in_random_unoccupied_location(CargoType.COAL)
-            )
+            new_buildings = [CoalMine]
         elif new_level % 3 == 0:
-            events.append(self._create_factory_in_random_unoccupied_location())
+            new_buildings = [SteelWorks]
         else:
-            events.append(
-                self._create_mine_in_random_unoccupied_location(CargoType.IRON)
-            )
+            new_buildings = [IronMine]
 
-        return events
+        return [
+            self._create_building_in_random_unoccupied_location(building)
+            for building in new_buildings
+        ]
 
     def _closest_rail(self, x, y) -> Rail | None:
         """Return None if
