@@ -206,6 +206,8 @@ class Gui:
         self._text_sprite_list.append(sprite)
 
     def toast(self, text: str):
+        if self._toast_sprite in self._text_sprite_list:
+            self._text_sprite_list.remove(self._toast_sprite)
         with self.camera:
             self._toast_sprite = arcade.create_text_sprite(
                 text,
