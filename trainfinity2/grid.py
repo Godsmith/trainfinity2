@@ -13,6 +13,7 @@ from trainfinity2.util import positions_between
 from .gui import Mode
 from .model import (
     Building,
+    CargoType,
     CoalMine,
     IronMine,
     Rail,
@@ -20,6 +21,7 @@ from .model import (
     Station,
     SteelWorks,
     Water,
+    Workshop,
 )
 from .events import CreateEvent, DestroyEvent, Event
 from .signal_controller import SignalController
@@ -314,20 +316,29 @@ class Grid:
         self.right += 1
         self.top += 1
 
-        new_buildings = []
-        if new_level == 1:
-            new_buildings = [IronMine, SteelWorks]
-        elif new_level % 3 == 2:
-            new_buildings = [CoalMine]
-        elif new_level % 3 == 0:
-            new_buildings = [SteelWorks]
-        else:
-            new_buildings = [IronMine]
-
+        buildings_from_level = {
+            1: [IronMine, SteelWorks],
+            2: [CoalMine],
+            3: [Workshop],
+            4: [IronMine],
+            5: [CoalMine],
+            6: [SteelWorks],
+            7: [IronMine],
+            8: [CoalMine],
+            9: [SteelWorks],
+            10: [IronMine],
+            11: [CoalMine],
+            12: [Workshop],
+        }
+        new_buildings = buildings_from_level.get(new_level, [IronMine, CoalMine])
         return [
             self._create_building_in_random_unoccupied_location(building)
             for building in new_buildings
         ]
+
+    def accepted_cargo(self, station: Station) -> set[CargoType]:
+        buildings = self.adjacent_buildings(station.positions)
+        return set().union(*(building.accepts for building in buildings))
 
     def _closest_rail(self, x, y) -> Rail | None:
         """Return None if

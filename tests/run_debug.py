@@ -6,7 +6,7 @@ to start a game with some objects already created for easier testing."""
 import arcade
 from trainfinity2.__main__ import Game, Window
 from pyglet.math import Vec2
-from trainfinity2.model import CoalMine, IronMine, Rail, Station, SteelWorks
+from trainfinity2.model import CoalMine, IronMine, Rail, Station, SteelWorks, Workshop
 from trainfinity2.events import Event
 from trainfinity2.terrain import Terrain
 
@@ -19,20 +19,12 @@ def init(game: Game):
             game.grid.create_building(IronMine(Vec2(2, 2))),
             game.grid.create_building(CoalMine(Vec2(7, 7))),
             game.grid.create_building(SteelWorks(Vec2(7, 2))),
+            game.grid.create_building(Workshop(Vec2(10, 5))),
         )
     )
     events.extend(
         game.grid.create_rail(
             {
-                Rail(1, 3, 2, 3),
-                Rail(2, 3, 3, 3),
-                Rail(3, 3, 4, 3),
-                Rail(4, 3, 5, 3),
-                Rail(5, 3, 6, 3),
-                Rail(6, 3, 7, 3),
-                Rail(3, 3, 4, 4),
-                Rail(4, 4, 5, 4),
-                Rail(5, 4, 6, 3),
                 Rail(8, 7, 8, 6),
                 Rail(8, 6, 8, 5),
                 Rail(8, 5, 8, 4),

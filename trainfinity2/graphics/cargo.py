@@ -6,9 +6,17 @@ from trainfinity2.constants import (
 from trainfinity2.model import CargoType
 
 FILL_COLOR_FROM_CARGO_TYPE = {
-    CargoType.IRON: color.TROLLEY_GREY,
+    CargoType.IRON: color.RED_BROWN,
     CargoType.COAL: color.SMOKY_BLACK,
-    CargoType.STEEL: color.STEEL_BLUE,
+    CargoType.STEEL: color.ASH_GREY,
+    CargoType.TOOLS: color.ORANGE,
+}
+
+OUTLINE_COLOR_FROM_CARGO_TYPE = {
+    CargoType.IRON: color.BLACK,
+    CargoType.COAL: color.ASH_GREY,
+    CargoType.STEEL: color.BLACK,
+    CargoType.TOOLS: color.BLACK,
 }
 
 
@@ -24,6 +32,11 @@ def get_cargo_shape(
         tilt_angle=tilt_angle,
     )
     rectangle_outline = arcade.create_rectangle_outline(
-        x, y, CARGO_SIZE, CARGO_SIZE, color=color.BLACK, tilt_angle=tilt_angle
+        x,
+        y,
+        CARGO_SIZE,
+        CARGO_SIZE,
+        color=OUTLINE_COLOR_FROM_CARGO_TYPE[cargo_type],
+        tilt_angle=tilt_angle,
     )
     return [filled_rectangle, rectangle_outline]

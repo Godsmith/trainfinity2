@@ -172,11 +172,13 @@ class Train:
     def _can_reserve_position(self, position: Vec2) -> bool:
         return self.signal_controller.reserver(position) in {id(self), None}
 
-    def _stop_at_station(self, station: Station) -> list[Event]:
+    def _stop_at_station(self, current_station: Station) -> list[Event]:
         # Check factories before mines, or a the iron will
         # instantly be transported to the factory
         self.speed = 0
-        for building in self.grid.adjacent_buildings(station.positions):
+        # This needs to be updated if we ever get multiple stations in a route
+        desired_cargo = self.grid.accepted_cargo(self.next_station(current_station))
+        for building in self.grid.adjacent_buildings(current_station.positions):
             for cargo_type in building.accepts:
                 if self._has_cargo(cargo_type):
                     self.wait_timer = 1
@@ -185,11 +187,15 @@ class Train:
                     )
                     return []
             for cargo_type in building.produces:
-                if building.cargo_count[cargo_type] > 0 and self._has_space(cargo_type):
+                if (
+                    cargo_type in desired_cargo
+                    and building.cargo_count[cargo_type] > 0
+                    and self._has_space(cargo_type)
+                ):
                     self.wait_timer = 1
                     self._run_after_wait = self._create_load_cargo_method(cargo_type)
                     return [building.remove_cargo(cargo_type, 1)]
-        self.continue_to_next_station()
+        self._target_station = self.next_station(current_station)
         # This ensures that the train can immediately reverse at the station
         # Otherwise it the train would prefer to continue forward and then reverse
         # self.current_rail = None
@@ -208,7 +214,7 @@ class Train:
 
     def _has_space(self, cargo_type: CargoType):
         for wagon in self.wagons:
-            if cargo_type in wagon.cargo_types and not wagon.cargo_count[cargo_type]:
+            if not wagon.cargo_count[cargo_type]:
                 return True
         return False
 
@@ -218,19 +224,16 @@ class Train:
     def _create_load_cargo_method(self, cargo_type: CargoType):
         def inner():
             for wagon in self.wagons:
-                if (
-                    cargo_type in wagon.cargo_types
-                    and not wagon.cargo_count[cargo_type]
-                ):
+                if not wagon.cargo_count[cargo_type]:
                     wagon.cargo_count[cargo_type] = 1
                     return
 
         return inner
 
-    def continue_to_next_station(self):
-        self._target_station = (
+    def next_station(self, current_station: Station) -> Station:
+        return (
             self.grid.station_from_position[self.second_station_position]
-            if self.first_station_position in self._target_station.positions
+            if self.first_station_position in current_station.positions
             else self.grid.station_from_position[self.first_station_position]
         )
 

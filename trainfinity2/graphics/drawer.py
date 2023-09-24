@@ -27,7 +27,6 @@ from ..grid import (
     StationBeingBuiltEvent,
 )
 from ..model import (
-    Building,
     CargoType,
     CargoAddedEvent,
     CargoRemovedEvent,
@@ -38,6 +37,7 @@ from ..model import (
     SignalColor,
     Station,
     SteelWorks,
+    Workshop,
 )
 from ..events import CreateEvent, DestroyEvent, Event, NullEvent
 from ..train import Train
@@ -117,6 +117,8 @@ class Drawer:
                     self._create_mine(mine)
                 case CreateEvent(SteelWorks() as steelworks):
                     self._create_steelworks(steelworks)
+                case CreateEvent(Workshop() as workshop):
+                    self._create_workshop(workshop)
                 case CreateEvent(Station() as station):
                     self._create_station(station)
                 case CreateEvent(Rail() as rail):
@@ -192,8 +194,8 @@ class Drawer:
 
     def _create_steelworks(self, steelworks: SteelWorks):
         sprite = arcade.Sprite(
-            "images/factory.png",
-            0.75,
+            "images/steel_mill.png",
+            1.0,
             center_x=steelworks.position.x * GRID_BOX_SIZE_PIXELS
             + GRID_BOX_SIZE_PIXELS / 2,
             center_y=steelworks.position.y * GRID_BOX_SIZE_PIXELS
@@ -209,6 +211,17 @@ class Drawer:
             center_y=mine.position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
         )
         self._add_sprite(sprite, mine)
+
+    def _create_workshop(self, workshop: Workshop):
+        sprite = arcade.Sprite(
+            "images/anvil.png",
+            1.0,
+            center_x=workshop.position.x * GRID_BOX_SIZE_PIXELS
+            + GRID_BOX_SIZE_PIXELS / 2,
+            center_y=workshop.position.y * GRID_BOX_SIZE_PIXELS
+            + GRID_BOX_SIZE_PIXELS / 2,
+        )
+        self._add_sprite(sprite, workshop)
 
     def _get_station_shapes(self, station: Station, is_building: bool = False):
         def set_alpha(color_: tuple[int, int, int]) -> tuple[int, int, int, int]:
