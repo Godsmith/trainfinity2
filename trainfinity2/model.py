@@ -10,7 +10,7 @@ from pyglet.math import Vec2
 from itertools import pairwise
 
 from .gui import Gui
-from .events import CreateEvent, Event, NullEvent
+from .events import CreateEvent, Event
 
 
 @dataclass(frozen=True)
@@ -75,7 +75,7 @@ class CargoRemovedEvent(Event):
 
 @dataclass
 class Recipe:
-    output: CargoType
+    output: set[CargoType] = field(default_factory=set)
     input: set[CargoType] = field(default_factory=set)
 
 
@@ -91,18 +91,22 @@ class Building(ABC):
 
     @property
     def produces(self) -> set[CargoType]:
-        return {self.recipe.output}
+        return self.recipe.output
 
-    def try_create_cargo(self) -> Event:
-        if (
-            all(self.cargo_count[input_cargo] for input_cargo in self.recipe.input)
-            and self.cargo_count[self.recipe.output] <= MAX_CARGO_AT_BUILDING
+    def try_create_cargo(self) -> list[Event]:
+        events = []
+        if all(
+            self.cargo_count[input_cargo] for input_cargo in self.recipe.input
+        ) and all(
+            self.cargo_count[output_cargo] <= MAX_CARGO_AT_BUILDING
+            for output_cargo in self.recipe.output
         ):
             for input_cargo in self.recipe.input:
                 self.cargo_count[input_cargo] -= 1
-            self.cargo_count[self.recipe.output] += 1
-            return CargoAddedEvent(self.position, self.recipe.output)
-        return NullEvent()
+            for output_cargo in self.recipe.output:
+                self.cargo_count[output_cargo] += 1
+                events.append(CargoAddedEvent(self.position, output_cargo))
+        return events
 
     def remove_cargo(self, type: CargoType, amount: int) -> CargoRemovedEvent:
         assert self.cargo_count[type] >= amount
@@ -114,7 +118,7 @@ class Building(ABC):
 class SteelWorks(Building):
     def __post_init__(self):
         self.recipe = Recipe(
-            input={CargoType.COAL, CargoType.IRON}, output=CargoType.STEEL
+            input={CargoType.COAL, CargoType.IRON}, output={CargoType.STEEL}
         )
 
 
@@ -122,32 +126,32 @@ class SteelWorks(Building):
 class Workshop(Building):
     def __post_init__(self):
         self.recipe = Recipe(
-            input={CargoType.STEEL, CargoType.PLANKS}, output=CargoType.TOOLS
+            input={CargoType.STEEL, CargoType.PLANKS}, output={CargoType.TOOLS}
         )
 
 
 @dataclass
 class CoalMine(Building):
     def __post_init__(self):
-        self.recipe = Recipe(output=CargoType.COAL)
+        self.recipe = Recipe(output={CargoType.COAL})
 
 
 @dataclass
 class IronMine(Building):
     def __post_init__(self):
-        self.recipe = Recipe(output=CargoType.IRON)
+        self.recipe = Recipe(output={CargoType.IRON})
 
 
 @dataclass
 class Forest(Building):
     def __post_init__(self):
-        self.recipe = Recipe(output=CargoType.LOGS)
+        self.recipe = Recipe(output={CargoType.LOGS})
 
 
 @dataclass
 class Sawmill(Building):
     def __post_init__(self):
-        self.recipe = Recipe(input={CargoType.LOGS}, output=CargoType.PLANKS)
+        self.recipe = Recipe(input={CargoType.LOGS}, output={CargoType.PLANKS})
 
 
 @dataclass(frozen=True)

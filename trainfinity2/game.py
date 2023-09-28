@@ -113,7 +113,7 @@ class Game:
 
     def try_create_cargo_in_all_buildings(self):
         for building in self.grid.buildings.values():
-            self.drawer.handle_events([building.try_create_cargo()])
+            self.drawer.handle_events(building.try_create_cargo())
 
     def on_update(self, delta_time):
         self.cargo_counter += delta_time

@@ -42,7 +42,7 @@ from ..model import (
     SteelWorks,
     Workshop,
 )
-from ..events import CreateEvent, DestroyEvent, Event, NullEvent
+from ..events import CreateEvent, DestroyEvent, Event
 from ..train import Train
 
 
@@ -136,8 +136,6 @@ class Drawer:
                     self._remove_cargo(event.position, event.amount)
                 case DestroyEvent():
                     self._remove(event.object)
-                case NullEvent():
-                    pass
                 case _:
                     raise ValueError(f"Event not being handled: {event}")
 
