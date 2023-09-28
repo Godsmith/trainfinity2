@@ -15,8 +15,11 @@ from .model import (
     Building,
     CargoType,
     CoalMine,
+    Forest,
     IronMine,
+    Market,
     Rail,
+    Sawmill,
     Signal,
     Station,
     SteelWorks,
@@ -316,21 +319,30 @@ class Grid:
         self.right += 1
         self.top += 1
 
-        buildings_from_level = {
-            1: [IronMine, SteelWorks],
-            2: [CoalMine],
-            3: [Workshop],
-            4: [IronMine],
-            5: [CoalMine],
-            6: [SteelWorks],
-            7: [IronMine],
-            8: [CoalMine],
-            9: [SteelWorks],
-            10: [IronMine],
-            11: [CoalMine],
-            12: [Workshop],
-        }
-        new_buildings = buildings_from_level.get(new_level, [IronMine, CoalMine])
+        buildings_from_level = [
+            [],
+            [IronMine, Market],
+            [CoalMine],
+            [SteelWorks],
+            [Forest],
+            [Sawmill],
+            [Workshop],
+            [IronMine],
+            [CoalMine],
+            [Forest],
+            [Sawmill],
+            [IronMine],
+            [CoalMine],
+            [SteelWorks],
+            [Forest],
+            [Sawmill],
+        ]
+        new_buildings = (
+            buildings_from_level[new_level]
+            if new_level < len(buildings_from_level)
+            else [random.choice([IronMine, CoalMine, Forest])]
+        )
+
         return [
             self._create_building_in_random_unoccupied_location(building)
             for building in new_buildings

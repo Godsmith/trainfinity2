@@ -34,6 +34,7 @@ from ..model import (
     CoalMine,
     Forest,
     IronMine,
+    Market,
     Rail,
     Sawmill,
     Signal,
@@ -201,6 +202,8 @@ class Drawer:
                 filepath = "images/forest.png"
             case Sawmill():
                 filepath = "images/forest.png"
+            case Market():
+                filepath = "images/market.png"
             case _:
                 filepath = "images/unknown_building.png"
 

@@ -115,6 +115,12 @@ class Building(ABC):
 
 
 @dataclass
+class Market(Building):
+    def __post_init__(self):
+        self.recipe = Recipe(input={*CargoType})
+
+
+@dataclass
 class SteelWorks(Building):
     def __post_init__(self):
         self.recipe = Recipe(
