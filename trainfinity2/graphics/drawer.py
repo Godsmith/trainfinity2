@@ -27,6 +27,7 @@ from ..grid import (
     StationBeingBuiltEvent,
 )
 from ..model import (
+    Building,
     CargoType,
     CargoAddedEvent,
     CargoRemovedEvent,
@@ -111,14 +112,8 @@ class Drawer:
     def handle_events(self, events: Iterable[Event]):
         for event in events:
             match event:
-                case CreateEvent(CoalMine() as mine):
-                    self._create_mine(mine)
-                case CreateEvent(IronMine() as mine):
-                    self._create_mine(mine)
-                case CreateEvent(SteelWorks() as steelworks):
-                    self._create_steelworks(steelworks)
-                case CreateEvent(Workshop() as workshop):
-                    self._create_workshop(workshop)
+                case CreateEvent(Building() as building):
+                    self._create_building(building)
                 case CreateEvent(Station() as station):
                     self._create_station(station)
                 case CreateEvent(Rail() as rail):
@@ -192,36 +187,28 @@ class Drawer:
                 )
             )
 
-    def _create_steelworks(self, steelworks: SteelWorks):
-        sprite = arcade.Sprite(
-            "images/steel_mill.png",
-            1.0,
-            center_x=steelworks.position.x * GRID_BOX_SIZE_PIXELS
-            + GRID_BOX_SIZE_PIXELS / 2,
-            center_y=steelworks.position.y * GRID_BOX_SIZE_PIXELS
-            + GRID_BOX_SIZE_PIXELS / 2,
-        )
-        self._add_sprite(sprite, steelworks)
+    def _create_building(self, building: Building):
+        scale = 1.0
+        match building:
+            case IronMine() | CoalMine():
+                scale = 0.75
+                filepath = "images/mine.png"
+            case Workshop():
+                filepath = "images/anvil.png"
+            case SteelWorks():
+                filepath = "images/steel_mill.png"
+            case _:
+                filepath = "unknown building"
 
-    def _create_mine(self, mine: IronMine | CoalMine):
         sprite = arcade.Sprite(
-            "images/mine.png",
-            0.75,
-            center_x=mine.position.x * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
-            center_y=mine.position.y * GRID_BOX_SIZE_PIXELS + GRID_BOX_SIZE_PIXELS / 2,
-        )
-        self._add_sprite(sprite, mine)
-
-    def _create_workshop(self, workshop: Workshop):
-        sprite = arcade.Sprite(
-            "images/anvil.png",
-            1.0,
-            center_x=workshop.position.x * GRID_BOX_SIZE_PIXELS
+            filepath,
+            scale,
+            center_x=building.position.x * GRID_BOX_SIZE_PIXELS
             + GRID_BOX_SIZE_PIXELS / 2,
-            center_y=workshop.position.y * GRID_BOX_SIZE_PIXELS
+            center_y=building.position.y * GRID_BOX_SIZE_PIXELS
             + GRID_BOX_SIZE_PIXELS / 2,
         )
-        self._add_sprite(sprite, workshop)
+        self._add_sprite(sprite, building)
 
     def _get_station_shapes(self, station: Station, is_building: bool = False):
         def set_alpha(color_: tuple[int, int, int]) -> tuple[int, int, int, int]:
