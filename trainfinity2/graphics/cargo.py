@@ -6,17 +6,21 @@ from trainfinity2.constants import (
 from trainfinity2.model import CargoType
 
 FILL_COLOR_FROM_CARGO_TYPE = {
-    CargoType.IRON: color.RED_BROWN,
+    CargoType.IRON: color.RUST,
     CargoType.COAL: color.SMOKY_BLACK,
     CargoType.STEEL: color.ASH_GREY,
     CargoType.TOOLS: color.ORANGE,
+    CargoType.LOGS: color.WOOD_BROWN,
+    CargoType.PLANKS: color.LIGHT_BROWN,
 }
 
 OUTLINE_COLOR_FROM_CARGO_TYPE = {
     CargoType.IRON: color.BLACK,
-    CargoType.COAL: color.ASH_GREY,
+    CargoType.COAL: color.DARK_GRAY,
     CargoType.STEEL: color.BLACK,
     CargoType.TOOLS: color.BLACK,
+    CargoType.LOGS: color.BLACK,
+    CargoType.PLANKS: color.BLACK,
 }
 
 

@@ -32,8 +32,10 @@ from ..model import (
     CargoAddedEvent,
     CargoRemovedEvent,
     CoalMine,
+    Forest,
     IronMine,
     Rail,
+    Sawmill,
     Signal,
     SignalColor,
     Station,
@@ -197,8 +199,12 @@ class Drawer:
                 filepath = "images/anvil.png"
             case SteelWorks():
                 filepath = "images/steel_mill.png"
+            case Forest():
+                filepath = "images/forest.png"
+            case Sawmill():
+                filepath = "images/forest.png"
             case _:
-                filepath = "unknown building"
+                filepath = "images/unknown_building.png"
 
         sprite = arcade.Sprite(
             filepath,

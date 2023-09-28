@@ -57,6 +57,8 @@ class CargoType(Enum):
     IRON = auto()
     STEEL = auto()
     TOOLS = auto()
+    LOGS = auto()
+    PLANKS = auto()
 
 
 @dataclass(frozen=True)
@@ -119,7 +121,9 @@ class SteelWorks(Building):
 @dataclass
 class Workshop(Building):
     def __post_init__(self):
-        self.recipe = Recipe(input={CargoType.STEEL}, output=CargoType.TOOLS)
+        self.recipe = Recipe(
+            input={CargoType.STEEL, CargoType.PLANKS}, output=CargoType.TOOLS
+        )
 
 
 @dataclass
@@ -132,6 +136,18 @@ class CoalMine(Building):
 class IronMine(Building):
     def __post_init__(self):
         self.recipe = Recipe(output=CargoType.IRON)
+
+
+@dataclass
+class Forest(Building):
+    def __post_init__(self):
+        self.recipe = Recipe(output=CargoType.LOGS)
+
+
+@dataclass
+class Sawmill(Building):
+    def __post_init__(self):
+        self.recipe = Recipe(input={CargoType.LOGS}, output=CargoType.PLANKS)
 
 
 @dataclass(frozen=True)
