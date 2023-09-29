@@ -10,8 +10,8 @@ FILL_COLOR_FROM_CARGO_TYPE = {
     CargoType.COAL: color.SMOKY_BLACK,
     CargoType.STEEL: color.ASH_GREY,
     CargoType.TOOLS: color.ORANGE,
-    CargoType.LOGS: color.WOOD_BROWN,
-    CargoType.PLANKS: color.LIGHT_BROWN,
+    CargoType.LOGS: color.BROWN,
+    CargoType.PLANKS: color.WOOD_BROWN,
 }
 
 OUTLINE_COLOR_FROM_CARGO_TYPE = {
