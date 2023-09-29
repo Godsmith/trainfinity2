@@ -747,11 +747,11 @@ def test_train_picks_up_iron_from_mine(game: Game):
     assert len(game.drawer.cargo_shape_element_list) == 0
 
 
-def test_train_delivers_iron_to_factory_gives_score(game: Game):
+def test_train_delivers_iron_to_market_gives_money(game: Game):
     create_objects(
         game.grid,
         """
-        . M . F .
+        . M . m .
 
         .-S-.-S-.
         """,
@@ -767,7 +767,7 @@ def test_train_delivers_iron_to_factory_gives_score(game: Game):
         game.on_update(1 / 60)
 
     assert train.wagons[0].cargo_count[CargoType.IRON] == 0
-    assert game.player.score == 1
+    assert game.player.money == 1
 
 
 def test_on_resize(game):
@@ -1224,7 +1224,7 @@ class TestPlayer:
     def test_grid_is_enlarged_when_leveling_up(self, game: Game):
         assert game.grid.left == -1
         assert game.grid.right == GRID_WIDTH_CELLS + 1
-        game.player.score = 10
+        game.player.money = 10
         assert game.grid.left == -2
         assert game.grid.right == GRID_WIDTH_CELLS + 2
 

@@ -4,6 +4,7 @@ from itertools import combinations
 
 import arcade
 from pyglet.math import Vec2
+from trainfinity2.cargo_values import CARGO_VALUES
 
 from trainfinity2.events import Event
 
@@ -18,7 +19,7 @@ from .grid import (
     Grid,
 )
 from .gui import Gui, Mode
-from .model import CargoAddedEvent, Player, Station
+from .model import CargoSoldEvent, Player, Station
 from .signal_controller import SignalController
 from .terrain import Terrain
 from .train import Train
@@ -126,8 +127,8 @@ class Game:
             events = train.move(delta_time)
             for event in events:
                 match event:
-                    case CargoAddedEvent():
-                        self.player.score += 1
+                    case CargoSoldEvent(type, amount):
+                        self.player.money += CARGO_VALUES[type] * amount
             self.drawer.handle_events(events)
 
         for train1, train2 in combinations(self.trains, 2):
@@ -150,9 +151,9 @@ class Game:
             self.frame_count = 0
 
             self.score_increase_per_second_last_minute.append(
-                self.player.score - self.score_last_second
+                self.player.money - self.score_last_second
             )
-            self.score_last_second = self.player.score
+            self.score_last_second = self.player.money
             self.gui.update_score_per_minute(
                 sum(self.score_increase_per_second_last_minute)
             )

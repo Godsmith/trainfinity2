@@ -30,8 +30,8 @@ def mock_grid():
 
 
 class TestPlayer:
-    def test_level_is_increased_when_score_passes_threshold(self, player):
-        player.score = 10
+    def test_level_is_increased_when_money_passes_threshold(self, player):
+        player.money = 10
 
         assert player._level == 2
 

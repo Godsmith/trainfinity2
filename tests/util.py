@@ -5,6 +5,7 @@ from trainfinity2.model import (
     Building,
     CoalMine,
     IronMine,
+    Market,
     Rail,
     Station,
     SteelWorks,
@@ -130,6 +131,7 @@ def create_objects(grid: Grid, map_: str):
     _create_buildings(lines, "M", create_create_building_method(grid, IronMine))
     _create_buildings(lines, "C", create_create_building_method(grid, CoalMine))
     _create_buildings(lines, "F", create_create_building_method(grid, SteelWorks))
+    _create_buildings(lines, "m", create_create_building_method(grid, Market))
 
     east_west_station_creator = StationCreator(grid, east_west=True)
     north_south_station_creator = StationCreator(grid, east_west=False)

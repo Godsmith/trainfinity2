@@ -195,7 +195,7 @@ class Gui:
         x = right - 20
         y = top - 40
         sprite = arcade.create_text_sprite(
-            f"Score: {self._score}. Level: {self._level}. To next level: {self._score_to_next_level}",
+            f"Money: ${self._score}. Level: {self._level}. To next level: ${self._score_to_next_level}",
             x,
             y,
             color=color.BLACK,

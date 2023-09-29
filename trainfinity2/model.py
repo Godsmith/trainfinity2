@@ -73,6 +73,12 @@ class CargoRemovedEvent(Event):
     amount: int
 
 
+@dataclass(frozen=True)
+class CargoSoldEvent(Event):
+    type: CargoType
+    amount: int
+
+
 @dataclass
 class Recipe:
     output: set[CargoType] = field(default_factory=set)
@@ -122,6 +128,10 @@ class Building(ABC):
 class Market(Building):
     def __post_init__(self):
         self.recipe = Recipe(input={*CargoType})
+
+    def add_cargo(self, type: CargoType, amount: int) -> list[Event]:
+        self.cargo_count[type] += amount
+        return [CargoSoldEvent(type, amount)]
 
 
 @dataclass
@@ -230,11 +240,11 @@ class Player:
         return self.LEVELS[self._level + 1] - self._score
 
     @property
-    def score(self) -> int:
+    def money(self) -> int:
         return self._score
 
-    @score.setter
-    def score(self, value):
+    @money.setter
+    def money(self, value):
         self._score = value
         while self._score >= self.LEVELS[self._level + 1]:
             self.level_up()

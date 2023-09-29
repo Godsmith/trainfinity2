@@ -28,6 +28,7 @@ from ..grid import (
 )
 from ..model import (
     Building,
+    CargoSoldEvent,
     CargoType,
     CargoAddedEvent,
     CargoRemovedEvent,
@@ -137,6 +138,10 @@ class Drawer:
                     self._remove_cargo(event.position, event.amount)
                 case DestroyEvent():
                     self._remove(event.object)
+                case CargoSoldEvent():
+                    # Do nothing at this point. In the future, perhaps
+                    # create some floating text or something
+                    pass
                 case _:
                     raise ValueError(f"Event not being handled: {event}")
 
