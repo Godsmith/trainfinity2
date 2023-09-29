@@ -236,7 +236,6 @@ class Game:
             )
         elif self.gui.mode == Mode.DESTROY:
             self.drawer.handle_events(self.grid.remove_rail(Vec2(world_x, world_y)))
-            self.drawer.show_rails_to_be_destroyed(set())
 
     def _create_train(self, station1: Station, station2: Station):
         train = Train(

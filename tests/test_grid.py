@@ -2,6 +2,7 @@ from pyglet.math import Vec2
 from pytest import fixture
 from tests.util import create_objects
 from trainfinity2.grid import Grid, positions_between
+from trainfinity2.mode import Mode
 from trainfinity2.model import Rail, Station
 from trainfinity2.signal_controller import SignalController
 from trainfinity2.terrain import Terrain
@@ -124,3 +125,15 @@ class TestBuildRail:
         )
         rail = grid._mark_illegal_rail([Rail(0, 0, 1, 0)]).pop()
         assert rail.legal
+
+
+def test_destroy_rail_by_clicking_and_dragging(grid: Grid):
+    create_objects(
+        grid,
+        """
+            .-.
+            """,
+    )
+    assert len(grid.rails) == 1
+    grid.click_and_drag(0, 0, 0, 0, Mode.DESTROY)
+    assert len(grid.rails) == 0

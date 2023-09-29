@@ -223,6 +223,8 @@ class Grid:
                     *self.station_being_built.positions_before_and_after
                 ),
             ]
+        elif mode == Mode.DESTROY:
+            return self.remove_rail(Vec2(x, y))
 
         return []
 

@@ -158,6 +158,8 @@ class Drawer:
         for signal_shape in self._signal_shapes_from_object_id[id(object)]:
             self._signal_shape_list.remove(signal_shape)
         del self._signal_shapes_from_object_id[id(object)]
+        # Just in case it was rails that was destroyed, hide the red outline
+        self.show_rails_to_be_destroyed(set())
 
     def create_grid(self, grid: Grid):
         self._grid_shape_list = _ShapeElementList()
