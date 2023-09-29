@@ -1,7 +1,8 @@
+import math
 import random
 from collections import defaultdict
 from dataclasses import dataclass, field
-from itertools import pairwise
+from itertools import combinations, pairwise, product
 from typing import Iterable, Sequence
 
 from pyglet.math import Vec2
@@ -224,6 +225,39 @@ class Grid:
             ]
 
         return []
+
+    def show_rails_being_built(self, x: float, y: float):
+        # Adjust x and y since rails are drawn half a cell from their coordinate
+        x -= 0.5
+        y -= 0.5
+        four_closest_positions = [
+            Vec2(x, y)
+            for x, y in product(
+                (math.floor(x), math.ceil(x)), (math.floor(y), math.ceil(y))
+            )
+        ]
+        position_pairs = list(combinations(four_closest_positions, 2))
+        position_pair_from_point = {}
+        for pos1, pos2 in position_pairs:
+            thirdway_point_1 = Vec2(
+                (pos1.x * 2 + pos2.x) / 3, (pos1.y * 2 + pos2.y) / 3
+            )
+            thirdway_point_2 = Vec2(
+                (pos1.x + pos2.x * 2) / 3, (pos1.y + pos2.y * 2) / 3
+            )
+            position_pair_from_point[thirdway_point_1] = (pos1, pos2)
+            position_pair_from_point[thirdway_point_2] = (pos1, pos2)
+
+        def squared_distance_to_point(pos):
+            dx = abs(x - pos.x)
+            dy = abs(y - pos.y)
+            return dx * dx + dy * dy
+
+        sorted_points = sorted(
+            position_pair_from_point.keys(), key=squared_distance_to_point
+        )
+        positions = position_pair_from_point[sorted_points[0]]
+        return self._show_rails_being_built(*positions)
 
     def _show_rails_being_built(self, start: Vec2, stop: Vec2) -> RailsBeingBuiltEvent:
         rails_being_built = rails_between(start, stop)

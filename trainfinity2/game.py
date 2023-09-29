@@ -311,6 +311,14 @@ class Game:
             )
             events.append(self.grid.show_signal_outline(world_x_float, world_y_float))
 
+        elif self.gui.mode == Mode.RAIL:
+            world_x_float, world_y_float = self.camera.to_world_coordinates_no_rounding(
+                x, y
+            )
+            events.append(
+                self.grid.show_rails_being_built(world_x_float, world_y_float)
+            )
+
         elif self.gui.mode == Mode.DESTROY:
             self.drawer.show_rails_to_be_destroyed(
                 self.grid.rails_at_position(Vec2(world_x, world_y))
