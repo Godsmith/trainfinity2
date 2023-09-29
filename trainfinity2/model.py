@@ -113,8 +113,9 @@ class Building(ABC):
         self.cargo_count[type] -= amount
         return CargoRemovedEvent(self.position, amount)
 
-    def add_cargo(self, type: CargoType, amount: int):
+    def add_cargo(self, type: CargoType, amount: int) -> list[Event]:
         self.cargo_count[type] += amount
+        return [CargoAddedEvent(self.position, type)]
 
 
 @dataclass

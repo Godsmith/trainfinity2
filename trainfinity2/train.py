@@ -206,13 +206,16 @@ class Train:
         self, building: Building, cargo_type: CargoType
     ) -> Callable[[], list[Event]]:
         def inner() -> list[Event]:
+            events: list[Event] = []
             for wagon in reversed(self.wagons):
                 if wagon.cargo_count[cargo_type]:
                     self.player.score += wagon.cargo_count[cargo_type]
-                    building.add_cargo(cargo_type, wagon.cargo_count[cargo_type])
+                    events.extend(
+                        building.add_cargo(cargo_type, wagon.cargo_count[cargo_type])
+                    )
                     wagon.cargo_count[cargo_type] = 0
-                    return []
-            return []
+                    return events
+            return events
 
         return inner
 
