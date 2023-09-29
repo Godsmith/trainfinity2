@@ -18,7 +18,7 @@ from .grid import (
     Grid,
 )
 from .gui import Gui, Mode
-from .model import Player, Station
+from .model import CargoAddedEvent, Player, Station
 from .signal_controller import SignalController
 from .terrain import Terrain
 from .train import Train
@@ -123,7 +123,12 @@ class Game:
         self._update_gui_figures(delta_time)
 
         for train in self.trains:
-            self.drawer.handle_events(train.move(delta_time))
+            events = train.move(delta_time)
+            for event in events:
+                match event:
+                    case CargoAddedEvent():
+                        self.player.score += 1
+            self.drawer.handle_events(events)
 
         for train1, train2 in combinations(self.trains, 2):
             if train1.is_colliding_with(train2):
@@ -234,7 +239,6 @@ class Game:
 
     def _create_train(self, station1: Station, station2: Station):
         train = Train(
-            self.player,
             station1.positions[0],
             station2.positions[0],
             self.grid,

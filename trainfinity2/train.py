@@ -10,7 +10,7 @@ from trainfinity2.events import Event
 
 
 from .grid import Grid
-from .model import Building, Player, Rail, CargoType, Station
+from .model import Building, Rail, CargoType, Station
 from .wagon import Wagon
 from .route_finder import find_route, has_reached_end_of_target_station
 from .signal_controller import SignalController
@@ -65,7 +65,6 @@ def _find_equidistant_points_and_angles_along_line(
 
 @dataclass
 class Train:
-    player: Player
     first_station_position: Vec2
     second_station_position: Vec2
     grid: Grid
@@ -209,7 +208,6 @@ class Train:
             events: list[Event] = []
             for wagon in reversed(self.wagons):
                 if wagon.cargo_count[cargo_type]:
-                    self.player.score += wagon.cargo_count[cargo_type]
                     events.extend(
                         building.add_cargo(cargo_type, wagon.cargo_count[cargo_type])
                     )
