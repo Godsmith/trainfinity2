@@ -220,10 +220,7 @@ class Train:
         return inner
 
     def _has_space(self, cargo_type: CargoType):
-        for wagon in self.wagons:
-            if not wagon.cargo_count[cargo_type]:
-                return True
-        return False
+        return any(not wagon.cargo_count[cargo_type] for wagon in self.wagons)
 
     def _has_cargo(self, cargo_type: CargoType):
         return any(wagon.cargo_count[cargo_type] for wagon in self.wagons)
