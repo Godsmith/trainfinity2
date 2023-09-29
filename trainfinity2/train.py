@@ -104,7 +104,7 @@ class Train:
         # add_wagon also extends the position history
         self.add_wagon()
 
-        self._run_after_wait: Callable[[], None] | None = None
+        self._run_after_wait: Callable[[], list[Event]] | None = None
 
     @property
     def rails_on_route(self):
@@ -116,8 +116,9 @@ class Train:
             return []
 
         if self._run_after_wait:
-            self._run_after_wait()
+            events = self._run_after_wait()
             self._run_after_wait = None
+            return events
 
         if self.speed < self.MAX_SPEED:
             self.speed += self.ACCELERATION * delta_time
@@ -201,16 +202,19 @@ class Train:
         # self.current_rail = None
         return []
 
-    def _create_unload_cargo_method(self, factory: Building, cargo_type: CargoType):
-        def inner():
+    def _create_unload_cargo_method(
+        self, building: Building, cargo_type: CargoType
+    ) -> Callable[[], list[Event]]:
+        def inner() -> list[Event]:
             for wagon in reversed(self.wagons):
                 if wagon.cargo_count[cargo_type]:
                     self.player.score += wagon.cargo_count[cargo_type]
-                    factory.cargo_count[cargo_type] += wagon.cargo_count[cargo_type]
+                    building.add_cargo(cargo_type, wagon.cargo_count[cargo_type])
                     wagon.cargo_count[cargo_type] = 0
-                    return
+                    return []
+            return []
 
-        return inner()
+        return inner
 
     def _has_space(self, cargo_type: CargoType):
         for wagon in self.wagons:
@@ -226,7 +230,8 @@ class Train:
             for wagon in self.wagons:
                 if not wagon.cargo_count[cargo_type]:
                     wagon.cargo_count[cargo_type] = 1
-                    return
+                    return []
+            return []
 
         return inner
 

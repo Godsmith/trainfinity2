@@ -113,6 +113,9 @@ class Building(ABC):
         self.cargo_count[type] -= amount
         return CargoRemovedEvent(self.position, amount)
 
+    def add_cargo(self, type: CargoType, amount: int):
+        self.cargo_count[type] += amount
+
 
 @dataclass
 class Market(Building):
