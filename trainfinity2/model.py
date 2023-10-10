@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 import functools
-from typing import Callable
+from typing import Callable, Sequence
 
 from pyglet.math import Vec2
 
@@ -99,7 +99,7 @@ class Building(ABC):
     def produces(self) -> set[CargoType]:
         return self.recipe.output
 
-    def try_create_cargo(self) -> list[Event]:
+    def try_create_cargo(self) -> Sequence[Event]:
         events = []
         if all(
             self.cargo_count[input_cargo] for input_cargo in self.recipe.input

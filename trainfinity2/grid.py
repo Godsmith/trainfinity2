@@ -3,7 +3,7 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import combinations, pairwise, product
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, Type
 
 from pyglet.math import Vec2
 
@@ -355,7 +355,7 @@ class Grid:
         self.right += 1
         self.top += 1
 
-        buildings_from_level = [
+        buildings_from_level: Sequence[Sequence[Type[Building]]] = [
             [],
             [IronMine, Market],
             [CoalMine],
